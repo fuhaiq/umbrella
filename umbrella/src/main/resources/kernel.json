@@ -1,0 +1,12 @@
+{
+    "libdir" : {
+		"name" : "com.wolfram.jlink.libdir",
+		"dir" : "/usr/local/Wolfram/Mathematica/10.0/SystemFiles/Links/JLink/SystemFiles/Libraries/Linux-x86-64"
+	},
+	"maxWaitMillis" : 3000,
+	"timeConstrained" : 5,
+	"maxTotal": 5,
+	"pageWidth":300,
+	"url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel",
+	"dumpDir" : "/home/michael/wesker/dump/"
+}
