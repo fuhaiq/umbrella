@@ -16,7 +16,7 @@ import com.umbrella.kernel.KernelModule;
 import com.umbrella.redis.JedisModule;
 import com.umbrella.service.RpcServiceConfig;
 import com.umbrella.service.RpcServiceType;
-import com.umbrella.service.beanstalkd.BeanstalkdServiceModule;
+import com.umbrella.service.beanstalkd.BeanstalkdKernelServiceModule;
 import com.umbrella.service.kernel.KernelServiceModule;
 import com.umbrella.service.telnet.TelnetServiceModule;
 
@@ -32,7 +32,7 @@ public class ServiceManagerModule extends AbstractModule{
 		install(new KernelModule("kernel.json"));
 		install(new TelnetServiceModule(serviceBinder, new RpcServiceConfig("localhost", 8000, new RpcServiceType.EPOLL())));
 		install(new KernelServiceModule(serviceBinder, new RpcServiceConfig("localhost", 9000, new RpcServiceType.EPOLL())));
-		install(new BeanstalkdServiceModule(serviceBinder));
+		install(new BeanstalkdKernelServiceModule(serviceBinder));
 		Multibinder<ServiceManager.Listener> multibinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
 		multibinder.addBinding().to(ShutdownListener.class).in(Scopes.SINGLETON);
 	}

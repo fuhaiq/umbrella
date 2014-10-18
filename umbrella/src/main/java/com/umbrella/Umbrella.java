@@ -9,7 +9,7 @@ public class Umbrella {
 	public static void main(String[] args) {
 		Injector injector = Guice.createInjector(new ServiceManagerModule());
 		ServiceManager manager = injector.getInstance(ServiceManager.class);
-		manager.startAsync();
+		manager.startAsync().awaitHealthy();
 	}
 
 }

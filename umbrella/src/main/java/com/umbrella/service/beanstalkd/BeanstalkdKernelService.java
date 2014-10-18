@@ -9,9 +9,9 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.Beanstalkd;
 
-public class BeanstalkdService extends AbstractExecutionThreadService{
+public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	
-	private final Logger LOG = LogManager.getLogger("beanstalkd");
+	private final Logger LOG = LogManager.getLogger("beanstalkd-kernel");
 	
 	@Inject
 	private ObjectPool<Beanstalkd> pool;
