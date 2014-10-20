@@ -41,7 +41,7 @@ public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 		while (isRunning()) {
 			String job = bean.reserve();
 			if(!Strings.isNullOrEmpty(job)) {
-				System.out.println(job);
+				System.out.println("->"+job+"<-");
 			}
 		}
 	}
