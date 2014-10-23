@@ -12,8 +12,8 @@ public class BeanstalkdKernelServiceModule extends ServiceModule {
 
 	@Override
 	protected void configure() {
-		serviceBinder.addBinding("beanstalkd-1").toInstance(new BeanstalkdKernelService());
-		serviceBinder.addBinding("beanstalkd-2").toInstance(new BeanstalkdKernelService());
+		serviceBinder.addBinding("beanstalkd-kernel-1").toInstance(new BeanstalkdKernelService());
+		serviceBinder.addBinding("beanstalkd-kernel-2").toInstance(new BeanstalkdKernelService());
 	}
 
 }

@@ -1,6 +1,7 @@
 package com.umbrella.service.beanstalkd;
 
 import com.google.common.util.concurrent.Service;
+import com.google.inject.Scopes;
 import com.google.inject.multibindings.MapBinder;
 import com.umbrella.service.ServiceModule;
 
@@ -12,7 +13,7 @@ public class BeanstalkdDBServiceModule extends ServiceModule{
 
 	@Override
 	protected void configure() {
-		
+		serviceBinder.addBinding("beanstalkd-db").to(BeanstalkdDBService.class).in(Scopes.SINGLETON);
 	}
 
 }

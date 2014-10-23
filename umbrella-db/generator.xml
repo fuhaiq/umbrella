@@ -4,7 +4,7 @@
   "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
 
 <generatorConfiguration>
-	<classPathEntry location="e:/mysql-connector-java-5.1.33-bin.jar" />
+	<classPathEntry location="/home/michael/.m2/repository/mysql/mysql-connector-java/5.1.33/mysql-connector-java-5.1.33.jar" />
 
 	<context id="Mysql2Tables" targetRuntime="MyBatis3">
 
@@ -12,7 +12,7 @@
 			<property name="suppressAllComments" value="true" />
 		</commentGenerator>
 		<jdbcConnection driverClass="com.mysql.jdbc.Driver"
-			connectionURL="jdbc:mysql://localhost:3306/helpsource" userId="root"
+			connectionURL="jdbc:mysql://localhost:3306/umbrella" userId="root"
 			password="">
 		</jdbcConnection>
 

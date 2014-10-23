@@ -11,7 +11,12 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
+import com.umbrella.beanstalkd.BeanstalkdModule;
+import com.umbrella.db.DBModule;
+import com.umbrella.service.RpcServiceConfig;
+import com.umbrella.service.RpcServiceType;
 import com.umbrella.service.beanstalkd.BeanstalkdDBServiceModule;
+import com.umbrella.service.telnet.TelnetServiceModule;
 
 public class ServiceManagerModule extends AbstractModule{
 	
@@ -19,8 +24,11 @@ public class ServiceManagerModule extends AbstractModule{
 	
 	@Override
 	protected void configure() {
+		install(new DBModule("db.xml"));
+		install(new BeanstalkdModule("beanstalkd.json"));
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
 		install(new BeanstalkdDBServiceModule(serviceBinder));
+		install(new TelnetServiceModule(serviceBinder, new RpcServiceConfig("localhost", 8000, new RpcServiceType.EPOLL())));
 		Multibinder<ServiceManager.Listener> multibinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
 		multibinder.addBinding().to(ShutdownListener.class).in(Scopes.SINGLETON);
 	}
