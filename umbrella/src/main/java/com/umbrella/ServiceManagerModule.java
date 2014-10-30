@@ -33,8 +33,8 @@ public class ServiceManagerModule extends AbstractModule{
 		install(new TelnetServiceModule(serviceBinder, new RpcServiceConfig("localhost", 8000, new RpcServiceType.EPOLL())));
 		install(new KernelServiceModule(serviceBinder, new RpcServiceConfig("localhost", 9000, new RpcServiceType.EPOLL())));
 		install(new BeanstalkdKernelServiceModule(serviceBinder));
-		Multibinder<ServiceManager.Listener> multibinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
-		multibinder.addBinding().to(ShutdownListener.class).in(Scopes.SINGLETON);
+		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
+		listenerBinder.addBinding().to(ServiceManagerListener.class).in(Scopes.SINGLETON);
 	}
 	
 	@Provides

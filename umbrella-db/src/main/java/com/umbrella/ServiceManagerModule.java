@@ -29,8 +29,8 @@ public class ServiceManagerModule extends AbstractModule{
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
 		install(new BeanstalkdDBServiceModule(serviceBinder));
 		install(new TelnetServiceModule(serviceBinder, new RpcServiceConfig("localhost", 8000, new RpcServiceType.EPOLL())));
-		Multibinder<ServiceManager.Listener> multibinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
-		multibinder.addBinding().to(ShutdownListener.class).in(Scopes.SINGLETON);
+		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
+		listenerBinder.addBinding().to(ServiceManagerListener.class).in(Scopes.SINGLETON);
 	}
 	
 	@Provides

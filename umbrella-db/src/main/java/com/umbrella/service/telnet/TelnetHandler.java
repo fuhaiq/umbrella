@@ -3,6 +3,7 @@ package com.umbrella.service.telnet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -20,7 +21,7 @@ public class TelnetHandler extends SimpleChannelInboundHandler<String>{
 		if(msg.equalsIgnoreCase("info")) {
 			ctx.writeAndFlush(manager.toString() + "\r\n");
 		} else if(msg.equalsIgnoreCase("exit")) {
-			ctx.channel().close();
+			ctx.channel().writeAndFlush("bye").addListener(ChannelFutureListener.CLOSE);
 		} else if(msg.equalsIgnoreCase("shutdown")) {
 			ctx.writeAndFlush("shutdown all services\r\n").addListener(r->manager.stopAsync());
 		} else {

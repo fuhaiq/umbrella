@@ -4,6 +4,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.SocketChannel;
+
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 public class BeanstalkdConfig extends GenericObjectPoolConfig{

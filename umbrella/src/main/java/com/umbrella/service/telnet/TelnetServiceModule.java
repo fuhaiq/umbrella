@@ -32,11 +32,11 @@ public final class TelnetServiceModule extends ServiceModule{
 
 	@Override
 	protected void configure() {
-		MapBinder<String, ChannelHandler> mapbinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named("telnet"));
-		mapbinder.addBinding("telnet.decoder").to(TelnetDecoder.class).in(Scopes.NO_SCOPE);
-		mapbinder.addBinding("decoder").to(StringDecoder.class).in(Scopes.SINGLETON);
-		mapbinder.addBinding("encoder").to(StringEncoder.class).in(Scopes.SINGLETON);
-		mapbinder.addBinding("telnet.handler").to(TelnetHandler.class).in(Scopes.NO_SCOPE);
+		MapBinder<String, ChannelHandler> handlerBinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named("telnet"));
+		handlerBinder.addBinding("telnet.decoder").to(TelnetDecoder.class).in(Scopes.NO_SCOPE);
+		handlerBinder.addBinding("decoder").to(StringDecoder.class).in(Scopes.SINGLETON);
+		handlerBinder.addBinding("encoder").to(StringEncoder.class).in(Scopes.SINGLETON);
+		handlerBinder.addBinding("telnet.handler").to(TelnetHandler.class).in(Scopes.NO_SCOPE);
 		serviceBinder.addBinding("telnet").toInstance(new TelnetService(config));
 	}
 

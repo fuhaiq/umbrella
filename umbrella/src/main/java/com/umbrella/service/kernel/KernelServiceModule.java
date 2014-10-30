@@ -39,11 +39,11 @@ public final class KernelServiceModule extends ServiceModule{
 				mapAction("evaluate").to(Evaluate.class).in(Scopes.SINGLETON);
 			}
 		});
-		MapBinder<String, ChannelHandler> mapbinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named("kernel"));
-		mapbinder.addBinding("decoder").to(JsonDecoder.class).in(Scopes.SINGLETON);
-		mapbinder.addBinding("encoder").to(JsonEncoder.class).in(Scopes.SINGLETON);
-		mapbinder.addBinding("action").to(JsonActionHandler.class).in(Scopes.NO_SCOPE);
-		mapbinder.addBinding("exception").to(JsonExceptionHandler.class).in(Scopes.SINGLETON);
+		MapBinder<String, ChannelHandler> handlerBinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named("kernel"));
+		handlerBinder.addBinding("decoder").to(JsonDecoder.class).in(Scopes.SINGLETON);
+		handlerBinder.addBinding("encoder").to(JsonEncoder.class).in(Scopes.SINGLETON);
+		handlerBinder.addBinding("action").to(JsonActionHandler.class).in(Scopes.NO_SCOPE);
+		handlerBinder.addBinding("exception").to(JsonExceptionHandler.class).in(Scopes.SINGLETON);
 		serviceBinder.addBinding("kernel").toInstance(new KernelService(config));
 	}
 	
