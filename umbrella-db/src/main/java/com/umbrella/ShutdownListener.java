@@ -15,7 +15,7 @@ import com.umbrella.beanstalkd.BeanstalkdConfig;
 
 public class ShutdownListener extends ServiceManager.Listener{
 
-	private final Logger LOG = LogManager.getLogger("ServiceManager");
+	private final Logger LOG = LogManager.getLogger(ShutdownListener.class);
 	
 	@Inject
 	private ObjectPool<Beanstalkd> beans;

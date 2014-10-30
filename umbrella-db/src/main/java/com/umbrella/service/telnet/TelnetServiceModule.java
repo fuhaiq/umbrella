@@ -30,22 +30,20 @@ public final class TelnetServiceModule extends ServiceModule{
 		this.config = config;
 	}
 
-	public final static String ID = "telnet";
-
 	@Override
 	protected void configure() {
-		MapBinder<String, ChannelHandler> mapbinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named(ID));
+		MapBinder<String, ChannelHandler> mapbinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named("telnet"));
 		mapbinder.addBinding("telnet.decoder").to(TelnetDecoder.class).in(Scopes.NO_SCOPE);
 		mapbinder.addBinding("decoder").to(StringDecoder.class).in(Scopes.SINGLETON);
 		mapbinder.addBinding("encoder").to(StringEncoder.class).in(Scopes.SINGLETON);
 		mapbinder.addBinding("telnet.handler").to(TelnetHandler.class).in(Scopes.NO_SCOPE);
-		serviceBinder.addBinding(ID).toInstance(new TelnetService(config));
+		serviceBinder.addBinding("telnet").toInstance(new TelnetService(config));
 	}
 
 	@Provides
 	@Singleton
-	@Named(ID)
-	ServerBootstrap provideServerBootstrap(@Named(ID) Provider<Map<String, ChannelHandler>> handlers) {
+	@Named("telnet")
+	ServerBootstrap provideServerBootstrap(@Named("telnet") Provider<Map<String, ChannelHandler>> handlers) {
 		ServerBootstrap boot = new ServerBootstrap();
 		boot.group(config.getBoss(), config.getWorker()).channel(config.getChannelClass()).childHandler(new ChannelInitializer<SocketChannel>(){
 					@Override

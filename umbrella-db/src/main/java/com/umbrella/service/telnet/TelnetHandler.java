@@ -11,7 +11,7 @@ import com.google.inject.Inject;
 
 public class TelnetHandler extends SimpleChannelInboundHandler<String>{
 	
-	private final Logger LOG = LogManager.getLogger("TelnetHandler");
+	private final Logger LOG = LogManager.getLogger(TelnetHandler.class);
 	
 	@Inject private ServiceManager manager;
 	

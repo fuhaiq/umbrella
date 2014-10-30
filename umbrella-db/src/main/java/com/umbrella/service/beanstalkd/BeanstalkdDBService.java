@@ -13,7 +13,7 @@ import com.umbrella.db.model.User;
 
 public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	
-	private final Logger LOG = LogManager.getLogger("beanstalkd-db");
+	private final Logger LOG = LogManager.getLogger(BeanstalkdDBService.class);
 	
 	@Override
 	public String toString() {
