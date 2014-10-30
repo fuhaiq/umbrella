@@ -4,7 +4,7 @@
   "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
 
 <generatorConfiguration>
-	<classPathEntry location="/home/michael/.m2/repository/mysql/mysql-connector-java/5.1.33/mysql-connector-java-5.1.33.jar" />
+	<classPathEntry location="C:\Users\michael.fu\.m2\repository\mysql\mysql-connector-java\5.1.33\mysql-connector-java-5.1.33.jar" />
 
 	<context id="Mysql2Tables" targetRuntime="MyBatis3">
 
@@ -36,8 +36,7 @@
 			<property name="enableSubPackages" value="true" />
 		</javaClientGenerator>
 
-		<table tableName="user" alias="user" domainObjectName="User"
-			enableDeleteByExample="false" enableUpdateByExample="false">
+		<table tableName="user" alias="user" domainObjectName="User">
 			<property name="useActualColumnNames" value="true" />
 			<generatedKey column="ID" sqlStatement="MySql" identity="true" />
 		</table>

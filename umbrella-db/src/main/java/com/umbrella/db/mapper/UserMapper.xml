@@ -35,6 +35,35 @@
       </foreach>
     </where>
   </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
   <sql id="Base_Column_List" >
     user.id as user_id, user.name as user_name, user.age as user_age
   </sql>
@@ -61,6 +90,12 @@
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
     delete from user
     where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.umbrella.db.model.UserExample" >
+    delete from user user
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
   </delete>
   <insert id="insert" parameterType="com.umbrella.db.model.User" >
     <selectKey resultType="java.lang.Integer" keyProperty="id" order="AFTER" >
@@ -97,6 +132,32 @@
       <include refid="Example_Where_Clause" />
     </if>
   </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update user user
+    <set >
+      <if test="record.id != null" >
+        user.id = #{record.id,jdbcType=INTEGER},
+      </if>
+      <if test="record.name != null" >
+        user.name = #{record.name,jdbcType=VARCHAR},
+      </if>
+      <if test="record.age != null" >
+        user.age = #{record.age,jdbcType=INTEGER},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update user user
+    set user.id = #{record.id,jdbcType=INTEGER},
+      user.name = #{record.name,jdbcType=VARCHAR},
+      user.age = #{record.age,jdbcType=INTEGER}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
   <update id="updateByPrimaryKeySelective" parameterType="com.umbrella.db.model.User" >
     update user
     <set >
