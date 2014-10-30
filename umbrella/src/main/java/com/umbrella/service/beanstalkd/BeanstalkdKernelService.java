@@ -11,7 +11,7 @@ import com.umbrella.beanstalkd.Beanstalkd;
 
 public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	
-	private final Logger LOG = LogManager.getLogger("beanstalkd-kernel");
+	private final Logger LOG = LogManager.getLogger(BeanstalkdKernelService.class);
 	
 	@Inject
 	private ObjectPool<Beanstalkd> pool;

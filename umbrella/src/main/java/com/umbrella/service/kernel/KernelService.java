@@ -13,9 +13,9 @@ import com.umbrella.service.RpcServiceConfig;
 
 public class KernelService extends AbstractIdleService{
 
-	private final Logger LOG = LogManager.getLogger(KernelServiceModule.ID);
+	private final Logger LOG = LogManager.getLogger(KernelService.class);
 	
-	@Inject @Named(KernelServiceModule.ID)
+	@Inject @Named("kernel")
 	private Provider<ServerBootstrap> boot;
 	
 	private final RpcServiceConfig config;

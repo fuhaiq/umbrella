@@ -13,9 +13,9 @@ import com.umbrella.service.RpcServiceConfig;
 
 public class TelnetService extends AbstractIdleService{
 	
-	private final Logger LOG = LogManager.getLogger(TelnetServiceModule.ID);
+	private final Logger LOG = LogManager.getLogger(TelnetService.class);
 	
-	@Inject @Named(TelnetServiceModule.ID)
+	@Inject @Named("telnet")
 	private Provider<ServerBootstrap> boot;
 	
 	private final RpcServiceConfig config;

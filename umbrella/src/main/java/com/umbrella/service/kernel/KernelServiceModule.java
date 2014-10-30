@@ -24,8 +24,6 @@ import com.umbrella.service.kernel.action.JsonActionModule;
 
 public final class KernelServiceModule extends ServiceModule{
 	
-	public final static String ID = "kernel";
-	
 	public KernelServiceModule(MapBinder<String, Service> serviceBinder, RpcServiceConfig config) {
 		super(serviceBinder);
 		this.config = config;
@@ -41,18 +39,18 @@ public final class KernelServiceModule extends ServiceModule{
 				mapAction("evaluate").to(Evaluate.class).in(Scopes.SINGLETON);
 			}
 		});
-		MapBinder<String, ChannelHandler> mapbinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named(ID));
+		MapBinder<String, ChannelHandler> mapbinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named("kernel"));
 		mapbinder.addBinding("decoder").to(JsonDecoder.class).in(Scopes.SINGLETON);
 		mapbinder.addBinding("encoder").to(JsonEncoder.class).in(Scopes.SINGLETON);
 		mapbinder.addBinding("action").to(JsonActionHandler.class).in(Scopes.NO_SCOPE);
 		mapbinder.addBinding("exception").to(JsonExceptionHandler.class).in(Scopes.SINGLETON);
-		serviceBinder.addBinding(ID).toInstance(new KernelService(config));
+		serviceBinder.addBinding("kernel").toInstance(new KernelService(config));
 	}
 	
 	@Provides
 	@Singleton
-	@Named(ID)
-	ServerBootstrap provideServerBootstrap(@Named(ID) Provider<Map<String, ChannelHandler>> handlers) {
+	@Named("kernel")
+	ServerBootstrap provideServerBootstrap(@Named("kernel") Provider<Map<String, ChannelHandler>> handlers) {
 		ServerBootstrap boot = new ServerBootstrap();
 		boot.group(config.getBoss(), config.getWorker()).channel(config.getChannelClass()).childHandler(new ChannelInitializer<SocketChannel>(){
 					@Override
