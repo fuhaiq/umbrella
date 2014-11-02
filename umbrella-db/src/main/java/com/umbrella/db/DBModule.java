@@ -1,6 +1,5 @@
 package com.umbrella.db;
 
-import static com.google.inject.util.Providers.guicify;
 import static org.apache.ibatis.session.SqlSessionManager.newInstance;
 
 import java.io.IOException;
@@ -11,7 +10,6 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.ibatis.session.SqlSessionManager;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Scopes;
 
 public class DBModule extends AbstractModule {
 
@@ -31,12 +29,5 @@ public class DBModule extends AbstractModule {
 			addError(e);
 		}
 		bind(SqlSessionManager.class).toInstance(newInstance(factory));
-		factory.getConfiguration().getMapperRegistry().getMappers().stream().forEach(r -> bindMapper(r));
 	}
-
-	private <T> void bindMapper(Class<T> mapperType) {
-		bind(mapperType).toProvider(guicify(new MapperProvider<T>(mapperType))).in(Scopes.SINGLETON);
-	}
-	
-
 }

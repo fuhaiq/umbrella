@@ -14,12 +14,13 @@
 				<property name="jdbcUrl" value="jdbc:mysql://127.0.0.1:3306/umbrella" />
 				<property name="user" value="root" />
 				<property name="password" value="" />
-				<property name="maxPoolSize" value="20" />
+				<property name="maxPoolSize" value="10" />
 				<property name="maxIdleTime" value="600" />
+				<property name="initialPoolSize" value="3" />
 			</dataSource>
 		</environment>
 	</environments>
 	<mappers>
-		<mapper resource="com/umbrella/db/mapper/UserMapper.xml" />
+		<mapper resource="com/umbrella/db/user.xml"/>
 	</mappers>
 </configuration>
