@@ -4,11 +4,9 @@ import org.apache.commons.pool2.ObjectPool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.base.Strings;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.Beanstalkd;
-import com.umbrella.beanstalkd.BeanstalkdJob;
 
 public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	
@@ -40,10 +38,6 @@ public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	@Override
 	protected void run() throws Exception {
 		while (isRunning()) {
-			BeanstalkdJob job = bean.reserve();
-			if(job != null) {
-				System.out.println(job.toString());
-			}
 		}
 	}
 }

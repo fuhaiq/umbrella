@@ -1,9 +1,6 @@
 package com.umbrella.beanstalkd;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import static com.umbrella.beanstalkd.BeanstalkdFunction.*;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -38,8 +35,8 @@ public class Beanstalkd {
 		this.unit = unit;
 	}
 	
-	public BeanstalkdJob reserve() throws InterruptedException, ExecutionException {
-		return RESERVE.apply(emitToConnection("reserve\r\n"));
+	public String reserve() throws InterruptedException, ExecutionException {
+		return emitToConnection("reserve\r\n");
 	}
 	
 	public String kick(int bound) throws InterruptedException, ExecutionException, TimeoutException {
@@ -50,15 +47,15 @@ public class Beanstalkd {
 		return emitToConnection(String.format("watch %s\r\n", tube), timeout, unit);
 	}
 	
-	public String delete(String id) throws InterruptedException, ExecutionException, TimeoutException {
+	public String delete(long id) throws InterruptedException, ExecutionException, TimeoutException {
 		return emitToConnection(String.format("delete %s\r\n", id), timeout, unit);
 	}
 	
-	public String release(String id, int pri, int delay) throws InterruptedException, ExecutionException, TimeoutException {
+	public String release(long id, int pri, int delay) throws InterruptedException, ExecutionException, TimeoutException {
 		return emitToConnection(String.format("release %s %s %s\r\n", id, pri, delay), timeout, unit);
 	}
 	
-	public String bury(String id, int pri) throws InterruptedException, ExecutionException, TimeoutException {
+	public String bury(long id, int pri) throws InterruptedException, ExecutionException, TimeoutException {
 		return emitToConnection(String.format("bury %s %s\r\n", id, pri), timeout, unit);
 	}
 	
