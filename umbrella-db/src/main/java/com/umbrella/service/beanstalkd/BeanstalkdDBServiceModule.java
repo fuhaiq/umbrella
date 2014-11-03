@@ -5,7 +5,7 @@ import com.google.inject.Scopes;
 import com.google.inject.multibindings.MapBinder;
 import com.umbrella.service.ServiceModule;
 
-public class BeanstalkdDBServiceModule extends ServiceModule{
+public class BeanstalkdDBServiceModule extends ServiceModule {
 
 	public BeanstalkdDBServiceModule(MapBinder<String, Service> serviceBinder) {
 		super(serviceBinder);

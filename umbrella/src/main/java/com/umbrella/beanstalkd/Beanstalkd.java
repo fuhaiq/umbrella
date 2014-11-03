@@ -1,6 +1,9 @@
 package com.umbrella.beanstalkd;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import static com.umbrella.beanstalkd.BeanstalkdFunction.*;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -35,8 +38,8 @@ public class Beanstalkd {
 		this.unit = unit;
 	}
 	
-	public String reserve() throws InterruptedException, ExecutionException {
-		return emitToConnection("reserve\r\n");
+	public BeanstalkdJob reserve() throws InterruptedException, ExecutionException {
+		return RESERVE.apply(emitToConnection("reserve\r\n"));
 	}
 	
 	public String kick(int bound) throws InterruptedException, ExecutionException, TimeoutException {
@@ -104,5 +107,5 @@ public class Beanstalkd {
 		"INTERNAL_ERROR\r\n",
 		"BAD_FORMAT\r\n",
 		"UNKNOWN_COMMAND\r\n"
-	); 
+	);
 }

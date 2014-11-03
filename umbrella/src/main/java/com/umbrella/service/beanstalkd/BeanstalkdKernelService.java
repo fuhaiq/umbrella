@@ -8,6 +8,7 @@ import com.google.common.base.Strings;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.Beanstalkd;
+import com.umbrella.beanstalkd.BeanstalkdJob;
 
 public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	
@@ -39,9 +40,9 @@ public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	@Override
 	protected void run() throws Exception {
 		while (isRunning()) {
-			String job = bean.reserve();
-			if(!Strings.isNullOrEmpty(job)) {
-				System.out.println("->"+job+"<-");
+			BeanstalkdJob job = bean.reserve();
+			if(job != null) {
+				System.out.println(job.toString());
 			}
 		}
 	}

@@ -1,17 +1,14 @@
 package com.umbrella.service.beanstalkd;
 
-import java.sql.SQLException;
-
 import org.apache.commons.pool2.ObjectPool;
-import org.apache.ibatis.session.SqlSessionManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.alibaba.fastjson.JSONObject;
-import com.google.common.base.Strings;
+import com.google.common.base.Objects;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.Beanstalkd;
+import com.umbrella.beanstalkd.BeanstalkdJob;
 
 public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	
@@ -19,10 +16,7 @@ public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	
 	@Inject private ObjectPool<Beanstalkd> pool;
 	
-	@Inject private SqlSessionManager manager;
-	
 	private Beanstalkd bean;
-	
 	
 	@Override
 	protected void startUp() throws Exception {
@@ -45,18 +39,10 @@ public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	@Override
 	protected void run() throws Exception {
 		while (isRunning()) {
-			String job = bean.reserve();
-			if(!Strings.isNullOrEmpty(job)) {
-				insert();
+			BeanstalkdJob job = bean.reserve();
+			if(job != null) {
+				System.out.println(job.toString());
 			}
 		}
 	}
-	
-	public void insert() throws SQLException {
-		JSONObject param = new JSONObject();
-		param.put("name", "michael");
-		param.put("age", 33);
-		manager.insert("user.insert", param);
-	}
-
 }
