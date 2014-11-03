@@ -67,12 +67,14 @@ public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	private void executeWithoutTransaction(long id, JSONObject sql) {
 		String key = sql.getString("key");
 		if (Strings.isNullOrEmpty(key)) throw new IllegalStateException("no key in DB job " + id);
+		String type = sql.getString("type");
+		if (Strings.isNullOrEmpty(type)) throw new IllegalStateException("no type in DB job " + id);
 		JSONObject data = sql.getJSONObject("data");
-		if (key.contains("insert")) {
+		if (type.equalsIgnoreCase("i")) {
 			manager.insert(key, data);
-		} else if (key.contains("update")) {
+		} else if (type.equalsIgnoreCase("u")) {
 			manager.update(key, data);
-		} else if (key.contains("delete")) {
+		} else if (type.equalsIgnoreCase("d")) {
 			manager.delete(key, data);
 		} else {
 			throw new IllegalStateException("undefined type of key[" + key + "] in DB job " + id);
