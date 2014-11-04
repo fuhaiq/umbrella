@@ -1,5 +1,7 @@
 package com.umbrella.service.beanstalkd;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.ibatis.session.SqlSessionManager;
 import org.apache.ibatis.session.TransactionIsolationLevel;
@@ -55,29 +57,34 @@ public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	
 	private void execute(BeanstalkdDBJob job) {
 		JSONArray sqls = job.getSqls();
-		if(sqls.size() > 1) {
-			executeWithTransaction(job.getId(), sqls);
-		} else if(sqls.size() == 1) {
+		switch (sqls.size()) {
+		case 1:
 			executeWithoutTransaction(job.getId(), sqls.getJSONObject(0));
-		} else {
-			throw new IllegalStateException("unknown job size in DB job " + job.getId());
+			break;
+		case 0:
+			throw new IllegalStateException("no sql in DB job " + job.getId());
+		default:
+			executeWithTransaction(job.getId(), sqls);
+			break;
 		}
 	}
 	
 	private void executeWithoutTransaction(long id, JSONObject sql) {
-		String key = sql.getString("key");
-		if (Strings.isNullOrEmpty(key)) throw new IllegalStateException("no key in DB job " + id);
-		String type = sql.getString("type");
-		if (Strings.isNullOrEmpty(type)) throw new IllegalStateException("no type in DB job " + id);
+		String key = checkNotNull(sql.getString("key"), "no key in DB job " + id);
+		String type = checkNotNull(sql.getString("type"), "no type in DB job " + id);
 		JSONObject data = sql.getJSONObject("data");
-		if (type.equalsIgnoreCase("i")) {
+		switch (type) {
+		case "i":
 			manager.insert(key, data);
-		} else if (type.equalsIgnoreCase("u")) {
+			break;
+		case "u":
 			manager.update(key, data);
-		} else if (type.equalsIgnoreCase("d")) {
+			break;
+		case "d":
 			manager.delete(key, data);
-		} else {
-			throw new IllegalStateException("undefined type of key[" + key + "] in DB job " + id);
+			break;
+		default:
+			throw new IllegalStateException("undefined type [" + type + "] in DB job " + id);
 		}
 	}
 	
