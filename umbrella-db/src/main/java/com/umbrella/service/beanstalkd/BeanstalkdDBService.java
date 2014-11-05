@@ -29,13 +29,13 @@ public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	protected void startUp() throws Exception {
 		bean = pool.borrowObject();
 		bean.watch("db");
-		LOG.info("beanstalkd service starts");
+		LOG.info("beanstalkd db service starts");
 	}
 
 	@Override
 	protected void shutDown() throws Exception {
 		pool.invalidateObject(bean);
-		LOG.info("beanstalkd service stops");
+		LOG.info("beanstalkd db service stops");
 	}
 
 	@Override

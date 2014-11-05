@@ -42,13 +42,13 @@ public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	protected void startUp() throws Exception {
 		bean = pool.borrowObject();
 		bean.watch("kernel");
-		LOG.info("beanstalkd service starts");
+		LOG.info("beanstalkd kernel service starts");
 	}
 
 	@Override
 	protected void shutDown() throws Exception {
 		pool.invalidateObject(bean);
-		LOG.info("beanstalkd service stops");
+		LOG.info("beanstalkd kernel service stops");
 	}
 
 	@Override
