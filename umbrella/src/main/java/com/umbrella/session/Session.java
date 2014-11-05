@@ -1,11 +1,11 @@
 package com.umbrella.session;
 
 public interface Session<T> {
-	public void start();
+	public void start() throws SessionException;
 
-	public void close();
+	public void close() throws SessionException;
 
-	public T get();
+	public T get() throws SessionException;
 	
 	public boolean isClosed();
 }

@@ -19,7 +19,7 @@ public class BeanstalkdKernelJob {
 		if (matcher.find()) {
 			this.topicId = matcher.group(0);
 		} else {
-			throw new IllegalStateException("could not find kernel topic id");
+			throw new IllegalStateException("could not find topic id");
 		}
 	}
 

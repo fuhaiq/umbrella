@@ -47,15 +47,15 @@ public class Beanstalkd {
 		return emitToConnection(String.format("watch %s\r\n", tube), timeout, unit);
 	}
 	
-	public String delete(String id) throws InterruptedException, ExecutionException, TimeoutException {
+	public String delete(long id) throws InterruptedException, ExecutionException, TimeoutException {
 		return emitToConnection(String.format("delete %s\r\n", id), timeout, unit);
 	}
 	
-	public String release(String id, int pri, int delay) throws InterruptedException, ExecutionException, TimeoutException {
+	public String release(long id, int pri, int delay) throws InterruptedException, ExecutionException, TimeoutException {
 		return emitToConnection(String.format("release %s %s %s\r\n", id, pri, delay), timeout, unit);
 	}
 	
-	public String bury(String id, int pri) throws InterruptedException, ExecutionException, TimeoutException {
+	public String bury(long id, int pri) throws InterruptedException, ExecutionException, TimeoutException {
 		return emitToConnection(String.format("bury %s %s\r\n", id, pri), timeout, unit);
 	}
 	
