@@ -36,9 +36,10 @@ public class TelnetService extends AbstractIdleService{
 		boot.get().bind(config.getHost(), config.getPort()).addListener(r->{
 			if(!r.isSuccess()) {
 				stopAsync();
-				LOG.error("telnet started failed at port:" + config.getPort());
+				LOG.error("telnet service started failed at port:" + config.getPort());
+				throw new Exception(r.cause());
 			} else {
-				LOG.info("telnet started at port:" + config.getPort());
+				LOG.info("telnet service started at port:" + config.getPort());
 			}
 		});
 	}

@@ -32,13 +32,14 @@ public class KernelService extends AbstractIdleService{
 	}
 
 	@Override
-	protected void startUp() {
+	protected void startUp() throws Exception {
 		boot.get().bind(config.getHost(), config.getPort()).addListener(r->{
 			if(!r.isSuccess()) {
 				stopAsync();
-				LOG.error("kernel started failed at port:" + config.getPort());
+				LOG.error("kernel service started failed at port:" + config.getPort());
+				throw new Exception(r.cause());
 			} else {
-				LOG.info("kernel started at port:" + config.getPort());
+				LOG.info("kernel service started at port:" + config.getPort());
 			}
 		});
 	}

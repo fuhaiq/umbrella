@@ -90,13 +90,12 @@ public class Beanstalkd {
 	}
 	
 	public void close() {
-		checkNotNull(connection, "connection is null");
-		connection.close();
+		if(connection != null) connection.close();
 	}
 	
 	public boolean isConnected() {
-		checkNotNull(connection, "connection is null");
-		return connection.isConnected();
+		if(connection != null) return connection.isConnected();
+		return false;
 	}
 	
 	private static final List<String> BAD_RESPONSE = Lists.newArrayList(
