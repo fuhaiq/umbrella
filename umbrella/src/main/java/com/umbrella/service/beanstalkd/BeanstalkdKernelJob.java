@@ -10,14 +10,14 @@ public class BeanstalkdKernelJob {
 		Pattern pattern = Pattern.compile("(\\d+)");
 		Matcher matcher = pattern.matcher(job);
 		if (matcher.find()) {
-			this.id = Long.parseLong(matcher.group(0));
+			id = Long.parseLong(matcher.group(0));
 		} else {
 			throw new IllegalStateException("could not find job id");
 		}
 		pattern = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
 		matcher = pattern.matcher(job);
 		if (matcher.find()) {
-			this.topicId = matcher.group(0);
+			topicId = matcher.group(0);
 		} else {
 			throw new IllegalStateException("could not find topic id");
 		}
@@ -31,9 +31,9 @@ public class BeanstalkdKernelJob {
 		return id;
 	}
 
-	private long id;
+	private final long id;
 	
-	private String topicId;
+	private final String topicId;
 
 	
 }

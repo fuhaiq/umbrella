@@ -3,6 +3,9 @@ package com.umbrella.service.beanstalkd;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+
 public class BeanstalkdSearchJob {
 
 	public BeanstalkdSearchJob(String job) {
@@ -10,28 +13,28 @@ public class BeanstalkdSearchJob {
 		Pattern pattern = Pattern.compile("(\\d+)");
 		Matcher matcher = pattern.matcher(job);
 		if (matcher.find()) {
-			this.id = Long.parseLong(matcher.group(0));
+			id = Long.parseLong(matcher.group(0));
 		} else {
 			throw new IllegalStateException("could not find job id");
 		}
-		pattern = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
+		pattern = Pattern.compile("\\{.*\\}");
 		matcher = pattern.matcher(job);
 		if (matcher.find()) {
-			this.topicId = matcher.group(0);
+			json = JSON.parseObject(matcher.group(0));
 		} else {
-			throw new IllegalStateException("could not find topic id");
+			throw new IllegalStateException("could not find json content");
 		}
 	}
 	
-	public String getTopicId() {
-		return topicId;
-	}
-
 	public long getId() {
 		return id;
 	}
 
-	private long id;
-	
-	private String topicId;
+	public JSONObject getJson() {
+		return json;
+	}
+
+	private final long id;
+
+	private final JSONObject json;
 }

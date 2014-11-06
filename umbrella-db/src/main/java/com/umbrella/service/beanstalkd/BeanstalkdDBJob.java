@@ -13,22 +13,22 @@ public class BeanstalkdDBJob {
 		Pattern pattern = Pattern.compile("(\\d+)");
 		Matcher matcher = pattern.matcher(job);
 		if (matcher.find()) {
-			this.id = Long.parseLong(matcher.group(0));
+			id = Long.parseLong(matcher.group(0));
 		} else {
 			throw new IllegalStateException("could not find job id");
 		}
 		pattern = Pattern.compile("\\[\\{.*\\}\\]");
 		matcher = pattern.matcher(job);
 		if (matcher.find()) {
-			this.sqls = JSON.parseArray(matcher.group(0));
+			sqls = JSON.parseArray(matcher.group(0));
 		} else {
 			throw new IllegalStateException("could not find job data");
 		}
 	}
 
-	private long id;
+	private final long id;
 	
-	private JSONArray sqls;
+	private final JSONArray sqls;
 
 	public long getId() {
 		return id;
