@@ -96,7 +96,7 @@ public class BeanstalkdSearchService extends AbstractExecutionThreadService {
 		try (CloseableHttpResponse response = httpClient.execute(new HttpHost(host + url, port), request)) {
 			StatusLine status = response.getStatusLine();
 			if(200 != status.getStatusCode()) {
-				LOG.error("get " + status.getStatusCode() + " response code >>" + status.getReasonPhrase());
+				LOG.error("bad status code " + status.getStatusCode() + " >>" + status.getReasonPhrase());
 				return false;
 			}
 			return true;
