@@ -73,6 +73,7 @@ public class BeanstalkdDBService extends AbstractExecutionThreadService{
 		String key = checkNotNull(sql.getString("key"), "no key in DB job " + id);
 		String type = checkNotNull(sql.getString("type"), "no type in DB job " + id);
 		JSONObject data = sql.getJSONObject("data");
+		LOG.info(">>"+data.toJSONString()+"<<");
 		switch (type) {
 		case "i":
 			manager.insert(key, data);

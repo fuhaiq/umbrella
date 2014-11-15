@@ -6,7 +6,7 @@
 	"maxWaitMillis" : 3000,
 	"timeConstrained" : 5,
 	"maxTotal": 5,
-	"pageWidth":300,
+	"pageWidth":500,
 	"url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel",
 	"dumpDir" : "/home/michael/wesker/dump/"
 }

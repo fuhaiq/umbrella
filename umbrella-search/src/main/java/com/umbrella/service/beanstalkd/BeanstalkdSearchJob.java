@@ -1,7 +1,6 @@
 package com.umbrella.service.beanstalkd;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -10,20 +9,10 @@ public class BeanstalkdSearchJob {
 
 	public BeanstalkdSearchJob(String job) {
 		if (!job.startsWith("RESERVED")) throw new IllegalStateException("reserve job doesn't start with RESERVED");
-		Pattern pattern = Pattern.compile("(\\d+)");
-		Matcher matcher = pattern.matcher(job);
-		if (matcher.find()) {
-			id = Long.parseLong(matcher.group(0));
-		} else {
-			throw new IllegalStateException("could not find job id");
-		}
-		pattern = Pattern.compile("\\{.*\\}");
-		matcher = pattern.matcher(job);
-		if (matcher.find()) {
-			json = JSON.parseObject(matcher.group(0));
-		} else {
-			throw new IllegalStateException("could not find json content");
-		}
+		int firstSpace = job.indexOf(' ') + 1;
+		int secondSpace = job.indexOf(' ', firstSpace);
+		id = Integer.parseInt(StringUtils.substring(job, firstSpace, secondSpace));
+		json = JSON.parseObject(StringUtils.substringBetween(job, "\r\n"));
 	}
 	
 	public long getId() {

@@ -1,9 +1,9 @@
 package com.umbrella.beanstalkd;
 
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
@@ -47,7 +47,7 @@ public class BeanstalkdConfig extends GenericObjectPoolConfig{
 		return channelClass;
 	}
 
-	private final EventLoopGroup group = new NioEventLoopGroup();
+	private final EventLoopGroup group = new EpollEventLoopGroup();
 	
-	private final Class<? extends SocketChannel> channelClass = NioSocketChannel.class;
+	private final Class<? extends SocketChannel> channelClass = EpollSocketChannel.class;
 }

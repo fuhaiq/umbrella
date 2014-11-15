@@ -18,6 +18,7 @@ public class KernelListener implements PacketListener{
 		switch (evt.getPktType()) {
 		case MathLink.RETURNTEXTPKT:
 			String _return = ml.getString();
+			if(_return.equalsIgnoreCase("null")) break;
 			if(Kernel.ABORT.equals(_return)){
 				result.put("type", "abort");
 			} else {
@@ -33,6 +34,7 @@ public class KernelListener implements PacketListener{
 			break;
 		case MathLink.TEXTPKT: {
 			String txt = ml.getString();
+			if(txt.equalsIgnoreCase("null")) break;
 			JSONArray results = ml.result();
 			if(results.size() > 0) {
 				JSONObject last = results.getJSONObject(results.size() - 1);

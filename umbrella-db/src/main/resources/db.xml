@@ -11,7 +11,7 @@
 			<transactionManager type="JDBC" />
 			<dataSource type="com.umbrella.db.C3P0DataSourceFactory">
 				<property name="driverClass" value="com.mysql.jdbc.Driver" />
-				<property name="jdbcUrl" value="jdbc:mysql://127.0.0.1:3306/umbrella" />
+				<property name="jdbcUrl" value="jdbc:mysql://127.0.0.1:3306/umbrella?useUnicode=true&amp;characterEncoding=utf8" />
 				<property name="user" value="root" />
 				<property name="password" value="" />
 				<property name="maxPoolSize" value="10" />
@@ -21,6 +21,6 @@
 		</environment>
 	</environments>
 	<mappers>
-		<mapper resource="com/umbrella/db/user.xml"/>
+		<mapper resource="com/umbrella/db/topic.xml"/>
 	</mappers>
 </configuration>
