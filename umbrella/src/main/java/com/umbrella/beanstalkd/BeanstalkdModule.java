@@ -4,15 +4,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
+import org.aopalliance.intercept.MethodInterceptor;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
+
 import com.alibaba.fastjson.JSON;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.matcher.Matchers;
+import com.umbrella.session.Session;
 
 public class BeanstalkdModule extends AbstractModule{
 
@@ -36,6 +41,12 @@ public class BeanstalkdModule extends AbstractModule{
 			addError(e);
 		}
 		bind(new TypeLiteral<PooledObjectFactory<Beanstalkd>>() {}).to(BeanstalkdFactory.class).in(Scopes.SINGLETON);
+		bind(new TypeLiteral<Session<Beanstalkd>>() {}).to(BeanstalkdSession.class).in(Scopes.SINGLETON);
+		
+		MethodInterceptor beanstalkdInterceptor = new BeanstalkdInterceptor();
+		requestInjection(beanstalkdInterceptor);
+		
+		bindInterceptor(Matchers.any(), Matchers.annotatedWith(BeanstalkdCycle.class), beanstalkdInterceptor);
 	}
 
 	@Provides

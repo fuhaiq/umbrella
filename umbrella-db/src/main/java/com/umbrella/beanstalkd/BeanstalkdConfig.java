@@ -1,19 +1,29 @@
 package com.umbrella.beanstalkd;
 
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
-public class BeanstalkdConfig extends GenericObjectPoolConfig{
+public class BeanstalkdConfig extends GenericObjectPoolConfig {
+
+	private BeanstalkdType type;
 
 	private int port;
-	
+
 	private String host;
-	
+
 	private int timeout;
+
+	public void setType(String type) {
+		if (type.equalsIgnoreCase("nio")) {
+			this.type = new BeanstalkdType.NIO();
+		} else if (type.equalsIgnoreCase("epoll")) {
+			this.type = new BeanstalkdType.EPOLL();
+		} else {
+			throw new IllegalStateException("type must be one of NIO or EPOLL");
+		}
+	}
 
 	public int getPort() {
 		return port;
@@ -40,14 +50,11 @@ public class BeanstalkdConfig extends GenericObjectPoolConfig{
 	}
 	
 	public EventLoopGroup getGroup() {
-		return group;
+		return type.getGroup();
 	}
 
 	public Class<? extends SocketChannel> getChannelClass() {
-		return channelClass;
+		return type.getChannelClass();
 	}
 
-	private final EventLoopGroup group = new EpollEventLoopGroup();
-	
-	private final Class<? extends SocketChannel> channelClass = EpollSocketChannel.class;
 }

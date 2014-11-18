@@ -16,7 +16,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import com.umbrella.service.RpcServiceConfig;
+import com.umbrella.service.ServiceConfig;
 import com.umbrella.service.ServiceModule;
 import com.umbrella.service.kernel.action.Evaluate;
 import com.umbrella.service.kernel.action.JsonActionHandler;
@@ -24,12 +24,12 @@ import com.umbrella.service.kernel.action.JsonActionModule;
 
 public final class KernelServiceModule extends ServiceModule{
 	
-	public KernelServiceModule(MapBinder<String, Service> serviceBinder, RpcServiceConfig config) {
+	public KernelServiceModule(MapBinder<String, Service> serviceBinder, ServiceConfig config) {
 		super(serviceBinder);
 		this.config = config;
 	}
 
-	private final RpcServiceConfig config;
+	private final ServiceConfig config;
 	
 	@Override
 	protected void configure() {

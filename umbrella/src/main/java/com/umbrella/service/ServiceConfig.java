@@ -3,9 +3,9 @@ package com.umbrella.service;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 
-public class RpcServiceConfig {
+public class ServiceConfig {
 	
-	public RpcServiceConfig(String host, int port, RpcServiceType type) {
+	public ServiceConfig(String host, int port, ServiceType type) {
 		this.host = host;
 		this.port = port;
 		this.type = type;
@@ -15,7 +15,7 @@ public class RpcServiceConfig {
 	
 	private int port;
 	
-	private RpcServiceType type;
+	private ServiceType type;
 	
 	public String getHost() {
 		return host;

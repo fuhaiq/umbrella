@@ -13,8 +13,9 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.umbrella.beanstalkd.BeanstalkdModule;
 import com.umbrella.db.DBModule;
-import com.umbrella.service.RpcServiceConfig;
-import com.umbrella.service.RpcServiceType;
+import com.umbrella.redis.JedisModule;
+import com.umbrella.service.ServiceConfig;
+import com.umbrella.service.ServiceType;
 import com.umbrella.service.beanstalkd.BeanstalkdDBServiceModule;
 import com.umbrella.service.telnet.TelnetServiceModule;
 
@@ -25,10 +26,11 @@ public class ServiceManagerModule extends AbstractModule{
 	@Override
 	protected void configure() {
 		install(new DBModule("db.xml"));
+		install(new JedisModule("redis.json"));
 		install(new BeanstalkdModule("beanstalkd.json"));
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
 		install(new BeanstalkdDBServiceModule(serviceBinder));
-		install(new TelnetServiceModule(serviceBinder, new RpcServiceConfig("localhost", 9000, new RpcServiceType.EPOLL())));
+		install(new TelnetServiceModule(serviceBinder, new ServiceConfig("localhost", 9000, new ServiceType.EPOLL())));
 		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
 		listenerBinder.addBinding().to(ServiceManagerListener.class).in(Scopes.SINGLETON);
 	}

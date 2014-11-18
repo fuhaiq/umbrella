@@ -9,9 +9,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-public class RpcServiceType {
+public class ServiceType {
 	
-	public RpcServiceType(EventLoopGroup boss, EventLoopGroup worker, Class<? extends ServerChannel> channelClass) {
+	public ServiceType(EventLoopGroup boss, EventLoopGroup worker, Class<? extends ServerChannel> channelClass) {
 		this.boss = boss;
 		this.worker = worker;
 		this.channelClass = channelClass;
@@ -35,7 +35,7 @@ public class RpcServiceType {
 		return channelClass;
 	}
 	
-	public static final class EPOLL extends RpcServiceType {
+	public static final class EPOLL extends ServiceType {
 
 		public EPOLL() {
 			super(new EpollEventLoopGroup(0x1, new ThreadFactoryBuilder().setNameFormat("epoll-boss-thread").build()),
@@ -45,7 +45,7 @@ public class RpcServiceType {
 		
 	}
 	
-	public static final class NIO extends RpcServiceType {
+	public static final class NIO extends ServiceType {
 
 		public NIO() {
 			super(new NioEventLoopGroup(0x1, new ThreadFactoryBuilder().setNameFormat("nio-boss-thread").build()),

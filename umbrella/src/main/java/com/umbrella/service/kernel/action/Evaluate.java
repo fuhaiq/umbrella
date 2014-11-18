@@ -8,7 +8,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.inject.Inject;
 import com.umbrella.kernel.Kernel;
-import com.umbrella.kernel.KernelTransaction;
+import com.umbrella.kernel.KernelCycle;
 import com.umbrella.session.SessionException;
 import com.wolfram.jlink.MathLinkException;
 
@@ -23,7 +23,7 @@ public class Evaluate implements JsonAction{
 		ctx.writeAndFlush(evaluate(scripts));
 	}
 
-	@KernelTransaction
+	@KernelCycle
 	public JSON evaluate(JSONArray scripts) throws SessionException, MathLinkException {
 		JSONArray result = new JSONArray();
 		outer:for(int i = 0; i < scripts.size(); i++) {

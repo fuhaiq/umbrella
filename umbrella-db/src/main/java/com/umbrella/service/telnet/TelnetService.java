@@ -9,7 +9,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import com.umbrella.service.RpcServiceConfig;
+import com.umbrella.service.ServiceConfig;
 
 public class TelnetService extends AbstractIdleService{
 	
@@ -18,9 +18,9 @@ public class TelnetService extends AbstractIdleService{
 	@Inject @Named("telnet")
 	private Provider<ServerBootstrap> boot;
 	
-	private final RpcServiceConfig config;
+	private final ServiceConfig config;
 	
-	public TelnetService(RpcServiceConfig config) {
+	public TelnetService(ServiceConfig config) {
 		this.config = config;
 	}
 

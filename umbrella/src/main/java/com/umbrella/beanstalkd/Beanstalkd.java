@@ -35,6 +35,20 @@ public class Beanstalkd {
 		this.unit = unit;
 	}
 	
+	public String put(String data) throws InterruptedException, ExecutionException, TimeoutException {
+		return put((long)(Math.pow(2, 32) -1), 0, 120, data);
+	}
+	
+	public String put(long pri, int delay, int ttr, String data) throws InterruptedException, ExecutionException, TimeoutException {
+		long max = (long)(Math.pow(2, 32) -1);
+		pri = pri > max ? max : pri;
+		return emitToConnection(String.format("put %s %s %s %s\r\n%s\r\n", pri, delay, ttr, data.length(), data), timeout, unit);
+	}
+	
+	public String use(String tube) throws InterruptedException, ExecutionException, TimeoutException {
+		return emitToConnection(String.format("use %s\r\n", tube), timeout, unit);
+	}
+	
 	public String reserve() throws InterruptedException, ExecutionException {
 		return emitToConnection("reserve\r\n");
 	}
@@ -51,11 +65,13 @@ public class Beanstalkd {
 		return emitToConnection(String.format("delete %s\r\n", id), timeout, unit);
 	}
 	
-	public String release(long id, int pri, int delay) throws InterruptedException, ExecutionException, TimeoutException {
+	public String release(long id, long pri, int delay) throws InterruptedException, ExecutionException, TimeoutException {
+		long max = (long)(Math.pow(2, 32) -1);
+		pri = pri > max ? max : pri;
 		return emitToConnection(String.format("release %s %s %s\r\n", id, pri, delay), timeout, unit);
 	}
 	
-	public String bury(long id, int pri) throws InterruptedException, ExecutionException, TimeoutException {
+	public String bury(long id, long pri) throws InterruptedException, ExecutionException, TimeoutException {
 		return emitToConnection(String.format("bury %s %s\r\n", id, pri), timeout, unit);
 	}
 	

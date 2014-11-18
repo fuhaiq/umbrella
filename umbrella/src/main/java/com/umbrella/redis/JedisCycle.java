@@ -1,4 +1,4 @@
-package com.umbrella.kernel;
+package com.umbrella.redis;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,4 +7,4 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface KernelTransaction {}
+public @interface JedisCycle {}

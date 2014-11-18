@@ -49,7 +49,7 @@ public class KernelModule extends AbstractModule{
 		MethodInterceptor kernelInterceptor = new KernelInterceptor();
 		requestInjection(kernelInterceptor);
 		
-		bindInterceptor(Matchers.any(), Matchers.annotatedWith(KernelTransaction.class), kernelInterceptor);
+		bindInterceptor(Matchers.any(), Matchers.annotatedWith(KernelCycle.class), kernelInterceptor);
 		bind(Kernel.class).to(KernelImpl.class).in(Scopes.SINGLETON);
 	}
 

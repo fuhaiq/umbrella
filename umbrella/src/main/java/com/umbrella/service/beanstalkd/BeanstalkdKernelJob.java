@@ -1,15 +1,15 @@
 package com.umbrella.service.beanstalkd;
 
-import org.apache.commons.lang3.StringUtils;
 
 public class BeanstalkdKernelJob {
 	
 	public BeanstalkdKernelJob(String job) {
 		if (!job.startsWith("RESERVED")) throw new IllegalStateException("reserve job doesn't start with RESERVED");
-		int firstSpace = job.indexOf(' ') + 1;
-		int secondSpace = job.indexOf(' ', firstSpace);
-		id = Integer.parseInt(StringUtils.substring(job, firstSpace, secondSpace));
-		topicId = StringUtils.substringBetween(job, "\r\n");
+		int firstIndex = job.indexOf(' ', 8) + 1;
+		int secondIndex = job.indexOf(' ', firstIndex);
+		id = Integer.parseInt(job.substring(firstIndex, secondIndex));
+		firstIndex = job.indexOf("\r\n", secondIndex);
+		topicId = job.substring(firstIndex + 2, job.length() - 2);
 	}
 
 	public String getTopicId() {
@@ -23,6 +23,4 @@ public class BeanstalkdKernelJob {
 	private final long id;
 	
 	private final String topicId;
-
-	
 }

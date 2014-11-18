@@ -2,6 +2,8 @@ package com.umbrella.service.beanstalkd;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Map;
+
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.ibatis.session.SqlSessionManager;
 import org.apache.ibatis.session.TransactionIsolationLevel;
@@ -14,6 +16,7 @@ import com.google.common.base.Strings;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.Beanstalkd;
+import com.umbrella.service.beanstalkd.action.DBAction;
 
 public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	
@@ -22,6 +25,8 @@ public class BeanstalkdDBService extends AbstractExecutionThreadService{
 	@Inject private ObjectPool<Beanstalkd> pool;
 	
 	@Inject private SqlSessionManager manager;
+	
+	@Inject private Map<String, DBAction> actionMapping;
 	
 	private Beanstalkd bean;
 	
@@ -69,24 +74,10 @@ public class BeanstalkdDBService extends AbstractExecutionThreadService{
 		}
 	}
 	
-	private void executeWithoutTransaction(long id, JSONObject sql) {
-		String key = checkNotNull(sql.getString("key"), "no key in DB job " + id);
-		String type = checkNotNull(sql.getString("type"), "no type in DB job " + id);
-		JSONObject data = sql.getJSONObject("data");
-		LOG.info(">>"+data.toJSONString()+"<<");
-		switch (type) {
-		case "i":
-			manager.insert(key, data);
-			break;
-		case "u":
-			manager.update(key, data);
-			break;
-		case "d":
-			manager.delete(key, data);
-			break;
-		default:
-			throw new IllegalStateException("undefined type [" + type + "] in DB job " + id);
-		}
+	private void executeWithoutTransaction(long jobId, JSONObject sql) {
+		String id = checkNotNull(sql.getString("id"), "no id in DB job " + jobId);
+		DBAction action = checkNotNull(actionMapping.get(id), "action["+id+"] is not defined");
+		action.accept(sql);
 	}
 	
 	private void executeWithTransaction(long id, JSONArray sqls) {

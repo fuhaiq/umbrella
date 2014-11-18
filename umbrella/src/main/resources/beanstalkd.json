@@ -1,4 +1,5 @@
 {
+	"type" : "EPOLL",
 	"host" : "localhost",
 	"port" : 11300,
 	"maxWaitMillis" : 3000,

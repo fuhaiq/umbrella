@@ -1,10 +1,8 @@
 {
-	"type" : "EPOLL",
 	"host" : "localhost",
-	"port" : 11300,
+	"port" : 6379,
 	"maxWaitMillis" : 3000,
 	"maxTotal": 5,
-	"timeout" : 3000,
 	"testOnBorrow" : true,
 	"testOnReturn" : true,
 	"testOnCreate" : true
