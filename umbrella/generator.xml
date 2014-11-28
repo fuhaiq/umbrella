@@ -36,7 +36,7 @@
 			<property name="enableSubPackages" value="true" />
 		</javaClientGenerator>
 
-		<table tableName="topic" alias="topic" domainObjectName="Topic" enableCountByExample="false" enableSelectByExample="false" enableSelectByPrimaryKey="false" enableUpdateByExample="false" enableDeleteByExample="false">
+		<table tableName="topic" alias="topic" domainObjectName="Topic" enableCountByExample="false" enableSelectByExample="false" enableUpdateByExample="false" enableDeleteByExample="false">
 			<property name="useActualColumnNames" value="true" />
 			<!-- <generatedKey column="ID" sqlStatement="MySql" identity="true" /> -->
 		</table>

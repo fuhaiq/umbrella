@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="topic" >
-  <delete id="delete" parameterType="map" >
+  
+  <select id="selectHtml" resultType="java.lang.String" parameterType="java.lang.String" >
+    select html from topic topic where topic.id = #{id,jdbcType=VARCHAR}
+  </select>
+  
+  <delete id="delete" parameterType="java.lang.String" >
     delete from topic
     where id = #{id,jdbcType=VARCHAR}
   </delete>
+  
   <insert id="insert" parameterType="map" >
     insert into topic
     <trim prefix="(" suffix=")" suffixOverrides="," >

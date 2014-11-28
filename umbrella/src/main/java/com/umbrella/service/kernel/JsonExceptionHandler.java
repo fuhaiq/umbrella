@@ -19,7 +19,8 @@ public class JsonExceptionHandler extends SimpleChannelInboundHandler<JSONObject
 	
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		if(!"Timeout waiting for idle object".equals(cause.getMessage())) {
+		if(!"Timeout waiting for idle object".equals(cause.getMessage())
+				&& !"MathLink connection was lost.".equals(cause.getMessage())) {
 			LOG.error(cause.getMessage(), cause);
 		}
 		JSONObject exception = new JSONObject();

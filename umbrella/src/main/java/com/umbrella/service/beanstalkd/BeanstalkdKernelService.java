@@ -1,7 +1,6 @@
 package com.umbrella.service.beanstalkd;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import java.sql.SQLException;
 
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.logging.log4j.LogManager;
@@ -14,11 +13,9 @@ import com.google.common.base.Strings;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.Beanstalkd;
-
+import com.umbrella.service.beanstalkd.BeanstalkdKernelManager.Status;
 import com.umbrella.session.SessionException;
 import com.wolfram.jlink.MathLinkException;
-
-import com.umbrella.service.beanstalkd.BeanstalkdKernelManager.Status;
 
 public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	
@@ -64,34 +61,36 @@ public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	}
 	
 	
-	public boolean execute(BeanstalkdKernelJob kernelJob) throws MathLinkException, InterruptedException, ExecutionException, TimeoutException {
-		String updated = manager.setToEvaluateThenGetUpdated(kernelJob.getTopicId());
-		if (updated != null) {
+	public boolean execute(BeanstalkdKernelJob kernelJob) throws MathLinkException, SessionException, SQLException {
+		if (manager.lockTopic(kernelJob.getTopicId())) {
 			JSONObject topicResult = null;
 			Elements scripts = manager.getScriptElements(kernelJob.getTopicId());
-			if (scripts == null) {
-				return true;
-			} else if (scripts.size() == 0) {
+			if (scripts == null || scripts.size() == 0) {
+				LOG.info("没有可执行的代码，直接返回");
 				topicResult = new JSONObject();
 				topicResult.put("status", Status.SUCCESS.getValue());
 				topicResult.put("result", new JSONArray());
 			} else {
+				LOG.info("开始计算话题");
 				try {
 					topicResult = manager.evaluate(scripts);
-				} catch (SessionException e) {
+				} catch (SessionException | MathLinkException e) {
+					manager.resetTopicStatus(kernelJob.getTopicId());
 					if ("Timeout waiting for idle object".equals(e.getMessage())) {
 						LOG.info("目前没有可用的kernel,重置job");
-						manager.resetTopicStatus(kernelJob.getTopicId());
+						return false;
+					} else if("MathLink connection was lost.".equals(e.getMessage())) {
+						LOG.info("kernel计算超时,销毁kernel,重置job");
 						return false;
 					} else {
 						throw e;
 					}
 				}
 			}
-			LOG.info("开始计算话题");
-			manager.setResult(kernelJob.getTopicId(), topicResult, updated);
+			manager.setResult(kernelJob.getTopicId(), topicResult);
 			return true;
 		} else {
+			LOG.info("锁定话题失败，可能被别的内核抢到了");
 			return true;
 		}
 	}

@@ -28,7 +28,7 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 		kernelLink.discardAnswer();
 		kernelLink.evaluate("SetDirectory[\"" + config.getDumpDir() + "\"]");
 		kernelLink.discardAnswer();
-		kernelLink.evaluate("$PrePrint = With[{expr = #}, If[MatchQ[expr, _Graphics | _Graphics3D | _Graph] || MemberQ[expr, _Graphics | _Graphics3D | _Graph, ∞], LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[expr, TraditionalForm, "+config.getPageWidth()+"]]], MathMLForm[expr]]] &;");
+		kernelLink.evaluate("$PrePrint = With[{expr = #}, If[MatchQ[expr, _Graphics | _Graphics3D | _Graph | _Manipulate] || MemberQ[expr, _Graphics | _Graphics3D | _Graph | _Manipulate, ∞], LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[expr, TraditionalForm, "+config.getPageWidth()+"]]], MathMLForm[expr]]] &;");
 		kernelLink.discardAnswer();
 		LOG.info("Create the Kernel [" + kernelLink.toString() + "] to pool");
 		return kernelLink;

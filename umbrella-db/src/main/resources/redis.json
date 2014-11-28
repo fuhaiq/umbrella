@@ -1,9 +1,0 @@
-{
-	"host" : "localhost",
-	"port" : 6379,
-	"maxWaitMillis" : 3000,
-	"maxTotal": 5,
-	"testOnBorrow" : true,
-	"testOnReturn" : true,
-	"testOnCreate" : true
-}

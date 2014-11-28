@@ -12,6 +12,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.umbrella.beanstalkd.BeanstalkdModule;
+import com.umbrella.db.DBModule;
 import com.umbrella.kernel.KernelModule;
 import com.umbrella.redis.JedisModule;
 import com.umbrella.service.ServiceConfig;
@@ -27,12 +28,13 @@ public class ServiceManagerModule extends AbstractModule{
 	@Override
 	protected void configure() {
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
+		install(new DBModule("db.xml"));
 		install(new JedisModule("redis.json"));
 		install(new BeanstalkdModule("beanstalkd.json"));
 		install(new KernelModule("kernel.json"));
 		install(new TelnetServiceModule(serviceBinder, new ServiceConfig("localhost", 8000, new ServiceType.EPOLL())));
 		install(new KernelServiceModule(serviceBinder, new ServiceConfig("localhost", 8001, new ServiceType.EPOLL())));
-		install(new BeanstalkdKernelServiceModule(serviceBinder, "/usr/local/openresty/nginx/html/topic"));
+		install(new BeanstalkdKernelServiceModule(serviceBinder));
 		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
 		listenerBinder.addBinding().to(ServiceManagerListener.class).in(Scopes.SINGLETON);
 	}

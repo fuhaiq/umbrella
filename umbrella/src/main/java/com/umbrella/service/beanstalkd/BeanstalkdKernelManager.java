@@ -1,23 +1,21 @@
 package com.umbrella.service.beanstalkd;
 
-import java.util.List;
+import java.sql.SQLException;
 import java.util.Map;
 
-import org.apache.commons.pool2.ObjectPool;
+import org.apache.ibatis.session.SqlSessionManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Transaction;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.umbrella.beanstalkd.Beanstalkd;
-import com.umbrella.beanstalkd.BeanstalkdCycle;
 import com.umbrella.kernel.Kernel;
 import com.umbrella.kernel.KernelCycle;
 import com.umbrella.redis.JedisCycle;
@@ -31,59 +29,28 @@ public class BeanstalkdKernelManager {
 
 	@Inject private Session<Jedis> jedisSession;
 	
-	@Inject private Session<Beanstalkd> beanSession;
+	@Inject private SqlSessionManager manager;
 	
 	@Inject private Kernel kernel;
 	
-	@Inject private ObjectPool<Jedis> pool;
+	private final String lock = "topic:kernel:lock:";
 	
 	@JedisCycle
-	public String setToEvaluateThenGetUpdated(String topicId) throws SessionException {
-		String result = null;
+	public boolean lockTopic(String topicId) throws SessionException {
 		Jedis jedis = jedisSession.get();
-		jedis.watch("topic:" + topicId);
-		Transaction tx = jedis.multi();
-		Jedis assist = null;
-		try{
-			assist = pool.borrowObject();
-			CAS : while(true) {
-				if(!assist.exists("topic:" + topicId)) {
-					LOG.info("话题不存在!直接退出");
-					tx.discard();
-					jedis.unwatch();
-					break CAS;
-				}
-				List<String> statusAndUpdated = assist.hmget("topic:" + topicId, "status", "updated");
-				String status = statusAndUpdated.get(0);
-				String updated = statusAndUpdated.get(1);
-				if (!status.equals(Status.WAITING.getValue())) {
-					LOG.info("话题状态不是等待，直接退出");
-					tx.discard();
-					jedis.unwatch();
-					break CAS;
-				}
-				tx.hset("topic:" + topicId, "status", Status.EVALUATE.getValue());
-				List<?> txResult = tx.exec();
-				if (txResult == null || txResult.size() == 0) {
-					LOG.info("锁话题失败，重新进入判断");
-					jedis.watch("topic:" + topicId);
-					tx = jedis.multi();
-					continue CAS;
-				}
-				LOG.info("锁话题成功");
-				result = updated == null ? "" : updated;
-				break CAS;
-			}
-		} catch(Exception e) {
-			throw new SessionException(e);
-		} finally {
-			try {
-				pool.returnObject(assist);
-			} catch (Exception e) {
-				throw new SessionException(e);
-			}
+		long response = jedis.setnx(lock + topicId, "lock");
+		if(response == 0) {
+			return false;
 		}
-		return result;
+		LOG.info("锁定话题成功");
+		Map<String, String> map = Maps.newHashMap();
+		map.put("id", topicId);
+		map.put("status", Status.EVALUATE.getValue());
+		manager.update("topic.update", map);
+		LOG.info("更新话题状态为计算中");
+		jedis.del("topic:" + topicId);
+		LOG.info("删除话题缓存");
+		return true;
 	}
 	
 	@KernelCycle
@@ -115,73 +82,41 @@ public class BeanstalkdKernelManager {
 		return topicResult;
 	}
 	
-	@JedisCycle
-	public Elements getScriptElements(String topicId) throws SessionException {
-		Jedis jedis = jedisSession.get();
-		if(!jedis.exists("topic:" + topicId)) return null;
-		String html = jedis.hget("topic:" + topicId, "html");
+	public Elements getScriptElements(String topicId) throws SQLException {
+		String html = manager.selectOne("topic.selectHtml", topicId);
+		if(Strings.isNullOrEmpty(html)) {
+			throw new SQLException("no topic "+ topicId +" in db");
+		}
 		return Jsoup.parse(html).select("pre[class=brush:mathematica;toolbar:false]");
 	}
 	
 	@JedisCycle
-	@BeanstalkdCycle
-	public void setResult(String topicId, JSONObject topicResult, String updated) throws SessionException {
+	public void setResult(String topicId, JSONObject topicResult) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
-		jedis.watch("topic:" + topicId);
-		Transaction tx = jedis.multi();
-		Jedis assist = null;
-		try {
-			assist = pool.borrowObject();
-			if(!assist.exists("topic:" + topicId)) {
-				LOG.info("话题不存在!直接退出");
-				tx.discard();
-				jedis.unwatch();
-				return;
-			}
-			String latestUpdated = assist.hget("topic:" + topicId, "updated");
-			latestUpdated = latestUpdated == null ? "" : latestUpdated;
-			if(!updated.equals(latestUpdated)) {
-				LOG.info("话题时间戳不对应!直接退出");
-				tx.discard();
-				jedis.unwatch();
-				return;
-			}
-			Map<String, String> map = Maps.newHashMap();
-			String status = topicResult.getString("status");
-			String result = topicResult.getJSONArray("result").toJSONString();
-			map.put("status", status);
-			map.put("result", result);
-			tx.hmset("topic:" + topicId, map);
-			List<?> txResult = tx.exec();
-			if (txResult == null || txResult.size() == 0) {
-				LOG.info("设置话题结果失败，可能话题被修改");
-			} else {
-				LOG.info("设置话题结果成功,分发DB任务");
-				Beanstalkd bean = beanSession.get();
-				JSONArray sqls = new JSONArray();
-				JSONObject sql = new JSONObject();
-				sql.put("id", "topic.add.result");
-				sql.put("key", topicId);
-				sqls.add(sql);
-				bean.use("db");
-				bean.put(sqls.toJSONString());
-			}
-		} catch (Exception e) {
-			throw new SessionException(e);
-		} finally {
-			try {
-				pool.returnObject(assist);
-			} catch (Exception e) {
-				throw new SessionException(e);
-			}
-		}
-		
+		String status = topicResult.getString("status");
+		String result = topicResult.getJSONArray("result").toJSONString();
+		Map<String, String> map = Maps.newHashMap();
+		map.put("id", topicId);
+		map.put("status", status);
+		map.put("result", result);
+		manager.update("topic.update", map);
+		LOG.info("更新话题状态,设置话题结果");
+		jedis.del("topic:" + topicId);
+		LOG.info("删除话题缓存");
+		jedis.del(lock + topicId);
+		LOG.info("释放话题锁");
 	}
 	
 	@JedisCycle
-	public void resetTopicStatus(String topicId) throws SessionException {
+	public void resetTopicStatus(String topicId) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
-		jedis.hset("topic:" + topicId, "status", Status.WAITING.getValue());
+		Map<String, String> map = Maps.newHashMap();
+		map.put("id", topicId);
+		map.put("status", Status.WAITING.getValue());
+		manager.update("topic.update", map);
+		LOG.info("重置话题状态为等待");
+		jedis.del(lock + topicId);
+		LOG.info("释放话题锁");
 	}
 
 	public enum Status {

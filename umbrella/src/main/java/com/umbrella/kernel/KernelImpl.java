@@ -16,6 +16,7 @@ public class KernelImpl implements Kernel {
 	
 	@Override
 	public JSONArray evaluate(String expression) throws MathLinkException, SessionException {
+		expression = expression.replace((char)160, (char)32);
 		KernelLink kernelLink = session.get();
 		expression = "TimeConstrained[" + expression + ", "+config.getTimeConstrained()+"]";
 		kernelLink.putFunction("EnterTextPacket", 1);
