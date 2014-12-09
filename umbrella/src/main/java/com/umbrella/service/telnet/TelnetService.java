@@ -13,7 +13,7 @@ import com.umbrella.service.ServiceConfig;
 
 public class TelnetService extends AbstractIdleService{
 	
-	private final Logger LOG = LogManager.getLogger(TelnetService.class);
+	private final Logger LOG = LogManager.getLogger("telnet-service");
 	
 	@Inject @Named("telnet")
 	private Provider<ServerBootstrap> boot;

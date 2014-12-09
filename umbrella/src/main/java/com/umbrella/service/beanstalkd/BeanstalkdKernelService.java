@@ -19,7 +19,7 @@ import com.wolfram.jlink.MathLinkException;
 
 public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 	
-	private final Logger LOG = LogManager.getLogger(BeanstalkdKernelService.class);
+	private final Logger LOG = LogManager.getLogger("beanstalkd-kernel-service");
 	
 	@Inject private ObjectPool<Beanstalkd> pool;
 	
@@ -88,6 +88,7 @@ public class BeanstalkdKernelService extends AbstractExecutionThreadService{
 				}
 			}
 			manager.setResult(kernelJob.getTopicId(), topicResult);
+			LOG.info("设置话题结果完成");
 			return true;
 		} else {
 			LOG.info("锁定话题失败，可能被别的内核抢到了");

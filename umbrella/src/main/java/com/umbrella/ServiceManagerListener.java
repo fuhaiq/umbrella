@@ -17,7 +17,7 @@ import com.wolfram.jlink.KernelLink;
 
 public class ServiceManagerListener extends ServiceManager.Listener{
 
-	private final Logger LOG = LogManager.getLogger(ServiceManagerListener.class);
+	private final Logger LOG = LogManager.getLogger("service-manager");
 	
 	@Inject
 	private ObjectPool<KernelLink> kernel;

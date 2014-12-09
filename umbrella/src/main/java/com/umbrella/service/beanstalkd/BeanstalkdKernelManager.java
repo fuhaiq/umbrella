@@ -4,8 +4,6 @@ import java.sql.SQLException;
 import java.util.Map;
 
 import org.apache.ibatis.session.SqlSessionManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 
@@ -25,8 +23,6 @@ import com.wolfram.jlink.MathLinkException;
 
 public class BeanstalkdKernelManager {
 	
-	private final Logger LOG = LogManager.getLogger(BeanstalkdKernelManager.class);
-
 	@Inject private Session<Jedis> jedisSession;
 	
 	@Inject private SqlSessionManager manager;
@@ -42,14 +38,11 @@ public class BeanstalkdKernelManager {
 		if(response == 0) {
 			return false;
 		}
-		LOG.info("锁定话题成功");
 		Map<String, String> map = Maps.newHashMap();
 		map.put("id", topicId);
 		map.put("status", Status.EVALUATE.getValue());
 		manager.update("topic.update", map);
-		LOG.info("更新话题状态为计算中");
 		jedis.del("topic:" + topicId);
-		LOG.info("删除话题缓存");
 		return true;
 	}
 	
@@ -100,11 +93,8 @@ public class BeanstalkdKernelManager {
 		map.put("status", status);
 		map.put("result", result);
 		manager.update("topic.update", map);
-		LOG.info("更新话题状态,设置话题结果");
 		jedis.del("topic:" + topicId);
-		LOG.info("删除话题缓存");
 		jedis.del(lock + topicId);
-		LOG.info("释放话题锁");
 	}
 	
 	@JedisCycle
@@ -114,9 +104,7 @@ public class BeanstalkdKernelManager {
 		map.put("id", topicId);
 		map.put("status", Status.WAITING.getValue());
 		manager.update("topic.update", map);
-		LOG.info("重置话题状态为等待");
 		jedis.del(lock + topicId);
-		LOG.info("释放话题锁");
 	}
 
 	public enum Status {

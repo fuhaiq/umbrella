@@ -13,7 +13,7 @@ import com.umbrella.service.ServiceConfig;
 
 public class KernelService extends AbstractIdleService{
 
-	private final Logger LOG = LogManager.getLogger(KernelService.class);
+	private final Logger LOG = LogManager.getLogger("kernel-service");
 	
 	@Inject @Named("kernel")
 	private Provider<ServerBootstrap> boot;
