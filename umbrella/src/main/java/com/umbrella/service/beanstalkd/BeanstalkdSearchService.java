@@ -75,7 +75,7 @@ public class BeanstalkdSearchService extends AbstractExecutionThreadService {
 				if(execute(searchJob)) {
 					bean.delete(searchJob.getId());
 				} else {
-					//TODO release this job with higher priority without delay
+					bean.release(searchJob.getId(), (long) Math.pow(2, 31), 0);
 				}
 			}
 		}
