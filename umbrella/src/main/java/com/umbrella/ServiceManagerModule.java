@@ -1,8 +1,13 @@
 package com.umbrella;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Set;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
@@ -16,8 +21,6 @@ import com.umbrella.db.DBModule;
 import com.umbrella.kernel.KernelModule;
 import com.umbrella.mail.MailModule;
 import com.umbrella.redis.JedisModule;
-import com.umbrella.service.ServiceConfig;
-import com.umbrella.service.ServiceType;
 import com.umbrella.service.beanstalkd.BeanstalkdKernelServiceModule;
 import com.umbrella.service.beanstalkd.BeanstalkdMailServiceModule;
 import com.umbrella.service.kernel.KernelServiceModule;
@@ -27,16 +30,33 @@ public class ServiceManagerModule extends AbstractModule{
 	
 	private MapBinder<String, Service> serviceBinder;
 	
+	private final String config;
+	
+	public ServiceManagerModule(String config) {
+		this.config = config;
+	}
+	
 	@Override
 	protected void configure() {
+		try (InputStream in = this.getClass().getClassLoader().getResourceAsStream(config);
+				BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+			StringBuilder builder = new StringBuilder();
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				builder.append(line);
+			}
+			bind(UmbrellaConfig.class).toInstance(JSON.parseObject(builder.toString(), UmbrellaConfig.class));
+		} catch (IOException e) {
+			addError(e);
+		}
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
-		install(new MailModule("mail.json"));
+		install(new MailModule());
 		install(new DBModule("db.xml"));
-		install(new JedisModule("redis.json"));
-		install(new BeanstalkdModule("beanstalkd.json"));
-		install(new KernelModule("kernel.json"));
-		install(new TelnetServiceModule(serviceBinder, new ServiceConfig("localhost", 8000, new ServiceType.EPOLL())));
-		install(new KernelServiceModule(serviceBinder, new ServiceConfig("localhost", 8001, new ServiceType.EPOLL())));
+		install(new JedisModule());
+		install(new BeanstalkdModule());
+		install(new KernelModule());
+		install(new TelnetServiceModule(serviceBinder));
+		install(new KernelServiceModule(serviceBinder));
 		install(new BeanstalkdKernelServiceModule(serviceBinder));
 		install(new BeanstalkdMailServiceModule(serviceBinder));
 		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);

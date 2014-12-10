@@ -18,16 +18,15 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.umbrella.UmbrellaConfig;
 import com.umbrella.service.ServiceConfig;
 import com.umbrella.service.ServiceModule;
 
 public final class TelnetServiceModule extends ServiceModule{
 	
-	private final ServiceConfig config;
-	
-	public TelnetServiceModule(MapBinder<String, Service> serviceBinder, ServiceConfig config) {
+
+	public TelnetServiceModule(MapBinder<String, Service> serviceBinder) {
 		super(serviceBinder);
-		this.config = config;
 	}
 
 	@Override
@@ -37,13 +36,14 @@ public final class TelnetServiceModule extends ServiceModule{
 		handlerBinder.addBinding("decoder").to(StringDecoder.class).in(Scopes.SINGLETON);
 		handlerBinder.addBinding("encoder").to(StringEncoder.class).in(Scopes.SINGLETON);
 		handlerBinder.addBinding("telnet.handler").to(TelnetHandler.class).in(Scopes.NO_SCOPE);
-		serviceBinder.addBinding("telnet").toInstance(new TelnetService(config));
+		serviceBinder.addBinding("telnet").toInstance(new TelnetService());
 	}
 
 	@Provides
 	@Singleton
 	@Named("telnet")
-	ServerBootstrap provideServerBootstrap(@Named("telnet") Provider<Map<String, ChannelHandler>> handlers) {
+	ServerBootstrap provideServerBootstrap(UmbrellaConfig umbrella, @Named("telnet") Provider<Map<String, ChannelHandler>> handlers) {
+		ServiceConfig config = umbrella.getService().get("telnet");
 		ServerBootstrap boot = new ServerBootstrap();
 		boot.group(config.getBoss(), config.getWorker()).channel(config.getChannelClass()).childHandler(new ChannelInitializer<SocketChannel>(){
 					@Override

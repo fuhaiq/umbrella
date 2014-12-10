@@ -11,6 +11,7 @@ import org.aopalliance.intercept.MethodInvocation;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.umbrella.UmbrellaConfig;
 import com.umbrella.session.Session;
 import com.wolfram.jlink.KernelLink;
 
@@ -18,7 +19,7 @@ public class KernelTimeoutInterceptor implements MethodInterceptor{
 	
 	@Inject private Session<KernelLink> session;
 	
-	@Inject private KernelConfig kernelConfig;
+	@Inject private UmbrellaConfig umbrella;
 	
 	private final int additional = 3;
 	
@@ -30,7 +31,7 @@ public class KernelTimeoutInterceptor implements MethodInterceptor{
 		CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
 		service.execute(()->{
 			try {
-				future.get(kernelConfig.getTimeConstrained() + additional, TimeUnit.SECONDS);
+				future.get(umbrella.getKernel().getTimeConstrained() + additional, TimeUnit.SECONDS);
 			} catch(ExecutionException dontCare) {
 			} catch (InterruptedException | TimeoutException e) {
 				kernel.abandonEvaluation();

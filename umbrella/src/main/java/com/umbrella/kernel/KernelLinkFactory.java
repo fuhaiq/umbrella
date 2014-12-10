@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
+import com.umbrella.UmbrellaConfig;
 import com.wolfram.jlink.KernelLink;
 import com.wolfram.jlink.MathLinkFactory;
 import com.wolfram.jlink.PacketListener;
@@ -16,10 +17,11 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 
 	@Inject private PacketListener listener;
 	
-	@Inject private KernelConfig config;
+	@Inject private UmbrellaConfig umbrella;
 	
 	@Override
 	public KernelLink create() throws Exception {
+		KernelConfig config = umbrella.getKernel();
 		KernelLink kernelLink = MathLinkFactory.createKernelLink(config.getUrl());
 		kernelLink.connect();
 		kernelLink.discardAnswer();

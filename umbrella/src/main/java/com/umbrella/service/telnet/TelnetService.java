@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import com.umbrella.UmbrellaConfig;
 import com.umbrella.service.ServiceConfig;
 
 public class TelnetService extends AbstractIdleService{
@@ -18,14 +19,11 @@ public class TelnetService extends AbstractIdleService{
 	@Inject @Named("telnet")
 	private Provider<ServerBootstrap> boot;
 	
-	private final ServiceConfig config;
+	@Inject private UmbrellaConfig umbrella;
 	
-	public TelnetService(ServiceConfig config) {
-		this.config = config;
-	}
-
 	@Override
 	protected void shutDown() throws Exception {
+		ServiceConfig config = umbrella.getService().get("telnet");
 		config.getWorker().shutdownGracefully();
 		config.getBoss().shutdownGracefully();
 		LOG.info("telnet service stops");
@@ -33,6 +31,7 @@ public class TelnetService extends AbstractIdleService{
 
 	@Override
 	protected void startUp() {
+		ServiceConfig config = umbrella.getService().get("telnet");
 		boot.get().bind(config.getHost(), config.getPort()).addListener(r->{
 			if(!r.isSuccess()) {
 				stopAsync();

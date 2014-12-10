@@ -9,15 +9,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
+import com.umbrella.UmbrellaConfig;
 
 public class BeanstalkdFactory extends BasePooledObjectFactory<Beanstalkd> {
 
 	private final Logger LOG = LogManager.getLogger("BeanstalkdFactory");
 	
-	@Inject private BeanstalkdConfig config;
+	@Inject private UmbrellaConfig umbrella;
 
 	@Override
 	public Beanstalkd create() throws Exception {
+		BeanstalkdConfig config = umbrella.getBeanstalkd();
 		Beanstalkd bean = new Beanstalkd(config.getHost(), config.getPort(), config.getTimeout(), TimeUnit.MILLISECONDS);
 		bean.connect(config.getGroup(), config.getChannelClass());
 		LOG.info("Create the Beanstalkd [" + bean.toString() + "] to pool");

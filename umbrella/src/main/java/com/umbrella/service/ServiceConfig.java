@@ -5,12 +5,6 @@ import io.netty.channel.ServerChannel;
 
 public class ServiceConfig {
 	
-	public ServiceConfig(String host, int port, ServiceType type) {
-		this.host = host;
-		this.port = port;
-		this.type = type;
-	}
-
 	private String host;
 	
 	private int port;
@@ -43,5 +37,19 @@ public class ServiceConfig {
 
 	public Class<? extends ServerChannel> getChannelClass() {
 		return type.getChannelClass();
+	}
+
+	public ServiceType getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		if (type.equalsIgnoreCase("nio")) {
+			this.type = new ServiceType.NIO();
+		} else if (type.equalsIgnoreCase("epoll")) {
+			this.type = new ServiceType.EPOLL();
+		} else {
+			throw new IllegalStateException("type must be one of NIO or EPOLL");
+		}
 	}
 }

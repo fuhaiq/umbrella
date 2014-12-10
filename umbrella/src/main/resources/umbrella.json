@@ -1,0 +1,53 @@
+{
+    "beanstalkd": {
+        "type": "EPOLL", 
+        "host": "localhost", 
+        "port": 11300, 
+        "maxWaitMillis": 3000, 
+        "maxTotal": 5, 
+        "timeout": 3000, 
+        "testOnBorrow": true, 
+        "testOnReturn": true, 
+        "testOnCreate": true
+    }, 
+    "kernel": {
+        "libdir": {
+            "name": "com.wolfram.jlink.libdir", 
+            "dir": "/usr/local/Wolfram/Mathematica/10.0/SystemFiles/Links/JLink/SystemFiles/Libraries/Linux-x86-64"
+        }, 
+        "maxWaitMillis": 3000, 
+        "timeConstrained": 20, 
+        "maxTotal": 5, 
+        "pageWidth": 500, 
+        "url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel", 
+        "dumpDir": "/home/michael/wesker/dump/"
+    }, 
+    "mail": {
+        "host": "smtp.163.com", 
+        "port": 25, 
+        "validate": true, 
+        "user": "hf-1999@163.com", 
+        "password": "123456789"
+    }, 
+    "redis": {
+        "host": "localhost", 
+        "port": 6379, 
+        "maxWaitMillis": 3000, 
+        "maxTotal": 5, 
+        "testOnBorrow": true, 
+        "testOnReturn": true, 
+        "testOnCreate": true
+    }, 
+    "service": {
+        "kernel": {
+            "host": "localhost", 
+            "port": 8001,
+            "type": "EPOLL"
+        }, 
+        "telnet": {
+            "host": "localhost", 
+            "port": 8000,
+            "type": "EPOLL"
+        }
+    }
+}

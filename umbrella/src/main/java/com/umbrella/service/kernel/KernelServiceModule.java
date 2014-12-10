@@ -16,6 +16,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.umbrella.UmbrellaConfig;
 import com.umbrella.service.ServiceConfig;
 import com.umbrella.service.ServiceModule;
 import com.umbrella.service.kernel.action.Evaluate;
@@ -24,13 +25,10 @@ import com.umbrella.service.kernel.action.JsonActionModule;
 
 public final class KernelServiceModule extends ServiceModule{
 	
-	public KernelServiceModule(MapBinder<String, Service> serviceBinder, ServiceConfig config) {
+	public KernelServiceModule(MapBinder<String, Service> serviceBinder) {
 		super(serviceBinder);
-		this.config = config;
 	}
 
-	private final ServiceConfig config;
-	
 	@Override
 	protected void configure() {
 		install(new JsonActionModule(){
@@ -44,13 +42,14 @@ public final class KernelServiceModule extends ServiceModule{
 		handlerBinder.addBinding("encoder").to(JsonEncoder.class).in(Scopes.SINGLETON);
 		handlerBinder.addBinding("action").to(JsonActionHandler.class).in(Scopes.NO_SCOPE);
 		handlerBinder.addBinding("exception").to(JsonExceptionHandler.class).in(Scopes.SINGLETON);
-		serviceBinder.addBinding("kernel").toInstance(new KernelService(config));
+		serviceBinder.addBinding("kernel").toInstance(new KernelService());
 	}
 	
 	@Provides
 	@Singleton
 	@Named("kernel")
-	ServerBootstrap provideServerBootstrap(@Named("kernel") Provider<Map<String, ChannelHandler>> handlers) {
+	ServerBootstrap provideServerBootstrap(UmbrellaConfig umbrella, @Named("kernel") Provider<Map<String, ChannelHandler>> handlers) {
+		ServiceConfig config = umbrella.getService().get("kernel");
 		ServerBootstrap boot = new ServerBootstrap();
 		boot.group(config.getBoss(), config.getWorker()).channel(config.getChannelClass()).childHandler(new ChannelInitializer<SocketChannel>(){
 					@Override

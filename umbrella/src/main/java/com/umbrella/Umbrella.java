@@ -7,7 +7,7 @@ import com.google.inject.Injector;
 public class Umbrella {
 
 	public static void main(String[] args) {
-		Injector injector = Guice.createInjector(new ServiceManagerModule());
+		Injector injector = Guice.createInjector(new ServiceManagerModule("umbrella.json"));
 		ServiceManager manager = injector.getInstance(ServiceManager.class);
 		manager.startAsync().awaitHealthy();
 	}

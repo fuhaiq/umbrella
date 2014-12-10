@@ -5,12 +5,17 @@ import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import redis.clients.jedis.Jedis;
+
 import com.google.inject.Inject;
+import com.umbrella.UmbrellaConfig;
 
 public class JedisFactory extends BasePooledObjectFactory<Jedis>{
 	
 	private final Logger LOG = LogManager.getLogger("JedisFactory");
+	
+	@Inject private UmbrellaConfig umbrella;
 	
 	@Override
 	public void destroyObject(PooledObject<Jedis> p) throws Exception {
@@ -32,10 +37,9 @@ public class JedisFactory extends BasePooledObjectFactory<Jedis>{
 		LOG.info("Return the redis connection [" + jedis.toString() + "] back to pool");
 	}
 
-	@Inject private JedisConfig config;
-
 	@Override
 	public Jedis create() throws Exception {
+		JedisConfig config = umbrella.getRedis();
 		Jedis jedis = new Jedis(config.getHost(), config.getPort());
 		jedis.connect();
 		LOG.info("Create the redis connection [" + jedis.toString() + "] to pool");

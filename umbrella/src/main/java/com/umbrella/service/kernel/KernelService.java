@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import com.umbrella.UmbrellaConfig;
 import com.umbrella.service.ServiceConfig;
 
 public class KernelService extends AbstractIdleService{
@@ -18,14 +19,11 @@ public class KernelService extends AbstractIdleService{
 	@Inject @Named("kernel")
 	private Provider<ServerBootstrap> boot;
 	
-	private final ServiceConfig config;
-	
-	public KernelService(ServiceConfig config) {
-		this.config = config;
-	}
+	@Inject private UmbrellaConfig umbrella;
 	
 	@Override
 	protected void shutDown() throws Exception {
+		ServiceConfig config = umbrella.getService().get("kernel");
 		config.getWorker().shutdownGracefully();
 		config.getBoss().shutdownGracefully();
 		LOG.info("kernel service stops");
@@ -33,6 +31,7 @@ public class KernelService extends AbstractIdleService{
 
 	@Override
 	protected void startUp() throws Exception {
+		ServiceConfig config = umbrella.getService().get("kernel");
 		boot.get().bind(config.getHost(), config.getPort()).addListener(r->{
 			if(!r.isSuccess()) {
 				stopAsync();

@@ -12,24 +12,19 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.umbrella.beanstalkd.Beanstalkd;
-import com.umbrella.beanstalkd.BeanstalkdConfig;
 import com.wolfram.jlink.KernelLink;
 
 public class ServiceManagerListener extends ServiceManager.Listener{
 
 	private final Logger LOG = LogManager.getLogger("service-manager");
 	
-	@Inject
-	private ObjectPool<KernelLink> kernel;
+	@Inject private ObjectPool<KernelLink> kernel;
 	
-	@Inject
-	private ObjectPool<Jedis> jedis;
+	@Inject private ObjectPool<Jedis> jedis;
 	
-	@Inject
-	private ObjectPool<Beanstalkd> beans;
+	@Inject private ObjectPool<Beanstalkd> beans;
 	
-	@Inject
-	private BeanstalkdConfig beansConfig;
+	@Inject private UmbrellaConfig umbrella;
 	
 	@Inject @Named("kernel") private ExecutorService service;
 	
@@ -47,7 +42,7 @@ public class ServiceManagerListener extends ServiceManager.Listener{
 			jedis.close();
 			beans.clear();
 			beans.close();
-			beansConfig.getGroup().shutdownGracefully();
+			umbrella.getBeanstalkd().getGroup().shutdownGracefully();
 			service.shutdown();
 		} catch (Exception dontCare) {}
 		LOG.info("service manager stops.");
