@@ -13,7 +13,7 @@ import com.google.inject.Provider;
 public class JsonActionHandler extends SimpleChannelInboundHandler<JSONObject>{
 
 	@Inject private Provider<Map<String, JsonAction>> actionMapping;
-	
+
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, JSONObject json) throws Exception {
 		String id = checkNotNull(json.getString("id"), "action id is null");

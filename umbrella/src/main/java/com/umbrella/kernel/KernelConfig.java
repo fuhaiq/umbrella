@@ -8,6 +8,7 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	private Libdir libdir;
 	private int pageWidth;
 	private int timeConstrained;
+	private int timeConstrainedTotal;
 	
 	public String getUrl() {
 		return url;
@@ -47,6 +48,14 @@ public class KernelConfig extends GenericObjectPoolConfig{
 
 	public void setTimeConstrained(int timeConstrained) {
 		this.timeConstrained = timeConstrained;
+	}
+
+	public int getTimeConstrainedTotal() {
+		return timeConstrainedTotal;
+	}
+
+	public void setTimeConstrainedTotal(int timeConstrainedTotal) {
+		this.timeConstrainedTotal = timeConstrainedTotal;
 	}
 
 	class Libdir {

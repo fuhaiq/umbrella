@@ -21,8 +21,6 @@ public class KernelTimeoutInterceptor implements MethodInterceptor{
 	
 	@Inject private UmbrellaConfig umbrella;
 	
-	private final int additional = 3;
-	
 	@Inject @Named("kernel") private ExecutorService service;
 
 	@Override
@@ -31,7 +29,7 @@ public class KernelTimeoutInterceptor implements MethodInterceptor{
 		CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
 		service.execute(()->{
 			try {
-				future.get(umbrella.getKernel().getTimeConstrained() + additional, TimeUnit.SECONDS);
+				future.get(umbrella.getKernel().getTimeConstrainedTotal(), TimeUnit.SECONDS);
 			} catch(ExecutionException dontCare) {
 			} catch (InterruptedException | TimeoutException e) {
 				kernel.abandonEvaluation();

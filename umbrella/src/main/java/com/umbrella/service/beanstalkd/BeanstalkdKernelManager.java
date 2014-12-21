@@ -29,16 +29,20 @@ public class BeanstalkdKernelManager {
 	
 	@Inject private Kernel kernel;
 	
-	private final String lock = "topic:kernel:lock:";
+	private final String LOCK = "topic:kernel:lock:";
+	
+	private final String CHANNEL = "umbrella.socket";
+	
+	private final String TOPIC_DONE = "%s 的帖子 <a href=/topic/%s>%s</a> 运行完成";
 	
 	@JedisCycle
-	public boolean lockTopic(String topicId) throws SessionException {
+	public boolean lockTopic(int topicId) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
-		long response = jedis.setnx(lock + topicId, "lock");
+		long response = jedis.setnx(LOCK + topicId, "lock");
 		if(response == 0) {
 			return false;
 		}
-		Map<String, String> map = Maps.newHashMap();
+		Map<String, Object> map = Maps.newHashMap();
 		map.put("id", topicId);
 		map.put("status", Status.EVALUATE.getValue());
 		manager.update("topic.update", map);
@@ -75,8 +79,9 @@ public class BeanstalkdKernelManager {
 		return topicResult;
 	}
 	
-	public Elements getScriptElements(String topicId) throws SQLException {
-		String html = manager.selectOne("topic.selectHtml", topicId);
+	public Elements getScriptElements(int topicId) throws SQLException {
+		Map<String, String> topic = manager.selectOne("topic.select", topicId);
+		String html = topic.get("html");
 		if(Strings.isNullOrEmpty(html)) {
 			throw new SQLException("no topic "+ topicId +" in db");
 		}
@@ -84,27 +89,49 @@ public class BeanstalkdKernelManager {
 	}
 	
 	@JedisCycle
-	public void setResult(String topicId, JSONObject topicResult) throws SessionException, SQLException {
+	public void setResult(int topicId, JSONObject topicResult) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
 		String status = topicResult.getString("status");
 		String result = topicResult.getJSONArray("result").toJSONString();
-		Map<String, String> map = Maps.newHashMap();
+		jedis.del("topic:" + topicId);
+		jedis.del(LOCK + topicId);
+		//set topic's result
+		Map<String, Object> map = Maps.newHashMap();
 		map.put("id", topicId);
 		map.put("status", status);
 		map.put("result", result);
 		manager.update("topic.update", map);
-		jedis.del("topic:" + topicId);
-		jedis.del(lock + topicId);
+			
+		//message to topic owner
+		Map<String, String> topic = manager.selectOne("topic.select", topicId);
+		Map<String, String> owner = Maps.newHashMap();
+		owner.put("userid", topic.get("userid"));
+		owner.put("msg", String.format(TOPIC_DONE, "您", topicId, topic.get("title")));
+		manager.insert("message.insert", owner);
+			
+		//message to topic room
+		Map<String, String> other = Maps.newHashMap();
+		other.put("userid", topic.get("userid"));
+		other.put("room", "topic:" + topicId);
+		other.put("msg", String.format(TOPIC_DONE, "您关注", topicId, topic.get("title")));
+		manager.insert("message.topicDone4Room", other);
+		
+		//publish topic.done to channel
+		JSONObject msg = new JSONObject();
+		msg.put("topicId", topicId);
+		msg.put("status", status);
+		msg.put("event", "topic.done");
+		jedis.publish(CHANNEL, msg.toJSONString());
 	}
 	
 	@JedisCycle
-	public void resetTopicStatus(String topicId) throws SessionException, SQLException {
+	public void resetTopicStatus(int topicId) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
-		Map<String, String> map = Maps.newHashMap();
+		Map<String, Object> map = Maps.newHashMap();
 		map.put("id", topicId);
 		map.put("status", Status.WAITING.getValue());
 		manager.update("topic.update", map);
-		jedis.del(lock + topicId);
+		jedis.del(LOCK + topicId);
 	}
 
 	public enum Status {

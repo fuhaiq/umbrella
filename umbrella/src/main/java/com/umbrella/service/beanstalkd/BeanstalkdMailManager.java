@@ -16,16 +16,12 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 
 import org.apache.ibatis.session.SqlSessionManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.umbrella.mail.MailMessageProvider;
 
 public class BeanstalkdMailManager {
-	
-	private final Logger LOG = LogManager.getLogger("beanstalkd-mail-manager");
 	
 	@Inject private SqlSessionManager manager;
 	
@@ -41,24 +37,18 @@ public class BeanstalkdMailManager {
 		return (manager.insert("forget.insert", ticket) == 1 ? uuid : null);
 	}
 	
-	public boolean sendMail(String ticket, String email) throws SQLException {
+	public void sendMail(String ticket, String email) throws SQLException, MessagingException {
 		String nickName = manager.selectOne("user.selectNickname", email);
-		try {
-			Message message = provider.get();
-			Address to = new InternetAddress(email);
-			message.setRecipient(Message.RecipientType.TO,to);
-			message.setSubject("威思客密码找回");
-			message.setSentDate(new Date());
-			Multipart mainPart = new MimeMultipart();
-			BodyPart html = new MimeBodyPart();
-			html.setContent(String.format(body, nickName, ticket), "text/html; charset=utf-8");
-			mainPart.addBodyPart(html);
-			message.setContent(mainPart);   
-		    Transport.send(message);   
-			return true;
-		} catch (MessagingException e) {
-			LOG.error("发送邮件失败:", e);
-			return false;
-		}
+		Message message = provider.get();
+		Address to = new InternetAddress(email);
+		message.setRecipient(Message.RecipientType.TO, to);
+		message.setSubject("威思客密码找回");
+		message.setSentDate(new Date());
+		Multipart mainPart = new MimeMultipart();
+		BodyPart html = new MimeBodyPart();
+		html.setContent(String.format(body, nickName, ticket), "text/html; charset=utf-8");
+		mainPart.addBodyPart(html);
+		message.setContent(mainPart);
+		Transport.send(message);
 	}
 }

@@ -49,8 +49,9 @@ public class Beanstalkd {
 		return emitToConnection(String.format("use %s\r\n", tube), timeout, unit);
 	}
 	
-	public String reserve() throws InterruptedException, ExecutionException {
-		return emitToConnection("reserve\r\n");
+	public BeanstalkdJob reserve() throws InterruptedException, ExecutionException {
+		String response = emitToConnection("reserve\r\n");
+		return response.equals("") ? null : new BeanstalkdJob(response);
 	}
 	
 	public String kick(int bound) throws InterruptedException, ExecutionException, TimeoutException {

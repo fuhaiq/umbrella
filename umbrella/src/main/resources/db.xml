@@ -5,6 +5,7 @@
 <configuration>
 	<settings>
 		<setting name="cacheEnabled" value="false" />
+		<setting name="logImpl" value="LOG4J2"/>
 	</settings>
 	<environments default="development">
 		<environment id="development">
@@ -22,7 +23,7 @@
 	</environments>
 	<mappers>
 		<mapper resource="com/umbrella/db/topic.xml"/>
-		<mapper resource="com/umbrella/db/user.xml"/>
 		<mapper resource="com/umbrella/db/forget.xml"/>
+		<mapper resource="com/umbrella/db/message.xml"/>
 	</mappers>
 </configuration>

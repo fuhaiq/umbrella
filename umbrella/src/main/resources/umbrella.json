@@ -16,11 +16,12 @@
             "dir": "/usr/local/Wolfram/Mathematica/10.0/SystemFiles/Links/JLink/SystemFiles/Libraries/Linux-x86-64"
         }, 
         "maxWaitMillis": 3000, 
-        "timeConstrained": 20, 
+        "timeConstrained": 10, 
+        "timeConstrainedTotal": 30,
         "maxTotal": 5, 
         "pageWidth": 500, 
         "url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel", 
-        "dumpDir": "/home/michael/wesker/dump/"
+        "dumpDir": "/home/wesker/dump/"
     }, 
     "mail": {
         "host": "smtp.163.com", 
