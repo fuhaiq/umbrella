@@ -1,4 +1,4 @@
-package com.umbrella.service.kernel;
+package com.umbrella.service.json.kernel;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelHandler;
@@ -19,9 +19,11 @@ import com.google.inject.name.Names;
 import com.umbrella.UmbrellaConfig;
 import com.umbrella.service.ServiceConfig;
 import com.umbrella.service.ServiceModule;
-import com.umbrella.service.kernel.action.Evaluate;
-import com.umbrella.service.kernel.action.JsonActionHandler;
-import com.umbrella.service.kernel.action.JsonActionModule;
+import com.umbrella.service.json.JsonActionHandler;
+import com.umbrella.service.json.JsonActionModule;
+import com.umbrella.service.json.JsonDecoder;
+import com.umbrella.service.json.JsonEncoder;
+import com.umbrella.service.json.JsonExceptionHandler;
 
 public final class KernelServiceModule extends ServiceModule{
 	

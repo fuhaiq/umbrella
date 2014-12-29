@@ -1,4 +1,4 @@
-package com.umbrella.service.kernel.action;
+package com.umbrella.service.json.kernel;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import io.netty.channel.ChannelHandlerContext;
@@ -9,6 +9,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.inject.Inject;
 import com.umbrella.kernel.Kernel;
 import com.umbrella.kernel.KernelCycle;
+import com.umbrella.service.json.JsonAction;
 import com.umbrella.session.SessionException;
 import com.wolfram.jlink.MathLinkException;
 

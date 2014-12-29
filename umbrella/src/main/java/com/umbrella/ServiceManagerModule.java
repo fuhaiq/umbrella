@@ -23,7 +23,7 @@ import com.umbrella.mail.MailModule;
 import com.umbrella.redis.JedisModule;
 import com.umbrella.service.beanstalkd.BeanstalkdKernelServiceModule;
 import com.umbrella.service.beanstalkd.BeanstalkdMailServiceModule;
-import com.umbrella.service.kernel.KernelServiceModule;
+import com.umbrella.service.json.kernel.KernelServiceModule;
 import com.umbrella.service.telnet.TelnetServiceModule;
 
 public class ServiceManagerModule extends AbstractModule{

@@ -1,4 +1,4 @@
-package com.umbrella.service.kernel.action;
+package com.umbrella.service.json;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import io.netty.channel.ChannelHandlerContext;

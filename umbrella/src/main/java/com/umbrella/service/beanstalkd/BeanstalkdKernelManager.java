@@ -31,8 +31,6 @@ public class BeanstalkdKernelManager {
 	
 	private final String LOCK = "topic:kernel:lock:";
 	
-	private final String CHANNEL = "umbrella.socket";
-	
 	private final String TOPIC_DONE = "%s 的帖子 <a href=/topic/%s>%s</a> 运行完成";
 	
 	@JedisCycle
@@ -47,6 +45,7 @@ public class BeanstalkdKernelManager {
 		map.put("status", Status.EVALUATE.getValue());
 		manager.update("topic.update", map);
 		jedis.del("topic:" + topicId);
+		jedis.del("topic:list:main");
 		return true;
 	}
 	
@@ -85,7 +84,7 @@ public class BeanstalkdKernelManager {
 		if(Strings.isNullOrEmpty(html)) {
 			throw new SQLException("no topic "+ topicId +" in db");
 		}
-		return Jsoup.parse(html).select("pre[class=brush:mathematica;toolbar:false]");
+		return Jsoup.parse(html).select("pre[class=\"mathematica hljs\"]");
 	}
 	
 	@JedisCycle
@@ -95,6 +94,7 @@ public class BeanstalkdKernelManager {
 		String result = topicResult.getJSONArray("result").toJSONString();
 		jedis.del("topic:" + topicId);
 		jedis.del(LOCK + topicId);
+		jedis.del("topic:list:main");
 		//set topic's result
 		Map<String, Object> map = Maps.newHashMap();
 		map.put("id", topicId);
@@ -115,13 +115,6 @@ public class BeanstalkdKernelManager {
 		other.put("room", "topic:" + topicId);
 		other.put("msg", String.format(TOPIC_DONE, "您关注", topicId, topic.get("title")));
 		manager.insert("message.topicDone4Room", other);
-		
-		//publish topic.done to channel
-		JSONObject msg = new JSONObject();
-		msg.put("topicId", topicId);
-		msg.put("status", status);
-		msg.put("event", "topic.done");
-		jedis.publish(CHANNEL, msg.toJSONString());
 	}
 	
 	@JedisCycle
@@ -131,7 +124,9 @@ public class BeanstalkdKernelManager {
 		map.put("id", topicId);
 		map.put("status", Status.WAITING.getValue());
 		manager.update("topic.update", map);
+		jedis.del("topic:" + topicId);
 		jedis.del(LOCK + topicId);
+		jedis.del("topic:list:main");
 	}
 
 	public enum Status {

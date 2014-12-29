@@ -1,4 +1,4 @@
-package com.umbrella.service.kernel.action;
+package com.umbrella.service.json;
 
 import io.netty.channel.ChannelHandlerContext;
 

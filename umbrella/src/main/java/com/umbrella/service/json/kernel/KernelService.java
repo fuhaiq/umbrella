@@ -1,4 +1,4 @@
-package com.umbrella.service.kernel;
+package com.umbrella.service.json.kernel;
 
 import io.netty.bootstrap.ServerBootstrap;
 

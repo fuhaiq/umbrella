@@ -1,4 +1,4 @@
-package com.umbrella.service.kernel;
+package com.umbrella.service.json;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
