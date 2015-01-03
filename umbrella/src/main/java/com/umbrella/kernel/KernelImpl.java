@@ -16,11 +16,12 @@ public class KernelImpl implements Kernel {
 	@Inject private UmbrellaConfig umbrella;
 
 	@Override
-	public JSONArray evaluate(String expression) throws MathLinkException, SessionException {
+	public JSONArray evaluate(String dir, String expression) throws MathLinkException, SessionException {
 		expression = expression.replace((char)160, (char)32);
 		KernelLink kernelLink = session.get();
 		kernelLink.putFunction("TimeConstrained", 2);
-		kernelLink.putFunction("Umbrella", 1);
+		kernelLink.putFunction("Umbrella", 2);
+		kernelLink.put(dir);
 		kernelLink.put(expression);
 		kernelLink.put(umbrella.getKernel().getTimeConstrained());
 		kernelLink.endPacket();

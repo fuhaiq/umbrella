@@ -13,21 +13,9 @@ public class KernelListener implements PacketListener{
 	
 	@Override
 	public boolean packetArrived(PacketArrivedEvent evt) throws MathLinkException {
-		System.out.println(">>"+evt.getPktType());
 		KernelLink ml = (KernelLink) evt.getSource();
 		JSONObject result = new JSONObject();
 		switch (evt.getPktType()) {
-		case MathLink.RETURNTEXTPKT:
-			String _return = ml.getString();
-			if(_return.equalsIgnoreCase("null")) break;
-			if(Kernel.ABORT.equals(_return)){
-				result.put("type", "abort");
-			} else {
-				result.put("type", "return");
-				result.put("data", _return);
-			}
-			ml.result().add(result);
-			break;
 		case MathLink.MESSAGEPKT:
 			result.put("type", "error");
 			ml.result().add(result);
@@ -57,11 +45,21 @@ public class KernelListener implements PacketListener{
 			break;
 		}
 		case MathLink.RETURNPKT: {
-			//$Aborted timeout
-			//Null ignore
-			//<math><mi>$Failed</mi></math>   syntax error
-			//<math><mi>Null</mi></math> text
-			System.out.println(">>"+ml.getString());
+			String _return = ml.getString();
+			if("null".equalsIgnoreCase(_return)) break;
+			if(Kernel.NULL.equals(_return)) break;
+			if(Kernel.FAILED.equals(_return)) break;
+			if(Kernel.ABORT.equals(_return)) {
+				result.put("type", "abort");
+			} else if(_return.endsWith(".BMP")) {
+				result.put("type", "image");
+				result.put("data", _return);
+			} else {
+				result.put("type", "return");
+				result.put("data", _return);
+			}
+			ml.result().add(result);
+			break;
 		}
 		default:
 			// e.g. MessagePacket

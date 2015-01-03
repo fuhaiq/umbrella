@@ -54,7 +54,7 @@ public class BeanstalkdKernelManager {
 		Status status = Status.SUCCESS;
 		JSONArray result = new JSONArray();
 		outer:for(int i = 0; i < scripts.size(); i++) {
-			JSONArray json = kernel.evaluate(scripts.get(i).text());
+			JSONArray json = kernel.evaluate("/home/wesker/umbrella-openresty/www/static/img/", scripts.get(i).text());
 			for(int j = 0; j < json.size(); j++) {
 				JSONObject obj = json.getJSONObject(j);
 				obj.put("index", i);
