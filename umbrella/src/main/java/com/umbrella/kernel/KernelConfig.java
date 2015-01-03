@@ -4,7 +4,6 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 public class KernelConfig extends GenericObjectPoolConfig{
 	private String url;
-	private String dumpDir;
 	private Libdir libdir;
 	private int pageWidth;
 	private int timeConstrained;
@@ -16,14 +15,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 
 	public void setUrl(String url) {
 		this.url = url;
-	}
-
-	public String getDumpDir() {
-		return dumpDir;
-	}
-
-	public void setDumpDir(String dumpDir) {
-		this.dumpDir = dumpDir;
 	}
 
 	public Libdir getLibdir() {

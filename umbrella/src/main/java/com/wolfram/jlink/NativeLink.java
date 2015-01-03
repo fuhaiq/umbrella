@@ -926,6 +926,7 @@ public class NativeLink extends MathLinkImpl {
 			throw new MathLinkException(MLE_LINK_IS_NULL, LINK_NULL_MESSAGE);
 		}
 		MLPutString(link, s);
+//		MLPutUTF8String(link, s, s.length());
 		int errCode = MLError(link);
 		if (isException(errCode)) {
 			throw new MathLinkException(errCode, MLErrorMessage(link));
@@ -1206,6 +1207,7 @@ private static boolean loadNativeLib(String libName, String libDir) throws Secur
 
 	protected static native String MLGetString(long link);
 	protected static native void MLPutString(long link, String s);
+//	protected static native void MLPutUTF8String(long link, String s, int len);
 	protected static native byte[] MLGetByteString(long link, byte missing);
 	protected static native void MLPutByteString(long link, byte[] data, int len);
 

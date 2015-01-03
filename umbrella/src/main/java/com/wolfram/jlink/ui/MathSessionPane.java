@@ -1445,7 +1445,7 @@ class MathSessionTextPane extends JTextPane {
 			         	"{JLink`Private`cfv, JLink`Private`sopts, JLink`Private`ddf} = {FormatValues[Continuation], Options[\"stdout\"], $DisplayFunction} ; " + 
 			         	"Format[Continuation[_], OutputForm] = \"\" ; " +
 			         	"SetOptions[\"stdout\", FormatType -> OutputForm, CharacterEncoding -> \"Unicode\", PageWidth -> " + paneWidthInChars + "] ; " + 
-			         	"$DisplayFunction = " + df + ";");			
+			         	"$DisplayFunction = " + df + ";");		
 			ml.discardAnswer();
 		}
 			

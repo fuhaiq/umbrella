@@ -26,12 +26,12 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 		kernelLink.connect();
 		kernelLink.discardAnswer();
 		kernelLink.addPacketListener(listener);
-		kernelLink.evaluate("Needs[\"" + KernelLink.PACKAGE_CONTEXT + "\"]");
+//		kernelLink.evaluate("Needs[\"" + KernelLink.PACKAGE_CONTEXT + "\"]");
+//		kernelLink.discardAnswer();
+		kernelLink.evaluate("Needs[\"Umbrella`\"]");
 		kernelLink.discardAnswer();
-		kernelLink.evaluate("SetDirectory[\"" + config.getDumpDir() + "\"]");
-		kernelLink.discardAnswer();
-		kernelLink.evaluate("$PrePrint = With[{expr = #}, If[MatchQ[expr, _Graphics | _Graphics3D | _Graph | _Manipulate] || MemberQ[expr, _Graphics | _Graphics3D | _Graph | _Manipulate, ∞], LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[expr, TraditionalForm, "+config.getPageWidth()+"]]], MathMLForm[expr]]] &;");
-		kernelLink.discardAnswer();
+//		kernelLink.evaluate("$PrePrint = With[{expr = #}, If[MatchQ[expr, _Graphics | _Graphics3D | _Graph | _Manipulate] || MemberQ[expr, _Graphics | _Graphics3D | _Graph | _Manipulate, ∞], LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[expr, TraditionalForm, "+config.getPageWidth()+"]]], MathMLForm[expr]]] &;");
+//		kernelLink.discardAnswer();
 		LOG.info("Create the Kernel [" + kernelLink.toString() + "] to pool");
 		return kernelLink;
 	}

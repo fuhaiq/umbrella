@@ -13,6 +13,7 @@ public class KernelListener implements PacketListener{
 	
 	@Override
 	public boolean packetArrived(PacketArrivedEvent evt) throws MathLinkException {
+		System.out.println(">>"+evt.getPktType());
 		KernelLink ml = (KernelLink) evt.getSource();
 		JSONObject result = new JSONObject();
 		switch (evt.getPktType()) {
@@ -54,6 +55,13 @@ public class KernelListener implements PacketListener{
 			result.put("data", imageData);
 			ml.result().add(result);
 			break;
+		}
+		case MathLink.RETURNPKT: {
+			//$Aborted timeout
+			//Null ignore
+			//<math><mi>$Failed</mi></math>   syntax error
+			//<math><mi>Null</mi></math> text
+			System.out.println(">>"+ml.getString());
 		}
 		default:
 			// e.g. MessagePacket
