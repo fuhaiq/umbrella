@@ -1,15 +1,4 @@
 {
-    "beanstalkd": {
-        "type": "EPOLL", 
-        "host": "localhost", 
-        "port": 11300, 
-        "maxWaitMillis": 3000, 
-        "maxTotal": 5, 
-        "timeout": 3000, 
-        "testOnBorrow": true, 
-        "testOnReturn": true, 
-        "testOnCreate": true
-    }, 
     "kernel": {
         "libdir": {
             "name": "com.wolfram.jlink.libdir", 
@@ -19,25 +8,7 @@
         "timeConstrained": 10, 
         "timeConstrainedTotal": 30,
         "maxTotal": 5, 
-        "pageWidth": 500, 
         "url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel", 
-        "dumpDir": "/home/wesker/dump/"
-    }, 
-    "mail": {
-        "host": "smtp.163.com", 
-        "port": 25, 
-        "validate": true, 
-        "user": "hf-1999@163.com", 
-        "password": "123456789"
-    }, 
-    "redis": {
-        "host": "localhost", 
-        "port": 6379, 
-        "maxWaitMillis": 3000, 
-        "maxTotal": 5, 
-        "testOnBorrow": true, 
-        "testOnReturn": true, 
-        "testOnCreate": true
     }, 
     "service": {
         "kernel": {

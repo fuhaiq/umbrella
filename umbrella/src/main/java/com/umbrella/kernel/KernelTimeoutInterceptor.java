@@ -31,6 +31,7 @@ public class KernelTimeoutInterceptor implements MethodInterceptor{
 			try {
 				future.get(umbrella.getKernel().getTimeConstrainedTotal(), TimeUnit.SECONDS);
 			} catch(ExecutionException dontCare) {
+				/* completeExceptionally will handle this */
 			} catch (InterruptedException | TimeoutException e) {
 				kernel.abandonEvaluation();
 			}

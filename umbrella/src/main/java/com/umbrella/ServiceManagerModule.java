@@ -16,15 +16,9 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
-import com.umbrella.beanstalkd.BeanstalkdModule;
-import com.umbrella.db.DBModule;
 import com.umbrella.kernel.KernelModule;
-import com.umbrella.mail.MailModule;
-import com.umbrella.redis.JedisModule;
-import com.umbrella.service.beanstalkd.BeanstalkdKernelServiceModule;
-import com.umbrella.service.beanstalkd.BeanstalkdMailServiceModule;
-import com.umbrella.service.json.kernel.KernelServiceModule;
-import com.umbrella.service.telnet.TelnetServiceModule;
+import com.umbrella.service.netty.kernel.KernelServiceModule;
+import com.umbrella.service.netty.telnet.TelnetServiceModule;
 
 public class ServiceManagerModule extends AbstractModule{
 	
@@ -49,16 +43,12 @@ public class ServiceManagerModule extends AbstractModule{
 		} catch (IOException e) {
 			addError(e);
 		}
+		
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
-		install(new MailModule());
-		install(new DBModule("db.xml"));
-		install(new JedisModule());
-		install(new BeanstalkdModule());
 		install(new KernelModule());
 		install(new TelnetServiceModule(serviceBinder));
 		install(new KernelServiceModule(serviceBinder));
-		install(new BeanstalkdKernelServiceModule(serviceBinder));
-		install(new BeanstalkdMailServiceModule(serviceBinder));
+		
 		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
 		listenerBinder.addBinding().to(ServiceManagerListener.class).in(Scopes.SINGLETON);
 	}
