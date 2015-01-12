@@ -16,7 +16,11 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
+import com.umbrella.beanstalkd.BeanstalkdModule;
+import com.umbrella.db.DBModule;
 import com.umbrella.kernel.KernelModule;
+import com.umbrella.redis.JedisModule;
+import com.umbrella.service.beanstalkd.BeanstalkdServiceModule;
 import com.umbrella.service.netty.kernel.KernelServiceModule;
 import com.umbrella.service.netty.telnet.TelnetServiceModule;
 
@@ -43,11 +47,14 @@ public class ServiceManagerModule extends AbstractModule{
 		} catch (IOException e) {
 			addError(e);
 		}
-		
-		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
+		install(new DBModule("db.xml"));
+		install(new JedisModule());
+		install(new BeanstalkdModule());
 		install(new KernelModule());
+		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
 		install(new TelnetServiceModule(serviceBinder));
 		install(new KernelServiceModule(serviceBinder));
+		install(new BeanstalkdServiceModule(serviceBinder));
 		
 		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
 		listenerBinder.addBinding().to(ServiceManagerListener.class).in(Scopes.SINGLETON);
