@@ -1,4 +1,4 @@
-package com.umbrella.service.beanstalkd;
+package com.umbrella.service.beanstalkd.kernel;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -29,7 +29,7 @@ public class BeanstalkdTopicManager {
 	
 	@Inject private Kernel kernel;
 	
-	private final String LOCK = "topic:kernel:lock:";
+	private final String LOCK = "topic:lock:";
 	
 	private final String TOPIC_DONE = "%s 的帖子 <a href=/topic/%s>%s</a> 运行完成";
 	
@@ -44,8 +44,6 @@ public class BeanstalkdTopicManager {
 		map.put("id", topicId);
 		map.put("status", Status.EVALUATE.getValue());
 		manager.update("topic.update", map);
-		jedis.del("topic:" + topicId);
-		jedis.del("topic:list:main");
 		return true;
 	}
 	
@@ -92,15 +90,13 @@ public class BeanstalkdTopicManager {
 		Jedis jedis = jedisSession.get();
 		String status = topicResult.getString("status");
 		String result = topicResult.getJSONArray("result").toJSONString();
-		jedis.del("topic:" + topicId);
-		jedis.del(LOCK + topicId);
-		jedis.del("topic:list:main");
 		//set topic's result
 		Map<String, Object> map = Maps.newHashMap();
 		map.put("id", topicId);
 		map.put("status", status);
 		map.put("result", result);
 		manager.update("topic.update", map);
+		jedis.del(LOCK + topicId);
 			
 		//message to topic owner
 		Map<String, String> topic = manager.selectOne("topic.select", topicId);
@@ -124,9 +120,7 @@ public class BeanstalkdTopicManager {
 		map.put("id", topicId);
 		map.put("status", Status.WAITING.getValue());
 		manager.update("topic.update", map);
-		jedis.del("topic:" + topicId);
 		jedis.del(LOCK + topicId);
-		jedis.del("topic:list:main");
 	}
 
 	public enum Status {

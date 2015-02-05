@@ -19,6 +19,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.umbrella.beanstalkd.BeanstalkdModule;
 import com.umbrella.db.DBModule;
 import com.umbrella.kernel.KernelModule;
+import com.umbrella.mail.MailModule;
 import com.umbrella.redis.JedisModule;
 import com.umbrella.service.beanstalkd.BeanstalkdServiceModule;
 import com.umbrella.service.netty.kernel.KernelServiceModule;
@@ -51,6 +52,7 @@ public class ServiceManagerModule extends AbstractModule{
 		install(new JedisModule());
 		install(new BeanstalkdModule());
 		install(new KernelModule());
+		install(new MailModule());
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
 		install(new TelnetServiceModule(serviceBinder));
 		install(new KernelServiceModule(serviceBinder));

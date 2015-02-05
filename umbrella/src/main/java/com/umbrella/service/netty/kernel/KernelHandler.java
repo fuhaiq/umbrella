@@ -19,10 +19,7 @@ public class KernelHandler extends SimpleChannelInboundHandler<JSONObject> {
 	protected void channelRead0(ChannelHandlerContext ctx, JSONObject json) throws Exception {
 		String dir = checkNotNull(json.getString("dir"), "dir is null");
 		JSONArray scripts = JSON.parseArray(checkNotNull(json.getString("scripts"), "scripts is null"));
-		json.remove("dir");
-		json.remove("scripts");
-		json.put("result", evaluate(dir, scripts));
-		ctx.writeAndFlush(json);
+		ctx.writeAndFlush(evaluate(dir, scripts));
 	}
 	
 	@KernelCycle

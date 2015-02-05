@@ -1,4 +1,4 @@
-package com.umbrella.service.beanstalkd;
+package com.umbrella.service.beanstalkd.kernel;
 
 import java.sql.SQLException;
 
@@ -9,13 +9,14 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.BeanstalkdJob;
-import com.umbrella.service.beanstalkd.BeanstalkdTopicManager.Status;
+import com.umbrella.service.beanstalkd.BeanstalkdService;
+import com.umbrella.service.beanstalkd.kernel.BeanstalkdTopicManager.Status;
 import com.umbrella.session.SessionException;
 
 public class BeanstalkdTopicService extends BeanstalkdService{
 	
 	public BeanstalkdTopicService() {
-		super("kernel", LogManager.getLogger("beanstalkd-kernel-service"));
+		super("kernel-topic", LogManager.getLogger("beanstalkd-kernel-topic-service"));
 	}
 	
 	@Inject private BeanstalkdTopicManager manager;
