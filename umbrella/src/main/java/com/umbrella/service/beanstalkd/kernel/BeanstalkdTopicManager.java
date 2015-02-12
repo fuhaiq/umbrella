@@ -31,8 +31,6 @@ public class BeanstalkdTopicManager {
 	
 	private final String LOCK = "topic:lock:";
 	
-	private final String TOPIC_DONE = "%s 的帖子 <a href=/topic/%s>%s</a> 运行完成";
-	
 	@JedisCycle
 	public boolean lockTopic(int topicId) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
@@ -52,7 +50,7 @@ public class BeanstalkdTopicManager {
 		Status status = Status.SUCCESS;
 		JSONArray result = new JSONArray();
 		outer:for(int i = 0; i < scripts.size(); i++) {
-			JSONArray json = kernel.evaluate("/home/michael/umbrella-openresty/www/static/temp/", scripts.get(i).text());
+			JSONArray json = kernel.evaluate("/home/wesker/umbrella-openresty/www/static/temp/", scripts.get(i).text());
 			for(int j = 0; j < json.size(); j++) {
 				JSONObject obj = json.getJSONObject(j);
 				obj.put("index", i);
@@ -97,20 +95,6 @@ public class BeanstalkdTopicManager {
 		map.put("result", result);
 		manager.update("topic.update", map);
 		jedis.del(LOCK + topicId);
-			
-		//message to topic owner
-		Map<String, String> topic = manager.selectOne("topic.select", topicId);
-		Map<String, String> owner = Maps.newHashMap();
-		owner.put("userid", topic.get("userid"));
-		owner.put("msg", String.format(TOPIC_DONE, "您", topicId, topic.get("title")));
-		manager.insert("message.insert", owner);
-			
-		//message to topic room
-		Map<String, String> other = Maps.newHashMap();
-		other.put("userid", topic.get("userid"));
-		other.put("room", "topic:" + topicId);
-		other.put("msg", String.format(TOPIC_DONE, "您关注", topicId, topic.get("title")));
-		manager.insert("message.topicDone4Room", other);
 	}
 	
 	@JedisCycle

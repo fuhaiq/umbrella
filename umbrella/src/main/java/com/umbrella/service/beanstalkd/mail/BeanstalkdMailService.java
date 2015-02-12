@@ -12,7 +12,7 @@ public class BeanstalkdMailService extends BeanstalkdService {
 	@Inject private BeanstalkdMailManager manager;
 
 	public BeanstalkdMailService() {
-		super("email", LogManager.getLogger("beanstalkd-mail-service"));
+		super("email-forget", LogManager.getLogger("beanstalkd-mail-service"));
 	}
 
 	@Override

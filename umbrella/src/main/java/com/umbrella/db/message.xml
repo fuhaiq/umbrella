@@ -7,12 +7,6 @@
     where id = #{id,jdbcType=INTEGER}
   </delete>
   
-  <insert id="topicDone4Room" parameterType="map" >
-  	insert into message (userid, msg) 
-  	SELECT r.userid, #{msg,jdbcType=VARCHAR} as msg from room r where 
-  	r.room = #{room,jdbcType=VARCHAR} and r.userid != #{userid,jdbcType=VARCHAR} 
-  </insert>
-  
   <insert id="insert" parameterType="map" >
     insert into message
     <trim prefix="(" suffix=")" suffixOverrides="," >
