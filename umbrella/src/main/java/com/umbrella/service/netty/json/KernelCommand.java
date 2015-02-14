@@ -1,7 +1,6 @@
-package com.umbrella.service.netty.kernel;
+package com.umbrella.service.netty.json;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -9,21 +8,16 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.inject.Inject;
 import com.umbrella.kernel.Kernel;
 import com.umbrella.kernel.KernelCycle;
-import static com.google.common.base.Preconditions.checkNotNull;
 
-public class KernelHandler extends SimpleChannelInboundHandler<JSONObject> {
-
+public class KernelCommand implements JsonCommand {
+	
 	@Inject private Kernel kernel;
-	
+
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, JSONObject json) throws Exception {
-		String dir = checkNotNull(json.getString("dir"), "dir is null");
-		JSONArray scripts = JSON.parseArray(checkNotNull(json.getString("scripts"), "scripts is null"));
-		ctx.writeAndFlush(evaluate(dir, scripts));
-	}
-	
 	@KernelCycle
-	public JSON evaluate(String dir, JSONArray scripts) throws Exception {
+	public JSON exec(JSONObject in) throws Exception {
+		String dir = checkNotNull(in.getString("dir"), "dir is null");
+		JSONArray scripts = JSON.parseArray(checkNotNull(in.getString("scripts"), "scripts is null"));
 		JSONArray result = new JSONArray();
 		outer:for(int i = 0; i < scripts.size(); i++) {
 			JSONArray json = kernel.evaluate(dir, scripts.getString(i));

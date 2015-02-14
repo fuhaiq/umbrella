@@ -22,7 +22,7 @@ import com.umbrella.kernel.KernelModule;
 import com.umbrella.mail.MailModule;
 import com.umbrella.redis.JedisModule;
 import com.umbrella.service.beanstalkd.BeanstalkdServiceModule;
-import com.umbrella.service.netty.kernel.KernelServiceModule;
+import com.umbrella.service.netty.json.JsonServiceModule;
 import com.umbrella.service.netty.telnet.TelnetServiceModule;
 
 public class ServiceManagerModule extends AbstractModule{
@@ -55,7 +55,7 @@ public class ServiceManagerModule extends AbstractModule{
 		install(new MailModule());
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
 		install(new TelnetServiceModule(serviceBinder));
-		install(new KernelServiceModule(serviceBinder));
+		install(new JsonServiceModule(serviceBinder));
 		install(new BeanstalkdServiceModule(serviceBinder));
 		
 		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);

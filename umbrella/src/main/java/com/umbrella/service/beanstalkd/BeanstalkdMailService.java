@@ -1,26 +1,26 @@
-package com.umbrella.service.beanstalkd.mail;
+package com.umbrella.service.beanstalkd;
 
 import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.BeanstalkdJob;
-import com.umbrella.service.beanstalkd.BeanstalkdService;
+import com.umbrella.kit.MailKit;
 
 public class BeanstalkdMailService extends BeanstalkdService {
 	
-	@Inject private BeanstalkdMailManager manager;
+	@Inject private MailKit kit;
 
 	public BeanstalkdMailService() {
-		super("email-forget", LogManager.getLogger("beanstalkd-mail-service"));
+		super("email-forget", LogManager.getLogger("beanstalkd-email-forget"));
 	}
 
 	@Override
 	protected void execute(BeanstalkdJob job) throws Exception {
 		String email = job.getData();
-		String ticket = manager.raiseTicket(email);
+		String ticket = kit.raiseTicket(email);
 		if(Strings.isNullOrEmpty(ticket)) throw new IllegalStateException("ticket is null");
-		manager.sendMail(ticket, email);
+		kit.sendMail(ticket, email);
 		LOG.info("邮件发送完毕.");
 	}
 }

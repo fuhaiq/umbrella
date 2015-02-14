@@ -1,4 +1,4 @@
-package com.umbrella.service.netty.kernel;
+package com.umbrella.service.netty.json;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

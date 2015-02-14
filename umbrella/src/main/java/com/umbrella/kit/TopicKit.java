@@ -1,4 +1,4 @@
-package com.umbrella.service.beanstalkd.kernel;
+package com.umbrella.kit;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -21,7 +21,7 @@ import com.umbrella.session.Session;
 import com.umbrella.session.SessionException;
 import com.wolfram.jlink.MathLinkException;
 
-public class BeanstalkdTopicManager {
+public class TopicKit {
 	
 	@Inject private Session<Jedis> jedisSession;
 	
@@ -74,13 +74,20 @@ public class BeanstalkdTopicManager {
 		return topicResult;
 	}
 	
-	public Elements getScriptElements(int topicId) throws SQLException {
-		Map<String, String> topic = manager.selectOne("topic.select", topicId);
+	public Elements getScriptElements(Map<String, String> topic) throws SQLException {
+		if(topic == null) {
+			throw new SQLException("topic is null");
+		}
 		String html = topic.get("html");
 		if(Strings.isNullOrEmpty(html)) {
-			throw new SQLException("no topic "+ topicId +" in db");
+			return null;
 		}
 		return Jsoup.parse(html).select("pre[class=\"mathematica hljs\"]");
+	}
+	
+	public Elements getScriptElements(int topicId) throws SQLException {
+		Map<String, String> topic = manager.selectOne("topic.select", topicId);
+		return getScriptElements(topic);
 	}
 	
 	@JedisCycle

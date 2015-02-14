@@ -1,4 +1,4 @@
-package com.umbrella.service.netty.kernel;
+package com.umbrella.service.netty.json;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelHandler;
@@ -20,27 +20,33 @@ import com.umbrella.UmbrellaConfig;
 import com.umbrella.service.ServiceModule;
 import com.umbrella.service.netty.NettyServiceConfig;
 
-public final class KernelServiceModule extends ServiceModule{
-	
-	public KernelServiceModule(MapBinder<String, Service> serviceBinder) {
+public class JsonServiceModule extends ServiceModule {
+
+	public JsonServiceModule(MapBinder<String, Service> serviceBinder) {
 		super(serviceBinder);
 	}
 
 	@Override
 	protected void configure() {
-		MapBinder<String, ChannelHandler> handlerBinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named("kernel"));
+		MapBinder<String, ChannelHandler> handlerBinder = MapBinder.newMapBinder(binder(), String.class, ChannelHandler.class, Names.named("json"));
 		handlerBinder.addBinding("decoder").to(JsonDecoder.class).in(Scopes.SINGLETON);
 		handlerBinder.addBinding("encoder").to(JsonEncoder.class).in(Scopes.SINGLETON);
-		handlerBinder.addBinding("kernel").to(KernelHandler.class).in(Scopes.NO_SCOPE);
+		install(new JsonCommandModule(){
+			@Override
+			protected void configCommand() {
+				bindCommand("kernel").to(KernelCommand.class).in(Scopes.SINGLETON);
+			}
+		});
+		handlerBinder.addBinding("json").to(JsonHandler.class).in(Scopes.NO_SCOPE);
 		handlerBinder.addBinding("exception").to(JsonExceptionHandler.class).in(Scopes.SINGLETON);
-		serviceBinder.addBinding("kernel").toInstance(new KernelService());
+		serviceBinder.addBinding("json").toInstance(new JsonService());
 	}
 	
 	@Provides
 	@Singleton
-	@Named("kernel")
-	ServerBootstrap provideServerBootstrap(UmbrellaConfig umbrella, @Named("kernel") Provider<Map<String, ChannelHandler>> handlers) {
-		NettyServiceConfig config = umbrella.getService().get("kernel");
+	@Named("json")
+	ServerBootstrap provideServerBootstrap(UmbrellaConfig umbrella, @Named("json") Provider<Map<String, ChannelHandler>> handlers) {
+		NettyServiceConfig config = umbrella.getService().get("json");
 		ServerBootstrap boot = new ServerBootstrap();
 		boot.group(config.getBoss(), config.getWorker()).channel(config.getChannelClass()).childHandler(new ChannelInitializer<SocketChannel>(){
 					@Override

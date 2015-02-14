@@ -1,4 +1,4 @@
-package com.umbrella.service.netty.kernel;
+package com.umbrella.service.netty.json;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import io.netty.channel.ChannelHandlerContext;

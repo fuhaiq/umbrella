@@ -1,4 +1,4 @@
-package com.umbrella.service.beanstalkd.mail;
+package com.umbrella.kit;
 
 import java.sql.SQLException;
 import java.util.Date;
@@ -21,7 +21,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.umbrella.mail.MailMessageProvider;
 
-public class BeanstalkdMailManager {
+public class MailKit {
 	
 	@Inject private SqlSessionManager manager;
 	

@@ -1,4 +1,4 @@
-package com.umbrella.service.netty.kernel;
+package com.umbrella.service.netty.json;
 
 import io.netty.bootstrap.ServerBootstrap;
 
@@ -12,33 +12,33 @@ import com.google.inject.name.Named;
 import com.umbrella.UmbrellaConfig;
 import com.umbrella.service.netty.NettyServiceConfig;
 
-public class KernelService extends AbstractIdleService{
+public class JsonService extends AbstractIdleService {
 
-	private final Logger LOG = LogManager.getLogger("kernel-service");
+	private final Logger LOG = LogManager.getLogger("json-service");
 	
-	@Inject @Named("kernel")
+	@Inject @Named("json")
 	private Provider<ServerBootstrap> boot;
 	
 	@Inject private UmbrellaConfig umbrella;
 	
 	@Override
 	protected void shutDown() throws Exception {
-		NettyServiceConfig config = umbrella.getService().get("kernel");
+		NettyServiceConfig config = umbrella.getService().get("json");
 		config.getWorker().shutdownGracefully();
 		config.getBoss().shutdownGracefully();
-		LOG.info("kernel service stops");
+		LOG.info("json service stops");
 	}
 
 	@Override
 	protected void startUp() throws Exception {
-		NettyServiceConfig config = umbrella.getService().get("kernel");
+		NettyServiceConfig config = umbrella.getService().get("json");
 		boot.get().bind(config.getHost(), config.getPort()).addListener(r->{
 			if(!r.isSuccess()) {
 				stopAsync();
-				LOG.error("kernel service started failed at port:" + config.getPort());
+				LOG.error("json service started failed at port:" + config.getPort());
 				throw new Exception(r.cause());
 			} else {
-				LOG.info("kernel service started at port:" + config.getPort());
+				LOG.info("json service started at port:" + config.getPort());
 			}
 		});
 	}
