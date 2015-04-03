@@ -24,7 +24,6 @@
 	<mappers>
 		<mapper resource="com/umbrella/db/topic.xml"/>
 		<mapper resource="com/umbrella/db/forget.xml"/>
-		<mapper resource="com/umbrella/db/message.xml"/>
 		<mapper resource="com/umbrella/db/user.xml"/>
 	</mappers>
 </configuration>

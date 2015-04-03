@@ -25,42 +25,42 @@ import com.umbrella.session.Session;
 import com.umbrella.session.SessionException;
 import com.wolfram.jlink.MathLinkException;
 
-public class TopicKit {
-	
+public class ReplyKit {
+
 	@Inject private Session<Jedis> jedisSession;
-	
+
 	@Inject private SqlSessionManager manager;
-	
+
 	@Inject private Kernel kernel;
-	
-	private final String LOCK = "topic:lock:";
-	
-	private final static String PATH = "/home/wesker/umbrella-openresty/www/static/topic/";
+
+	private final String LOCK = "reply:lock:";
+
+	private final static String PATH = "/home/wesker/umbrella-openresty/www/static/reply/";
 	
 	@JedisCycle
-	public boolean lockTopic(int topicId) throws SessionException, SQLException {
+	public boolean lockReply(int replyId) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
-		long response = jedis.setnx(LOCK + topicId, "lock");
+		long response = jedis.setnx(LOCK + replyId, "lock");
 		if(response == 0) {
 			return false;
 		}
 		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", topicId);
+		map.put("id", replyId);
 		map.put("status", Status.EVALUATE.getValue());
-		manager.update("topic.update", map);
+		manager.update("reply.update", map);
 		return true;
 	}
 	
 	@KernelCycle
-	public JSONObject evaluate(int topicId, Elements scripts) throws SessionException, MathLinkException, IOException {
-		String topicPath = PATH + topicId + "/";
-		Path path = Paths.get(topicPath);
+	public JSONObject evaluate(int replyId, Elements scripts) throws SessionException, MathLinkException, IOException {
+		String replyPath = PATH + replyId + "/";
+		Path path = Paths.get(replyPath);
 		Files.deleteIfExists(path);
 		Files.createDirectory(path);
 		Status status = Status.SUCCESS;
 		JSONArray result = new JSONArray();
 		outer:for(int i = 0; i < scripts.size(); i++) {
-			JSONArray json = kernel.evaluate(topicPath, scripts.get(i).text());
+			JSONArray json = kernel.evaluate(replyPath, scripts.get(i).text());
 			for(int j = 0; j < json.size(); j++) {
 				JSONObject obj = json.getJSONObject(j);
 				obj.put("index", i);
@@ -78,50 +78,51 @@ public class TopicKit {
 			}
 			json.clear();
 		}
-		JSONObject topicResult = new JSONObject();
-		topicResult.put("status", status.getValue());
-		topicResult.put("result", result);
-		return topicResult;
+		JSONObject replyResult = new JSONObject();
+		replyResult.put("status", status.getValue());
+		replyResult.put("result", result);
+		return replyResult;
 	}
 	
-	public Elements getScriptElements(int topicId) throws SQLException {
-		Map<String, String> topic = manager.selectOne("topic.select", topicId);
-		if(topic == null) {
-			throw new SQLException("topic is null");
+	public Elements getScriptElements(int replyId) throws SQLException {
+		Map<String, String> reply = manager.selectOne("reply.select", replyId);
+		if(reply == null) {
+			throw new SQLException("reply is null");
 		}
-		String html = topic.get("html");
-		if(topic.get("status") ==  Status.NO_CODE.getValue() || Strings.isNullOrEmpty(html)) {
+		String html = reply.get("html");
+		if(reply.get("status") ==  Status.NO_CODE.getValue() || Strings.isNullOrEmpty(html)) {
 			throw new SQLException("no mathematica code[status=3] or html is null");
 		}
 		return Jsoup.parse(html).select("pre[class=\"mathematica hljs\"]");
 	}
 	
 	@JedisCycle
-	public void setResult(int topicId, JSONObject topicResult) throws SessionException, SQLException {
+	public void setResult(int replyId, JSONObject replyResult) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
-		String status = topicResult.getString("status");
-		String result = topicResult.getJSONArray("result").toJSONString();
+		String status = replyResult.getString("status");
+		String result = replyResult.getJSONArray("result").toJSONString();
 		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", topicId);
+		map.put("id", replyId);
 		map.put("status", status);
 		map.put("result", result);
-		manager.update("topic.update", map);
-		jedis.del(LOCK + topicId);
+		manager.update("reply.update", map);
+		jedis.del(LOCK + replyId);
 	}
 	
 	@JedisCycle
-	public void resetTopicStatus(int topicId) throws SessionException, SQLException {
+	public void resetReplyStatus(int replyId) throws SessionException, SQLException {
 		Jedis jedis = jedisSession.get();
 		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", topicId);
+		map.put("id", replyId);
 		map.put("status", Status.WAITING.getValue());
-		manager.update("topic.update", map);
-		jedis.del(LOCK + topicId);
+		manager.update("reply.update", map);
+		jedis.del(LOCK + replyId);
 	}
 
 	public enum Status {
 
-		ABORT("-2"), SYNTAX_ERROR("-1"), WAITING("0"), EVALUATE("1"), SUCCESS("2"), NO_CODE("3");
+		ABORT("-2"), SYNTAX_ERROR("-1"), WAITING("0"), EVALUATE("1"), SUCCESS(
+				"2"), NO_CODE("3");
 
 		private String value;
 
@@ -134,4 +135,5 @@ public class TopicKit {
 		}
 
 	}
+
 }

@@ -54,13 +54,13 @@ public abstract class BeanstalkdService extends AbstractExecutionThreadService {
 					execute(job);
 					bean.delete(job.getId());
 				} catch(Exception e) {
-					LOG.error("exception when exec bean job: ", e);
+					LOG.error("exception when exec bean job, bury the job[id:"+job.getId()+"]: ", e);
 					try {
 						exception(job);
 					} catch (Exception catchEx) {
 						LOG.error("exception when exec exception method: ", catchEx);
 					}
-					bean.release(job.getId(), (long) Math.pow(2, 31), 0);
+					bean.bury(job.getId(), (long) Math.pow(2, 31));
 				}
 			}
 		}
