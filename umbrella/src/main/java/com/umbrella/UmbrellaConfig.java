@@ -3,6 +3,7 @@ package com.umbrella;
 import java.util.Map;
 
 import com.umbrella.beanstalkd.BeanstalkdConfig;
+import com.umbrella.elasearch.ElaSearchConfig;
 import com.umbrella.kernel.KernelConfig;
 import com.umbrella.mail.MailConfig;
 import com.umbrella.redis.JedisConfig;
@@ -20,6 +21,16 @@ public class UmbrellaConfig {
 	
 	private MailConfig mail;
 	
+	private ElaSearchConfig elasearch;
+	
+	public ElaSearchConfig getElasearch() {
+		return elasearch;
+	}
+
+	public void setElasearch(ElaSearchConfig elasearch) {
+		this.elasearch = elasearch;
+	}
+
 	public KernelConfig getKernel() {
 		return kernel;
 	}

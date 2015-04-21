@@ -1,10 +1,12 @@
 package com.umbrella.service.beanstalkd;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.sql.SQLException;
 
 import org.apache.logging.log4j.LogManager;
-import org.jsoup.select.Elements;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.inject.Inject;
 import com.umbrella.beanstalkd.BeanstalkdJob;
@@ -21,22 +23,30 @@ public class BeanstalkdTopicService extends BeanstalkdService{
 	
 	@Override
 	protected void execute(BeanstalkdJob job) throws Exception {
-		int topicId = Integer.parseInt(job.getData());
-		if (kit.lockTopic(topicId)) {
-			JSONObject topicResult = null;
-			Elements scripts = kit.getScriptElements(topicId);
-			LOG.info("开始计算话题");
-			topicResult = kit.evaluate(topicId, scripts);
-			kit.setResult(topicId, topicResult);
-			LOG.info("设置话题结果完成");
+		JSONObject topic = JSON.parseObject(job.getData());
+		int topicId = checkNotNull(topic.getInteger("id"), "no topic's id with job:" + job.getId());
+		String action = checkNotNull(topic.getString("action"), "no action with job:" + job.getId());
+		if (action.equals("create")) {
+			kit.create(topicId);
+			LOG.info("创建话题完成");
+		} else if (action.equals("delete")) {
+			kit.delete(topicId);
+			LOG.info("删除话题完成");
+		} else if (action.equals("update")) {
+			kit.update(topicId);
+			LOG.info("更新话题完成");
 		} else {
-			LOG.info("锁定话题失败，可能被别的内核抢到了");
+			throw new IllegalStateException("BAD topic action:" + action);
 		}
 	}
 
 	@Override
 	protected void exception(BeanstalkdJob job) throws SessionException, SQLException {
-		int topicId = Integer.parseInt(job.getData());
-		kit.resetTopicStatus(topicId);
+		JSONObject topic = JSON.parseObject(job.getData());
+		int topicId = checkNotNull(topic.getInteger("id"), "no topic's id with job:" + job.getId());
+		String action = checkNotNull(topic.getString("action"), "no action with job:" + job.getId());
+		if (action.equals("create") || action.equals("update")) {
+			kit.reset(topicId);
+		}
 	}
 }
