@@ -10,12 +10,28 @@ curl -XPUT 'http://localhost:9200/umbrella/_settings' -d '{"analysis":{"analyzer
 打开索引
 curl -XPOST 'http://localhost:9200/umbrella/_open'
 
+比较分词效果
+http://localhost:9200/umbrella/_analyze?analyzer=standard&pretty=true&text=我是中国人
+http://localhost:9200/umbrella/_analyze?analyzer=ik&pretty=true&text=我是中国人
+
 创建话题索引,并指定title,content为IK分词
-curl -XPUT 'http://localhost:9200/umbrella/topic/_mapping' -d '{"topic":{"properties":{"title":{"type": "string","indexAnalyzer":"ikAnalyzer","searchAnalyzer":"ikAnalyzer"},"content":{"type": "string","indexAnalyzer":"ik","searchAnalyzer":"ik"}}}}'
+curl -XPUT 'http://localhost:9200/umbrella/topic/_mapping' -d '{"topic":{"properties":{"title":{"type": "string","indexAnalyzer":"ik","searchAnalyzer":"ik"},"content":{"type": "string","indexAnalyzer":"ik","searchAnalyzer":"ik"}}}}'
 
-测试话题
-curl -XPUT 'http://localhost:9200/umbrella/topic/1/_create' -d '{"title":"中华人民共和国","content":"大家好，这里是中华人民共和国的地方，请大家随时撤离。谢谢"}'
-curl -XPUT 'http://localhost:9200/umbrella/topic/2/_create' -d '{"title":"求助一个人民的话题","content":"不知道问么弄这个问题，请知道的人民回答下，谢谢。"}'
-
-curl -XGET 'http://localhost:9200/umbrella/topic/_search' -d '{"query":{"match":{"title":"中华人民"}}}'
-curl -XGET 'http://localhost:9200/umbrella/topic/_search' -d '{"query":{"match":{"title":"中华人民"}},"highlight":{"fields":{"title":{},"content":{}}}}'
+创建回复索引,并指定title,content为IK分词
+curl -XPUT "http://localhost:9200/umbrella/reply/_mapping" -d'
+{
+   "reply": {
+      "properties": {
+         "title": {
+            "type": "string",
+            "indexAnalyzer": "ikAnalyzer",
+            "searchAnalyzer": "ikAnalyzer"
+         },
+         "content": {
+            "type": "string",
+            "indexAnalyzer": "ikAnalyzer",
+            "searchAnalyzer": "ikAnalyzer"
+         }
+      }
+   }
+}'

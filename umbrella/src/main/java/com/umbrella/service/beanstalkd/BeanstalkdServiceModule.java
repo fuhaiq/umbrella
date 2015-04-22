@@ -3,6 +3,7 @@ package com.umbrella.service.beanstalkd;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.Scopes;
 import com.google.inject.multibindings.MapBinder;
+import com.umbrella.kit.ElaSearchKit;
 import com.umbrella.kit.MailKit;
 import com.umbrella.kit.ReplyKit;
 import com.umbrella.kit.TopicKit;
@@ -22,6 +23,8 @@ public class BeanstalkdServiceModule extends ServiceModule {
 		serviceBinder.addBinding("beanstalkd-mail").toInstance(new BeanstalkdMailService());
 		bind(ReplyKit.class).in(Scopes.SINGLETON);
 		serviceBinder.addBinding("beanstalkd-reply").toInstance(new BeanstalkdReplyService());
+		bind(ElaSearchKit.class).in(Scopes.SINGLETON);
+		serviceBinder.addBinding("beanstalkd-search").toInstance(new BeanstalkdSearchService());
 	}
 
 }

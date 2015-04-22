@@ -1,42 +1,88 @@
 package com.umbrella.kit;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
+import org.apache.http.Consts;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.apache.ibatis.session.SqlSessionManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.umbrella.UmbrellaConfig;
 
 public class ElaSearchKit {
 	
-	private final Logger LOG = LogManager.getLogger("ElasearchKit");
-	
 	@Inject private UmbrellaConfig umbrella;
 	
 	@Inject private SqlSessionManager manager;
-
-	public void create(int topicId) throws SQLException {
+	
+	public void createReply(int replyId) throws SQLException, ClientProtocolException, IOException {
 		String host = umbrella.getElasearch().getHost();
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		String address = host + "/reply/" + replyId + "/_create";
+		HttpPut put = new HttpPut(address);
+		JSONObject reply = manager.selectOne("reply.select", replyId);
+		JSONObject topic = manager.selectOne("topic.select", reply.getInteger("topicid"));
+		String title = topic.getString("title");
+		String html = reply.getString("html");
+		html = Jsoup.parse(html).text();
+		JSONObject entity = new JSONObject();
+		entity.put("title", title);
+		entity.put("content", html);
+		put.setEntity(new StringEntity(entity.toJSONString(), Consts.UTF_8));
+		CloseableHttpResponse res = httpclient.execute(put);
+		try {
+			int status = res.getStatusLine().getStatusCode();
+			if(status != HttpStatus.SC_CREATED) {
+				throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建回复索引失败,可能是回复索引已经存在!");
+			}
+			HttpEntity back = res.getEntity();
+		    EntityUtils.consume(back);
+        } finally {
+            res.close();
+        }
+	}
+	
+	public void createTopic(int topicId) throws SQLException, ClientProtocolException, IOException {
+		String host = umbrella.getElasearch().getHost();
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		String address = host + "/topic/" + topicId + "/_create";
+		HttpPut put = new HttpPut(address);
 		JSONObject topic = manager.selectOne("topic.select", topicId);
-		int status = topic.getIntValue("status");
-		if(status == 3) {
-			String html = topic.getString("html");
-			html = Jsoup.parse(html).text();
-			CloseableHttpClient httpclient = HttpClients.createDefault();
-			HttpPut put = new HttpPut(host + "/topic/" + topicId + "/_create");
-			put.setEntity(null);
+		String title = topic.getString("title");
+		String html = topic.getString("html");
+		if(Strings.isNullOrEmpty(html)) {
+			JSONObject entity = new JSONObject();
+			entity.put("title", title);
+			put.setEntity(new StringEntity(entity.toJSONString(), Consts.UTF_8));
 		} else {
-			String html = topic.getString("html");
 			html = Jsoup.parse(html).text();
-			String title = topic.getString("title");
-			
+			JSONObject entity = new JSONObject();
+			entity.put("title", title);
+			entity.put("content", html);
+			put.setEntity(new StringEntity(entity.toJSONString(), Consts.UTF_8));
 		}
+		CloseableHttpResponse res = httpclient.execute(put);
+		try {
+			int status = res.getStatusLine().getStatusCode();
+			if(status != HttpStatus.SC_CREATED) {
+				throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建话题索引失败,可能是话题索引已经存在!");
+			}
+			HttpEntity back = res.getEntity();
+		    EntityUtils.consume(back);
+        } finally {
+            res.close();
+        }
 	}
 }
