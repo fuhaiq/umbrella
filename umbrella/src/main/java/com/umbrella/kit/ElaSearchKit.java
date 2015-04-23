@@ -28,10 +28,10 @@ public class ElaSearchKit {
 	
 	@Inject private SqlSessionManager manager;
 	
-	public void createTag(int tagId) throws SQLException, ClientProtocolException, IOException {
+	public void modifyTag(int tagId, boolean created) throws SQLException, ClientProtocolException, IOException {
 		String host = umbrella.getElasearch().getHost();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
-		String address = host + "/tag/" + tagId + "/_create";
+		String address = created ? host + "/tag/" + tagId + "/_create" : host + "/tag/" + tagId;
 		HttpPut put = new HttpPut(address);
 		JSONObject tag = manager.selectOne("tag.select", tagId);
 		String name = tag.getString("name");
@@ -44,8 +44,14 @@ public class ElaSearchKit {
 		CloseableHttpResponse res = httpclient.execute(put);
 		try {
 			int status = res.getStatusLine().getStatusCode();
-			if(status != HttpStatus.SC_CREATED) {
-				throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建标签索引失败,可能是标签索引已经存在!");
+			if(created) {
+				if(status != HttpStatus.SC_CREATED) {
+					throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建标签索引失败,可能是标签索引已经存在!");
+				}
+			}else{
+				if(status != HttpStatus.SC_OK) {
+					throw new IllegalStateException("ElasticSearch返回码[" + status + "] 更新标签索引失败,可能是标签索引不存在!");
+				}
 			}
 			HttpEntity back = res.getEntity();
 		    EntityUtils.consume(back);
@@ -54,10 +60,10 @@ public class ElaSearchKit {
         }
 	}
 	
-	public void createReply(int replyId) throws SQLException, ClientProtocolException, IOException {
+	public void modifyReply(int replyId, boolean created) throws SQLException, ClientProtocolException, IOException {
 		String host = umbrella.getElasearch().getHost();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
-		String address = host + "/reply/" + replyId + "/_create";
+		String address = created ? host + "/reply/" + replyId + "/_create" : host + "/reply/" + replyId;
 		HttpPut put = new HttpPut(address);
 		JSONObject reply = manager.selectOne("reply.select", replyId);
 		JSONObject topic = manager.selectOne("topic.select", reply.getInteger("topicid"));
@@ -72,8 +78,14 @@ public class ElaSearchKit {
 		CloseableHttpResponse res = httpclient.execute(put);
 		try {
 			int status = res.getStatusLine().getStatusCode();
-			if(status != HttpStatus.SC_CREATED) {
-				throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建回复索引失败,可能是回复索引已经存在!");
+			if(created) {
+				if(status != HttpStatus.SC_CREATED) {
+					throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建回复索引失败,可能是回复索引已经存在!");
+				}
+			}else{
+				if(status != HttpStatus.SC_OK) {
+					throw new IllegalStateException("ElasticSearch返回码[" + status + "] 更新回复索引失败,可能是回复索引不存在!");
+				}
 			}
 			HttpEntity back = res.getEntity();
 		    EntityUtils.consume(back);
@@ -82,10 +94,10 @@ public class ElaSearchKit {
         }
 	}
 	
-	public void createTopic(int topicId) throws SQLException, ClientProtocolException, IOException {
+	public void modifyTopic(int topicId, boolean created) throws SQLException, ClientProtocolException, IOException {
 		String host = umbrella.getElasearch().getHost();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
-		String address = host + "/topic/" + topicId + "/_create";
+		String address = created ? host + "/topic/" + topicId + "/_create" : host + "/topic/" + topicId;
 		HttpPut put = new HttpPut(address);
 		JSONObject topic = manager.selectOne("topic.select", topicId);
 		String title = topic.getString("title");
@@ -104,8 +116,14 @@ public class ElaSearchKit {
 		CloseableHttpResponse res = httpclient.execute(put);
 		try {
 			int status = res.getStatusLine().getStatusCode();
-			if(status != HttpStatus.SC_CREATED) {
-				throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建话题索引失败,可能是话题索引已经存在!");
+			if(created) {
+				if(status != HttpStatus.SC_CREATED) {
+					throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建话题索引失败,可能是话题索引已经存在!");
+				}
+			}else{
+				if(status != HttpStatus.SC_OK) {
+					throw new IllegalStateException("ElasticSearch返回码[" + status + "] 更新话题索引失败,可能是话题索引不存在!");
+				}
 			}
 			HttpEntity back = res.getEntity();
 		    EntityUtils.consume(back);

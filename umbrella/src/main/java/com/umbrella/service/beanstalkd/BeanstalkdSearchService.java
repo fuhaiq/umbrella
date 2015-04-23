@@ -47,8 +47,18 @@ public class BeanstalkdSearchService extends BeanstalkdService {
 		switch(action) {
 		case "create":
 			LOG.info("开始创建话题索引");
-			kit.createTopic(topicId);
+			kit.modifyTopic(topicId, true);
 			LOG.info("创建话题索引完成");
+			break;
+		case "update":
+			LOG.info("开始更新话题索引");
+			kit.modifyTopic(topicId, false);
+			LOG.info("更新话题索引完成");
+			break;
+		case "delete":
+			LOG.info("开始删除话题索引");
+			kit.delete("/topic/", topicId);
+			LOG.info("删除话题索引完成");
 			break;
 		default:
 			throw new IllegalStateException("no this action defined with search job:" + jobId);
@@ -59,13 +69,19 @@ public class BeanstalkdSearchService extends BeanstalkdService {
 		switch(action) {
 		case "create":
 			LOG.info("开始创建回复索引");
-			kit.createReply(replyId);
+			kit.modifyReply(replyId, true);
 			LOG.info("创建回复索引完成");
+			break;
+		case "update":
+			LOG.info("开始更新回复索引");
+			kit.modifyReply(replyId, false);
+			LOG.info("更新回复索引完成");
 			break;
 		case "delete":
 			LOG.info("开始删除回复索引");
 			kit.delete("/reply/", replyId);
 			LOG.info("删除回复索引完成");
+			break;
 		default:
 			throw new IllegalStateException("no this action defined with search job:" + jobId);
 		}
@@ -75,8 +91,18 @@ public class BeanstalkdSearchService extends BeanstalkdService {
 		switch(action) {
 		case "create":
 			LOG.info("开始创建标签索引");
-			kit.createTag(tagId);
+			kit.modifyTag(tagId, true);
 			LOG.info("创建标签索引完成");
+			break;
+		case "update":
+			LOG.info("开始更新标签索引");
+			kit.modifyTag(tagId, false);
+			LOG.info("更新标签索引完成");
+			break;
+		case "delete":
+			LOG.info("开始删除标签索引");
+			kit.delete("/tag/", tagId);
+			LOG.info("删除标签索引完成");
 			break;
 		default:
 			throw new IllegalStateException("no this action defined with search job:" + jobId);
