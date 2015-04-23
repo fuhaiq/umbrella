@@ -8,6 +8,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -27,6 +28,32 @@ public class ElaSearchKit {
 	
 	@Inject private SqlSessionManager manager;
 	
+	public void createTag(int tagId) throws SQLException, ClientProtocolException, IOException {
+		String host = umbrella.getElasearch().getHost();
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		String address = host + "/tag/" + tagId + "/_create";
+		HttpPut put = new HttpPut(address);
+		JSONObject tag = manager.selectOne("tag.select", tagId);
+		String name = tag.getString("name");
+		String description = tag.getString("description");
+		description = Jsoup.parse(description).text();
+		JSONObject entity = new JSONObject();
+		entity.put("title", name);
+		entity.put("content", description);
+		put.setEntity(new StringEntity(entity.toJSONString(), Consts.UTF_8));
+		CloseableHttpResponse res = httpclient.execute(put);
+		try {
+			int status = res.getStatusLine().getStatusCode();
+			if(status != HttpStatus.SC_CREATED) {
+				throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建标签索引失败,可能是标签索引已经存在!");
+			}
+			HttpEntity back = res.getEntity();
+		    EntityUtils.consume(back);
+        } finally {
+            res.close();
+        }
+	}
+	
 	public void createReply(int replyId) throws SQLException, ClientProtocolException, IOException {
 		String host = umbrella.getElasearch().getHost();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -40,6 +67,7 @@ public class ElaSearchKit {
 		JSONObject entity = new JSONObject();
 		entity.put("title", title);
 		entity.put("content", html);
+		entity.put("topicid", topic.getInteger("id"));
 		put.setEntity(new StringEntity(entity.toJSONString(), Consts.UTF_8));
 		CloseableHttpResponse res = httpclient.execute(put);
 		try {
@@ -78,6 +106,24 @@ public class ElaSearchKit {
 			int status = res.getStatusLine().getStatusCode();
 			if(status != HttpStatus.SC_CREATED) {
 				throw new IllegalStateException("ElasticSearch返回码[" + status + "] 创建话题索引失败,可能是话题索引已经存在!");
+			}
+			HttpEntity back = res.getEntity();
+		    EntityUtils.consume(back);
+        } finally {
+            res.close();
+        }
+	}
+	
+	public void delete(String prefix, int indexId) throws ClientProtocolException, IOException {
+		String host = umbrella.getElasearch().getHost();
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		String address = host + prefix + indexId;
+		HttpDelete delete = new HttpDelete(address);
+		CloseableHttpResponse res = httpclient.execute(delete);
+		try {
+			int status = res.getStatusLine().getStatusCode();
+			if(status != HttpStatus.SC_OK) {
+				throw new IllegalStateException("ElasticSearch返回码[" + status + "] 删除索引失败,可能是索引已经不存在!");
 			}
 			HttpEntity back = res.getEntity();
 		    EntityUtils.consume(back);

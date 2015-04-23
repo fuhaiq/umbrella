@@ -26,5 +26,6 @@
 		<mapper resource="com/umbrella/db/forget.xml"/>
 		<mapper resource="com/umbrella/db/user.xml"/>
 		<mapper resource="com/umbrella/db/reply.xml"/>
+		<mapper resource="com/umbrella/db/tag.xml"/>
 	</mappers>
 </configuration>

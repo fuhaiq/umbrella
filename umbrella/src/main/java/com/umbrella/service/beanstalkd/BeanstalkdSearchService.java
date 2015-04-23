@@ -35,6 +35,9 @@ public class BeanstalkdSearchService extends BeanstalkdService {
 			case "reply":
 				indexReply(id, action, job.getId());
 				break;
+			case "tag":
+				indexTag(id, action, job.getId());
+				break;
 			default: 
 				throw new IllegalStateException("no this type defined with search job:" + job.getId());
 		}
@@ -58,6 +61,22 @@ public class BeanstalkdSearchService extends BeanstalkdService {
 			LOG.info("开始创建回复索引");
 			kit.createReply(replyId);
 			LOG.info("创建回复索引完成");
+			break;
+		case "delete":
+			LOG.info("开始删除回复索引");
+			kit.delete("/reply/", replyId);
+			LOG.info("删除回复索引完成");
+		default:
+			throw new IllegalStateException("no this action defined with search job:" + jobId);
+		}
+	}
+	
+	private void indexTag(int tagId, String action, long jobId) throws ClientProtocolException, SQLException, IOException {
+		switch(action) {
+		case "create":
+			LOG.info("开始创建标签索引");
+			kit.createTag(tagId);
+			LOG.info("创建标签索引完成");
 			break;
 		default:
 			throw new IllegalStateException("no this action defined with search job:" + jobId);

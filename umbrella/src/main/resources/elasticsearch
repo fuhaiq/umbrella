@@ -15,12 +15,50 @@ http://localhost:9200/umbrella/_analyze?analyzer=standard&pretty=true&text=我�
 http://localhost:9200/umbrella/_analyze?analyzer=ik&pretty=true&text=我是中国人
 
 创建话题索引,并指定title,content为IK分词
-curl -XPUT 'http://localhost:9200/umbrella/topic/_mapping' -d '{"topic":{"properties":{"title":{"type": "string","indexAnalyzer":"ik","searchAnalyzer":"ik"},"content":{"type": "string","indexAnalyzer":"ik","searchAnalyzer":"ik"}}}}'
+curl -XPUT "http://localhost:9200/umbrella/topic/_mapping" -d'
+{
+   "topic": {
+      "properties": {
+         "title": {
+            "type": "string",
+            "indexAnalyzer": "ikAnalyzer",
+            "searchAnalyzer": "ikAnalyzer"
+         },
+         "content": {
+            "type": "string",
+            "indexAnalyzer": "ikAnalyzer",
+            "searchAnalyzer": "ikAnalyzer"
+         }
+      }
+   }
+}'
 
-创建回复索引,并指定title,content为IK分词
+创建回复索引,并指定content为IK分词
 curl -XPUT "http://localhost:9200/umbrella/reply/_mapping" -d'
 {
    "reply": {
+      "properties": {
+      	 "topicid": {
+      	 	"type": "integer",
+      	 	"index": "no"
+      	 },
+         "title": {
+            "type": "string",
+            "index": "no"
+         },
+         "content": {
+            "type": "string",
+            "indexAnalyzer": "ikAnalyzer",
+            "searchAnalyzer": "ikAnalyzer"
+         }
+      }
+   }
+}'
+
+创建标签索引,并指定title,content为IK分词
+curl -XPUT "http://localhost:9200/umbrella/tag/_mapping" -d'
+{
+   "tag": {
       "properties": {
          "title": {
             "type": "string",
