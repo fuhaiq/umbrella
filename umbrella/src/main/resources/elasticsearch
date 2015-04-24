@@ -5,7 +5,18 @@ curl -XPUT 'http://localhost:9200/umbrella'
 curl -XPOST 'http://localhost:9200/umbrella/_close'
 
 设置索引为IK分词器
-curl -XPUT 'http://localhost:9200/umbrella/_settings' -d '{"analysis":{"analyzer":{"ikAnalyzer":{"type":"org.elasticsearch.index.analysis.IkAnalyzerProvider","alias":"ik"}}}}'
+
+curl -XPUT "http://localhost:9200/umbrella/_settings" -d'
+{
+   "analysis": {
+      "analyzer": {
+         "ikAnalyzer": {
+            "type": "org.elasticsearch.index.analysis.IkAnalyzerProvider",
+            "alias": "ik"
+         }
+      }
+   }
+}'
 
 打开索引
 curl -XPOST 'http://localhost:9200/umbrella/_open'
