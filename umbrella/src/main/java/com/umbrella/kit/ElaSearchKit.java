@@ -2,6 +2,7 @@ package com.umbrella.kit;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Set;
 
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
@@ -17,16 +18,22 @@ import org.apache.http.util.EntityUtils;
 import org.apache.ibatis.session.SqlSessionManager;
 import org.jsoup.Jsoup;
 
+import redis.clients.jedis.Jedis;
+
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.umbrella.UmbrellaConfig;
+import com.umbrella.redis.JedisCycle;
+import com.umbrella.session.Session;
 
 public class ElaSearchKit {
 	
 	@Inject private UmbrellaConfig umbrella;
 	
 	@Inject private SqlSessionManager manager;
+	
+	@Inject private Session<Jedis> jedisSession;
 	
 	public void modifyTag(int tagId, boolean created) throws SQLException, ClientProtocolException, IOException {
 		String host = umbrella.getElasearch().getHost();
@@ -35,9 +42,11 @@ public class ElaSearchKit {
 		HttpPut put = new HttpPut(address);
 		JSONObject tag = manager.selectOne("tag.select", tagId);
 		String name = tag.getString("name");
+		int category = tag.getIntValue("category");
 		String description = tag.getString("description");
 		description = Jsoup.parse(description).text();
 		JSONObject entity = new JSONObject();
+		entity.put("category", category);
 		entity.put("title", name);
 		entity.put("content", description);
 		put.setEntity(new StringEntity(entity.toJSONString(), Consts.UTF_8));
@@ -94,21 +103,29 @@ public class ElaSearchKit {
         }
 	}
 	
+	@JedisCycle
 	public void modifyTopic(int topicId, boolean created) throws SQLException, ClientProtocolException, IOException {
 		String host = umbrella.getElasearch().getHost();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		String address = created ? host + "/topic/" + topicId + "/_create" : host + "/topic/" + topicId;
 		HttpPut put = new HttpPut(address);
+		Jedis jedis = jedisSession.get();
+		Set<String> tags = jedis.smembers("topic:" + topicId + ":tag");
+		StringBuffer str = new StringBuffer();
+		tags.forEach((tag)->str.append(tag).append(" "));
+		str.deleteCharAt(str.length()-1);
 		JSONObject topic = manager.selectOne("topic.select", topicId);
 		String title = topic.getString("title");
 		String html = topic.getString("html");
 		if(Strings.isNullOrEmpty(html)) {
 			JSONObject entity = new JSONObject();
+			entity.put("tags", str);
 			entity.put("title", title);
 			put.setEntity(new StringEntity(entity.toJSONString(), Consts.UTF_8));
 		} else {
 			html = Jsoup.parse(html).text();
 			JSONObject entity = new JSONObject();
+			entity.put("tags", str);
 			entity.put("title", title);
 			entity.put("content", html);
 			put.setEntity(new StringEntity(entity.toJSONString(), Consts.UTF_8));

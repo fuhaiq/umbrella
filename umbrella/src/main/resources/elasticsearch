@@ -25,11 +25,17 @@ curl -XPOST 'http://localhost:9200/umbrella/_open'
 http://localhost:9200/umbrella/_analyze?analyzer=standard&pretty=true&text=我是中国人
 http://localhost:9200/umbrella/_analyze?analyzer=ik&pretty=true&text=我是中国人
 
+
 创建话题索引,并指定title,content为IK分词
 curl -XPUT "http://localhost:9200/umbrella/topic/_mapping" -d'
 {
    "topic": {
       "properties": {
+         "tags": {
+            "type": "string",
+            "indexAnalyzer": "whitespace",
+            "searchAnalyzer": "whitespace"
+         },
          "title": {
             "type": "string",
             "indexAnalyzer": "ikAnalyzer",
@@ -71,6 +77,10 @@ curl -XPUT "http://localhost:9200/umbrella/tag/_mapping" -d'
 {
    "tag": {
       "properties": {
+         "category": {
+            "type": "string",
+            "index": "not_analyzed"
+         },
          "title": {
             "type": "string",
             "indexAnalyzer": "ikAnalyzer",
