@@ -9,7 +9,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -153,7 +152,7 @@ public class ElaSearchKit {
 		String host = umbrella.getElasearch().getHost();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		String address = host + prefix + indexId;
-		HttpDelete delete = new HttpDelete(address);
+		XHttpDelete delete = new XHttpDelete(address);
 		CloseableHttpResponse res = httpclient.execute(delete);
 		try {
 			int status = res.getStatusLine().getStatusCode();
@@ -165,5 +164,23 @@ public class ElaSearchKit {
         } finally {
             res.close();
         }
+		if("/topic/".equals(prefix)) {
+			address = host + "/reply/_query";
+			delete = null;
+			delete = new XHttpDelete(address);
+			res = null;
+			res = httpclient.execute(delete);
+			delete.setEntity(new StringEntity("{\"query\":{\"term\":{ \"topicid\":"+indexId+"}}}", Consts.UTF_8));
+			try {
+				int status = res.getStatusLine().getStatusCode();
+				if(status != HttpStatus.SC_OK) {
+					throw new IllegalStateException("ElasticSearch返回码[" + status + "] 删除索引失败,可能是索引已经不存在!");
+				}
+				HttpEntity back = res.getEntity();
+			    EntityUtils.consume(back);
+	        } finally {
+	            res.close();
+	        }
+		}
 	}
 }

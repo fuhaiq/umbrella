@@ -57,7 +57,7 @@ curl -XPUT "http://localhost:9200/umbrella/reply/_mapping" -d'
       "properties": {
       	 "topicid": {
       	 	"type": "integer",
-      	 	"index": "no"
+      	 	"index": "not_analyzed"
       	 },
          "title": {
             "type": "string",

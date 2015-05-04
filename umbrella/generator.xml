@@ -36,7 +36,7 @@
 			<property name="enableSubPackages" value="true" />
 		</javaClientGenerator>
 
-		<table tableName="tag" alias="tag" domainObjectName="Tag" enableCountByExample="false" enableSelectByExample="false" enableUpdateByExample="false" enableDeleteByExample="false">
+		<table tableName="tag_topic" alias="tag_topic" domainObjectName="Tag_Topic" enableCountByExample="false" enableSelectByExample="false" enableUpdateByExample="false" enableDeleteByExample="false">
 			<property name="useActualColumnNames" value="true" />
 			<!-- <generatedKey column="ID" sqlStatement="MySql" identity="true" /> -->
 		</table>
