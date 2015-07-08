@@ -1,5 +1,7 @@
 package com.umbrella.kit;
 
+import static com.mongodb.client.model.Filters.eq;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -9,58 +11,60 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.Objects;
 
-import org.apache.ibatis.session.SqlSessionManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 
-import redis.clients.jedis.Jedis;
-
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.mongodb.MongoClient;
 import com.umbrella.kernel.Kernel;
 import com.umbrella.kernel.KernelCycle;
+import com.umbrella.mongo.MongoCycle;
 import com.umbrella.redis.JedisCycle;
 import com.umbrella.session.Session;
 import com.umbrella.session.SessionException;
 import com.wolfram.jlink.MathLinkException;
 
+import redis.clients.jedis.Jedis;
+
 public class ReplyKit {
-
+	
 	@Inject private Session<Jedis> jedisSession;
-
-	@Inject private SqlSessionManager manager;
-
+	
+	@Inject private Session<MongoClient> mongoSession;
+	
 	@Inject private Kernel kernel;
-
+	
 	private final String LOCK = "reply:lock:";
-
-	private final static String PATH = "/home/wesker/umbrella-openresty/www/static/reply/";
+	
+	private final static String PATH = "/home/wesker/umbrella/assets/reply/";
 	
 	private final Logger LOG = LogManager.getLogger("replykit");
 	
-	public void create(JSONObject reply) throws SessionException, SQLException, MathLinkException, IOException {
+	@MongoCycle
+	public void create(String replyid) throws SessionException, MathLinkException, IOException {
+		Document reply = mongoSession.get().getDatabase("umbrella").getCollection("reply").find(eq("_id", new ObjectId(replyid))).first();
 		if(Objects.isNull(reply)) {
-			throw new SQLException("reply is null");
+			throw new IllegalStateException("reply is null");
 		}
-		int status = reply.getIntValue("status");
+		int status = reply.getInteger("status");
 		if(status != Status.WAITING.value) {
-			throw new SQLException("bad reply status["+ status +"], expect " + Status.WAITING.getValue());
+			throw new IllegalStateException("bad reply status["+ status +"], expect " + Status.WAITING.getValue());
 		}
-		int replyId = reply.getIntValue("id");
-		boolean locked = lock(replyId);
+		boolean locked = lock(replyid);
 		if(locked) {
 			LOG.info("锁定回复,开始计算回复");
 			Elements scripts = Jsoup.parse(reply.getString("html")).select("pre[class=\"mathematica hljs\"]");
-			JSONObject json = evaluate(replyId, scripts);
-			setResult(replyId, json);
-			unlock(replyId);
+			JSONObject json = evaluate(replyid, scripts);
+			setResult(replyid, json);
+			unlock(replyid);
 			LOG.info("设置回复结果完成,解除锁定");
 		}else{
 			LOG.info("锁定回复失败，可能被别的内核抢到了");
@@ -68,26 +72,21 @@ public class ReplyKit {
 		}
 	}
 	
-	public void create(int replyId) throws SessionException, SQLException, MathLinkException, IOException {
-		JSONObject reply = manager.selectOne("reply.select", replyId);
-		create(reply);
-	}
-	
-	public void update(int replyId) throws IOException, SQLException, MathLinkException, IOException {
-		JSONObject reply = manager.selectOne("reply.select", replyId);
-		if(reply == null) {
-			throw new SQLException("reply is null");
+	public void update(String replyid) throws IOException, MathLinkException, IOException {
+		Document reply = mongoSession.get().getDatabase("umbrella").getCollection("reply").find(eq("_id", new ObjectId(replyid))).first();
+		if(Objects.isNull(reply)) {
+			throw new IllegalStateException("reply is null");
 		}
-		int status = reply.getIntValue("status");
-		delete(replyId);
+		int status = reply.getInteger("status");
+		delete(replyid);
 		if(status == Status.NO_CODE.value) {
 			return;
 		}
-		create(reply);
+		create(replyid);
 	}
 	
-	public void delete(int replyId) throws IOException {
-		String replyPath = PATH + replyId + "/";
+	public void delete(String replyid) throws IOException {
+		String replyPath = PATH + replyid + "/";
 		File file = new File(replyPath);
 		if (file.exists()) {
 			Path path = Paths.get(replyPath);
@@ -113,36 +112,32 @@ public class ReplyKit {
 	}
 	
 	@JedisCycle
-	public boolean lock(int replyId) throws SessionException, SQLException {
+	@MongoCycle
+	public boolean lock(String replyid) throws SessionException {
 		Jedis jedis = jedisSession.get();
-		long response = jedis.setnx(LOCK + replyId, "lock");
+		long response = jedis.setnx(LOCK + replyid, "lock");
 		if(response == 0) {
 			return false;
 		}
-		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", replyId);
-		map.put("status", Status.EVALUATE.value);
-		manager.update("reply.update", map);
+		mongoSession.get().getDatabase("umbrella").getCollection("reply").updateOne(eq("_id", new ObjectId(replyid)), new Document("$set", new Document("status", Status.EVALUATE.getValue())));
 		return true;
 	}
 	
 	@JedisCycle
-	public void unlock(int replyId) throws SessionException, SQLException {
+	public void unlock(String replyid) throws SessionException {
 		Jedis jedis = jedisSession.get();
-		jedis.del(LOCK + replyId);
+		jedis.del(LOCK + replyid);
 	}
 	
-	public void reset(int replyId) throws SessionException, SQLException {
-		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", replyId);
-		map.put("status", Status.WAITING.value);
-		manager.update("reply.update", map);
-		unlock(replyId);
+	
+	public void reset(String replyid) throws SessionException, SQLException {
+		mongoSession.get().getDatabase("umbrella").getCollection("reply").updateOne(eq("_id", new ObjectId(replyid)), new Document("$set", new Document("status", Status.WAITING.getValue())));
+		unlock(replyid);
 	}
 	
 	@KernelCycle
-	public JSONObject evaluate(int replyId, Elements scripts) throws SessionException, MathLinkException, IOException {
-		String replyPath = PATH + replyId + "/";
+	public JSONObject evaluate(String replyid, Elements scripts) throws SessionException, MathLinkException, IOException {
+		String replyPath = PATH + replyid + "/";
 		Path path = Paths.get(replyPath);
 		Files.createDirectory(path);
 		Status status = Status.SUCCESS;
@@ -176,14 +171,10 @@ public class ReplyKit {
 		return replyResult;
 	}
 	
-	public void setResult(int replyId, JSONObject replyResult) throws SessionException, SQLException {
+	public void setResult(String replyid, JSONObject replyResult) throws SessionException {
 		int status = replyResult.getIntValue("status");
-		String result = replyResult.getJSONArray("result").toJSONString();
-		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", replyId);
-		map.put("status", status);
-		map.put("result", result);
-		manager.update("reply.update", map);
+		JSONArray result = replyResult.getJSONArray("result");
+		mongoSession.get().getDatabase("umbrella").getCollection("reply").updateOne(eq("_id", new ObjectId(replyid)), new Document("$set", new Document("status", status).append("result", result)));
 	}
 
 	public enum Status {
@@ -201,5 +192,4 @@ public class ReplyKit {
 		}
 
 	}
-
 }

@@ -24,7 +24,7 @@ public class BeanstalkdTopicService extends BeanstalkdService{
 	@Override
 	protected void execute(BeanstalkdJob job) throws Exception {
 		JSONObject topic = JSON.parseObject(job.getData());
-		int topicId = checkNotNull(topic.getInteger("id"), "no topic's id with job:" + job.getId());
+		String topicId = checkNotNull(topic.getString("id"), "no topic's id with job:" + job.getId());
 		String action = checkNotNull(topic.getString("action"), "no action with job:" + job.getId());
 		if (action.equals("create")) {
 			kit.create(topicId);
@@ -43,7 +43,7 @@ public class BeanstalkdTopicService extends BeanstalkdService{
 	@Override
 	protected void exception(BeanstalkdJob job) throws SessionException, SQLException {
 		JSONObject topic = JSON.parseObject(job.getData());
-		int topicId = checkNotNull(topic.getInteger("id"), "no topic's id with job:" + job.getId());
+		String topicId = checkNotNull(topic.getString("id"), "no topic's id with job:" + job.getId());
 		String action = checkNotNull(topic.getString("action"), "no action with job:" + job.getId());
 		if (action.equals("create") || action.equals("update")) {
 			kit.reset(topicId);

@@ -6,6 +6,7 @@ import com.umbrella.beanstalkd.BeanstalkdConfig;
 import com.umbrella.elasearch.ElaSearchConfig;
 import com.umbrella.kernel.KernelConfig;
 import com.umbrella.mail.MailConfig;
+import com.umbrella.mongo.MongoConfig;
 import com.umbrella.redis.JedisConfig;
 import com.umbrella.service.netty.NettyServiceConfig;
 
@@ -20,6 +21,8 @@ public class UmbrellaConfig {
 	private JedisConfig redis;
 	
 	private MailConfig mail;
+	
+	private MongoConfig mongo;
 	
 	private ElaSearchConfig elasearch;
 	
@@ -69,5 +72,13 @@ public class UmbrellaConfig {
 
 	public void setMail(MailConfig mail) {
 		this.mail = mail;
+	}
+
+	public MongoConfig getMongo() {
+		return mongo;
+	}
+
+	public void setMongo(MongoConfig mongo) {
+		this.mongo = mongo;
 	}
 }

@@ -8,6 +8,12 @@
         "testOnReturn": true, 
         "testOnCreate": true
     },
+    "mongo": {
+        "host": "localhost", 
+        "port": 27017, 
+        "maxWaitMillis": 3000, 
+        "maxTotal": 5
+    },
     "beanstalkd": {
         "type": "EPOLL", 
         "host": "localhost", 

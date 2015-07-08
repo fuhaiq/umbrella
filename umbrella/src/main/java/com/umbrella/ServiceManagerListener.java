@@ -9,8 +9,11 @@ import org.apache.logging.log4j.Logger;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.mongodb.MongoClient;
 import com.umbrella.beanstalkd.Beanstalkd;
 import com.wolfram.jlink.KernelLink;
+
+import redis.clients.jedis.Jedis;
 
 public class ServiceManagerListener extends ServiceManager.Listener{
 
@@ -19,6 +22,10 @@ public class ServiceManagerListener extends ServiceManager.Listener{
 	@Inject private ObjectPool<KernelLink> kernel;
 	
 	@Inject private ObjectPool<Beanstalkd> beans;
+	
+	@Inject private ObjectPool<Jedis> jedis;
+	
+	@Inject private ObjectPool<MongoClient> mongo;
 	
 	@Inject @Named("kernel") private ExecutorService service;
 	
@@ -36,6 +43,10 @@ public class ServiceManagerListener extends ServiceManager.Listener{
 			kernel.close();
 			beans.clear();
 			beans.close();
+			jedis.clear();
+			jedis.close();
+			mongo.clear();
+			mongo.close();
 			umbrella.getBeanstalkd().getGroup().shutdownGracefully();
 			service.shutdown();
 		} catch (Exception dontCare) {}

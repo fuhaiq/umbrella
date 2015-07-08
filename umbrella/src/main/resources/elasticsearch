@@ -72,6 +72,19 @@ curl -XPUT "http://localhost:9200/umbrella/reply/_mapping" -d'
    }
 }'
 
+curl -XPUT "http://localhost:9200/umbrella/reply/_mapping" -d'
+{
+   "reply": {
+      "properties": {
+         "content": {
+            "type": "string",
+            "indexAnalyzer": "ikAnalyzer",
+            "searchAnalyzer": "ikAnalyzer"
+         }
+      }
+   }
+}'
+
 创建标签索引,并指定title,content为IK分词
 curl -XPUT "http://localhost:9200/umbrella/tag/_mapping" -d'
 {

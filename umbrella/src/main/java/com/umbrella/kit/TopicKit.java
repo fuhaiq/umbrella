@@ -1,5 +1,7 @@
 package com.umbrella.kit;
 
+import static com.mongodb.client.model.Filters.eq;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -9,51 +11,56 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.Objects;
 
-import org.apache.ibatis.session.SqlSessionManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 
-import redis.clients.jedis.Jedis;
-
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import com.umbrella.kernel.Kernel;
 import com.umbrella.kernel.KernelCycle;
+import com.umbrella.mongo.MongoCycle;
 import com.umbrella.redis.JedisCycle;
 import com.umbrella.session.Session;
 import com.umbrella.session.SessionException;
 import com.wolfram.jlink.MathLinkException;
 
+import redis.clients.jedis.Jedis;
+
 public class TopicKit {
 	
 	@Inject private Session<Jedis> jedisSession;
 	
-	@Inject private SqlSessionManager manager;
+	@Inject private Session<MongoClient> mongoSession;
 	
 	@Inject private Kernel kernel;
 	
 	private final String LOCK = "topic:lock:";
 	
-	private final static String PATH = "/home/wesker/umbrella-openresty/www/static/topic/";
+	private final static String PATH = "/home/wesker/umbrella/assets/topic/";
 	
 	private final Logger LOG = LogManager.getLogger("topickit");
 	
-	public void create(JSONObject topic) throws SessionException, SQLException, MathLinkException, IOException {
+	@MongoCycle
+	public void create(String topicId) throws SessionException, MathLinkException, IOException {
+		MongoClient mongo = mongoSession.get();
+		MongoDatabase db = mongo.getDatabase("umbrella");
+		Document topic = db.getCollection("topic").find(eq("_id", new ObjectId(topicId))).first();
 		if(Objects.isNull(topic)) {
-			throw new SQLException("topic is null");
+			throw new IllegalStateException("topic is null");
 		}
-		int status = topic.getIntValue("status");
+		int status = topic.getInteger("status");
 		if(status != Status.WAITING.value) {
-			throw new SQLException("bad topic status["+ status +"], expect " + Status.WAITING.getValue());
+			throw new IllegalStateException("bad topic status["+ status +"], expect " + Status.WAITING.getValue());
 		}
-		int topicId = topic.getIntValue("id");
 		boolean locked = lock(topicId);
 		if(locked) {
 			LOG.info("锁定话题,开始计算话题");
@@ -68,17 +75,12 @@ public class TopicKit {
 		}
 	}
 	
-	public void create(int topicId) throws SessionException, SQLException, MathLinkException, IOException {
-		JSONObject topic = manager.selectOne("topic.select", topicId);
-		create(topic);
-	}
-	
-	public void update(int topicId) throws IOException, SQLException, MathLinkException, IOException {
-		JSONObject topic = manager.selectOne("topic.select", topicId);
-		if(topic == null) {
-			throw new SQLException("topic is null");
+	public void update(String topicId) throws IOException, MathLinkException, IOException {
+		Document topic = mongoSession.get().getDatabase("umbrella").getCollection("topic").find(eq("_id", new ObjectId(topicId))).first();
+		if(Objects.isNull(topic)) {
+			throw new IllegalStateException("topic is null");
 		}
-		int status = topic.getIntValue("status");
+		int status = topic.getInteger("status");
 		delete(topicId);
 		if(status == Status.NO_CODE.value) {
 			return;
@@ -86,7 +88,7 @@ public class TopicKit {
 		create(topicId);
 	}
 	
-	public void delete(int topicId) throws IOException {
+	public void delete(String topicId) throws IOException {
 		String replyPath = PATH + topicId + "/";
 		File file = new File(replyPath);
 		if (file.exists()) {
@@ -113,36 +115,31 @@ public class TopicKit {
 	}
 	
 	@JedisCycle
-	public boolean lock(int topicId) throws SessionException, SQLException {
+	@MongoCycle
+	public boolean lock(String topicId) throws SessionException {
 		Jedis jedis = jedisSession.get();
 		long response = jedis.setnx(LOCK + topicId, "lock");
 		if(response == 0) {
 			return false;
 		}
-		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", topicId);
-		map.put("status", Status.EVALUATE.getValue());
-		manager.update("topic.update", map);
+		mongoSession.get().getDatabase("umbrella").getCollection("topic").updateOne(eq("_id", new ObjectId(topicId)), new Document("$set", new Document("status", Status.EVALUATE.getValue())));
 		return true;
 	}
 	
 	@JedisCycle
-	public void unlock(int topicId) throws SessionException, SQLException {
+	public void unlock(String topicId) throws SessionException {
 		Jedis jedis = jedisSession.get();
 		jedis.del(LOCK + topicId);
 	}
 	
 	
-	public void reset(int topicId) throws SessionException, SQLException {
-		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", topicId);
-		map.put("status", Status.WAITING.value);
-		manager.update("topic.update", map);
+	public void reset(String topicId) throws SessionException, SQLException {
+		mongoSession.get().getDatabase("umbrella").getCollection("topic").updateOne(eq("_id", new ObjectId(topicId)), new Document("$set", new Document("status", Status.WAITING.getValue())));
 		unlock(topicId);
 	}
 	
 	@KernelCycle
-	public JSONObject evaluate(int topicId, Elements scripts) throws SessionException, MathLinkException, IOException {
+	public JSONObject evaluate(String topicId, Elements scripts) throws SessionException, MathLinkException, IOException {
 		String topicPath = PATH + topicId + "/";
 		Path path = Paths.get(topicPath);
 		Files.createDirectory(path);
@@ -177,14 +174,10 @@ public class TopicKit {
 		return topicResult;
 	}
 	
-	public void setResult(int topicId, JSONObject topicResult) throws SessionException, SQLException {
+	public void setResult(String topicId, JSONObject topicResult) throws SessionException {
 		int status = topicResult.getIntValue("status");
-		String result = topicResult.getJSONArray("result").toJSONString();
-		Map<String, Object> map = Maps.newHashMap();
-		map.put("id", topicId);
-		map.put("status", status);
-		map.put("result", result);
-		manager.update("topic.update", map);
+		JSONArray result = topicResult.getJSONArray("result");
+		mongoSession.get().getDatabase("umbrella").getCollection("topic").updateOne(eq("_id", new ObjectId(topicId)), new Document("$set", new Document("status", status).append("result", result)));
 	}
 
 	public enum Status {

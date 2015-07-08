@@ -1,9 +1,10 @@
 package com.umbrella.session;
 
-public interface Session<T> {
-	public void start() throws SessionException;
+import java.io.Closeable;
 
-	public void close() throws SessionException;
+public interface Session<T> extends Closeable {
+	
+	public void start() throws SessionException;
 
 	public T get() throws SessionException;
 	

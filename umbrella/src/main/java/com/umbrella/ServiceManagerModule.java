@@ -17,9 +17,9 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.umbrella.beanstalkd.BeanstalkdModule;
-import com.umbrella.db.DBModule;
 import com.umbrella.kernel.KernelModule;
 import com.umbrella.mail.MailModule;
+import com.umbrella.mongo.MongoModule;
 import com.umbrella.redis.JedisModule;
 import com.umbrella.service.beanstalkd.BeanstalkdServiceModule;
 import com.umbrella.service.netty.json.JsonServiceModule;
@@ -48,8 +48,8 @@ public class ServiceManagerModule extends AbstractModule{
 		} catch (IOException e) {
 			addError(e);
 		}
-		install(new DBModule("db.xml"));
 		install(new JedisModule());
+		install(new MongoModule());
 		install(new BeanstalkdModule());
 		install(new KernelModule());
 		install(new MailModule());
