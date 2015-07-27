@@ -23,7 +23,6 @@ public class MongoModule extends AbstractModule{
 		
 		MongoInterceptor mongoInterceptor = new MongoInterceptor();
 		requestInjection(mongoInterceptor);
-		
 		bindInterceptor(Matchers.any(), Matchers.annotatedWith(MongoCycle.class), mongoInterceptor);
 	}
 
