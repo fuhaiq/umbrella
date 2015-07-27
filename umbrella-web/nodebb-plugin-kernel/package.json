@@ -1,0 +1,13 @@
+{
+  "name": "nodebb-plugin-kernel",
+  "version": "0.0.1",
+  "description": "A nodebb-plugin-kernel plugin for NodeBB which allows users to post topics to be evaluated by kernel",
+  "main": "library.js",
+  "author": {
+    "name": "Michael",
+    "email": "fuhaiq@gmail.com"
+  },
+  "license": "BSD-2-Clause",
+  "_id": "nodebb-plugin-kernel@0.0.1",
+  "directories": {}
+}
