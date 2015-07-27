@@ -48,13 +48,6 @@
             "type": "EPOLL"
         }
     },
-    "mail": {
-        "host": "smtp.163.com", 
-        "port": 25, 
-        "validate": true, 
-        "user": "radio890404@163.com", 
-        "password": "zxcvbnm4mnbvcxz"
-    },
     "elasearch" : {
     	"host": "http://localhost:9200/umbrella"
     }

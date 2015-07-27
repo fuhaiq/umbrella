@@ -3,9 +3,7 @@ package com.umbrella;
 import java.util.Map;
 
 import com.umbrella.beanstalkd.BeanstalkdConfig;
-import com.umbrella.elasearch.ElaSearchConfig;
 import com.umbrella.kernel.KernelConfig;
-import com.umbrella.mail.MailConfig;
 import com.umbrella.mongo.MongoConfig;
 import com.umbrella.redis.JedisConfig;
 import com.umbrella.service.netty.NettyServiceConfig;
@@ -20,20 +18,8 @@ public class UmbrellaConfig {
 	
 	private JedisConfig redis;
 	
-	private MailConfig mail;
-	
 	private MongoConfig mongo;
 	
-	private ElaSearchConfig elasearch;
-	
-	public ElaSearchConfig getElasearch() {
-		return elasearch;
-	}
-
-	public void setElasearch(ElaSearchConfig elasearch) {
-		this.elasearch = elasearch;
-	}
-
 	public KernelConfig getKernel() {
 		return kernel;
 	}
@@ -64,14 +50,6 @@ public class UmbrellaConfig {
 
 	public void setRedis(JedisConfig redis) {
 		this.redis = redis;
-	}
-
-	public MailConfig getMail() {
-		return mail;
-	}
-
-	public void setMail(MailConfig mail) {
-		this.mail = mail;
 	}
 
 	public MongoConfig getMongo() {
