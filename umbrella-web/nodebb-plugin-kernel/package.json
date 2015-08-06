@@ -11,6 +11,7 @@
   "_id": "nodebb-plugin-kernel@0.0.1",
   "directories": {},
   "dependencies": {
-    "jsdom": "^5.6.1"
-  },
+    "jsdom": ">=5.6.1",
+    "fivebeans": ">=1.3.1"
+  }
 }
