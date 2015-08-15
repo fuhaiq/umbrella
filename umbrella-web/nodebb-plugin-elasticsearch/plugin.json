@@ -1,0 +1,23 @@
+{
+	"id": "nodebb-plugin-search-elasticsearch",
+	"name": "Elasticsearch Search",
+	"description": "Full-text searching using Elasticsearch",
+	"library": "./library.js",
+	"hooks": [
+		{ "hook": "static:app.load", "method": "init", "priority": 5 },
+
+		{ "hook": "action:post.save", "method": "post.save"},
+		{ "hook": "action:post.delete", "method": "post.delete"},
+		{ "hook": "action:post.restore", "method": "post.restore"},
+		{ "hook": "action:post.purge", "method": "post.purge"},
+
+		{ "hook": "action:topic.post", "method": "topic.post"},
+		{ "hook": "action:topic.delete", "method": "topic.delete"},
+		{ "hook": "action:topic.restore", "method": "topic.restore"},
+		{ "hook": "action:topic.purge", "method": "topic.purge"},
+		
+		
+        { "hook": "filter:search.query", "method": "search"},
+        { "hook": "filter:topic.search", "method": "searchTopic"}
+	]
+}

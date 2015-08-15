@@ -1,0 +1,17 @@
+{
+  "name": "nodebb-plugin-elasticsearch",
+  "version": "0.0.1",
+  "description": "Full-text searching using Elasticsearch",
+  "main": "library.js",
+  "author": {
+    "name": "Michael",
+    "email": "fuhaiq@gmail.com"
+  },
+  "license": "BSD-2-Clause",
+  "_id": "nodebb-plugin-search@0.0.1",
+  "directories": {},
+  "dependencies": {
+    "elasticsearch": ">=6.0.0",
+    "string": ">=3.3.1"
+  }
+}
