@@ -16,9 +16,9 @@ import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
+import org.pegdown.PegDownProcessor;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -45,29 +45,37 @@ public class TopicKit {
 	
 	private final String LOCK = "topic:lock:";
 	
-	private final static String PATH = "/home/wesker/umbrella/assets/topic/";
+	private final static String PATH = "/home/wesker/git/umbrella-web/public/kernel/topic/";
 	
 	private final Logger LOG = LogManager.getLogger("topickit");
 	
 	@MongoCycle
-	public void create(String topicId) throws SessionException, MathLinkException, IOException {
+	public void create(String tid, String mainpid) throws SessionException, MathLinkException, IOException {
 		MongoClient mongo = mongoSession.get();
 		MongoDatabase db = mongo.getDatabase("umbrella");
-		Document topic = db.getCollection("topic").find(eq("_id", new ObjectId(topicId))).first();
+		Document topic = db.getCollection("objects").find(eq("_key", "topic:" + tid)).first();
 		if(Objects.isNull(topic)) {
-			throw new IllegalStateException("topic is null");
+			throw new IllegalStateException("话题不存在,可能被用户删除.");
 		}
 		int status = topic.getInteger("status");
 		if(status != Status.WAITING.value) {
-			throw new IllegalStateException("bad topic status["+ status +"], expect " + Status.WAITING.getValue());
+			throw new IllegalStateException("话题状态错误["+ status +"], 期望值: " + Status.WAITING.getValue());
 		}
-		boolean locked = lock(topicId);
+		
+		Document mainPost = db.getCollection("objects").find(eq("_key", "post:" + mainpid)).first();
+		if(Objects.isNull(mainPost)) {
+			throw new IllegalStateException("话题主回复为空.");
+		}
+		boolean locked = lock(tid);
 		if(locked) {
 			LOG.info("锁定话题,开始计算话题");
-			Elements scripts = Jsoup.parse(topic.getString("html")).select("pre[class=\"mathematica hljs\"]");
-			JSONObject json = evaluate(topicId, scripts);
-			setResult(topicId, json);
-			unlock(topicId);
+			PegDownProcessor processor = new PegDownProcessor();
+			String content = mainPost.getString("content");
+			String html = processor.markdownToHtml(content);
+			Elements scripts = Jsoup.parse(html).select("code");
+			JSONObject json = evaluate(tid, scripts);
+			setResult(tid, json);
+			unlock(tid);
 			LOG.info("设置话题结果完成,解除锁定");
 		}else{
 			LOG.info("锁定话题失败，可能被别的内核抢到了");
@@ -75,21 +83,21 @@ public class TopicKit {
 		}
 	}
 	
-	public void update(String topicId) throws IOException, MathLinkException, IOException {
-		Document topic = mongoSession.get().getDatabase("umbrella").getCollection("topic").find(eq("_id", new ObjectId(topicId))).first();
+	public void update(String tid, String mainpid) throws IOException, MathLinkException, IOException {
+		Document topic = mongoSession.get().getDatabase("umbrella").getCollection("objects").find(eq("_key", "topic:" + tid)).first();
 		if(Objects.isNull(topic)) {
-			throw new IllegalStateException("topic is null");
+			throw new IllegalStateException("话题不存在,可能被用户删除.");
 		}
 		int status = topic.getInteger("status");
-		delete(topicId);
+		delete(tid);
 		if(status == Status.NO_CODE.value) {
 			return;
 		}
-		create(topicId);
+		create(tid, mainpid);
 	}
 	
-	public void delete(String topicId) throws IOException {
-		String replyPath = PATH + topicId + "/";
+	public void delete(String tid) throws IOException {
+		String replyPath = PATH + tid + "/";
 		File file = new File(replyPath);
 		if (file.exists()) {
 			Path path = Paths.get(replyPath);
@@ -116,13 +124,13 @@ public class TopicKit {
 	
 	@JedisCycle
 	@MongoCycle
-	public boolean lock(String topicId) throws SessionException {
+	public boolean lock(String tid) throws SessionException {
 		Jedis jedis = jedisSession.get();
-		long response = jedis.setnx(LOCK + topicId, "lock");
+		long response = jedis.setnx(LOCK + tid, "lock");
 		if(response == 0) {
 			return false;
 		}
-		mongoSession.get().getDatabase("umbrella").getCollection("topic").updateOne(eq("_id", new ObjectId(topicId)), new Document("$set", new Document("status", Status.EVALUATE.getValue())));
+		mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "topic:" + tid), new Document("$set", new Document("status", Status.EVALUATE.getValue())));
 		return true;
 	}
 	
@@ -132,21 +140,23 @@ public class TopicKit {
 		jedis.del(LOCK + topicId);
 	}
 	
-	
-	public void reset(String topicId) throws SessionException, SQLException {
-		mongoSession.get().getDatabase("umbrella").getCollection("topic").updateOne(eq("_id", new ObjectId(topicId)), new Document("$set", new Document("status", Status.WAITING.getValue())));
-		unlock(topicId);
+	@MongoCycle
+	public void reset(String tid) throws SessionException, SQLException {
+		mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "topic:" + tid), new Document("$set", new Document("status", Status.WAITING.getValue())));
+		unlock(tid);
 	}
 	
 	@KernelCycle
-	public JSONObject evaluate(String topicId, Elements scripts) throws SessionException, MathLinkException, IOException {
-		String topicPath = PATH + topicId + "/";
+	public JSONObject evaluate(String tid, Elements scripts) throws SessionException, MathLinkException, IOException {
+		String topicPath = PATH + tid + "/";
 		Path path = Paths.get(topicPath);
 		Files.createDirectory(path);
 		Status status = Status.SUCCESS;
 		JSONArray result = new JSONArray();
 		outer:for(int i = 0; i < scripts.size(); i++) {
-			JSONArray json = kernel.evaluate(topicPath, scripts.get(i).text());
+			String script = scripts.get(i).text();
+			script = script.substring(3, script.length());
+			JSONArray json = kernel.evaluate(topicPath, script);
 			for(int j = 0; j < json.size(); j++) {
 				JSONObject obj = json.getJSONObject(j);
 				obj.put("index", i);
@@ -174,15 +184,15 @@ public class TopicKit {
 		return topicResult;
 	}
 	
-	public void setResult(String topicId, JSONObject topicResult) throws SessionException {
+	public void setResult(String tid, JSONObject topicResult) throws SessionException {
 		int status = topicResult.getIntValue("status");
 		JSONArray result = topicResult.getJSONArray("result");
-		mongoSession.get().getDatabase("umbrella").getCollection("topic").updateOne(eq("_id", new ObjectId(topicId)), new Document("$set", new Document("status", status).append("result", result)));
+		mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "topic:" + tid), new Document("$set", new Document("status", status).append("result", result)));
 	}
 
 	public enum Status {
 
-		ABORT(-2), SYNTAX_ERROR(-1), WAITING(0), EVALUATE(1), SUCCESS(2), NO_CODE(3);
+		ABORT(-2), SYNTAX_ERROR(-1), NO_CODE(0), WAITING(1), EVALUATE(2), SUCCESS(3);
 
 		private int value;
 

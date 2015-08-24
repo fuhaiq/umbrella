@@ -24,16 +24,18 @@ public class BeanstalkdTopicService extends BeanstalkdService{
 	@Override
 	protected void execute(BeanstalkdJob job) throws Exception {
 		JSONObject topic = JSON.parseObject(job.getData());
-		String topicId = checkNotNull(topic.getString("id"), "no topic's id with job:" + job.getId());
+		LOG.info(topic.toJSONString());
+		String tid = checkNotNull(topic.getString("tid"), "no topic's id with job:" + job.getId());
+		String mainpid = checkNotNull(topic.getString("mainpid"), "no topic's mainpid with job:" + job.getId());
 		String action = checkNotNull(topic.getString("action"), "no action with job:" + job.getId());
 		if (action.equals("create")) {
-			kit.create(topicId);
+			kit.create(tid, mainpid);
 			LOG.info("创建话题完成");
 		} else if (action.equals("delete")) {
-			kit.delete(topicId);
+			kit.delete(tid);
 			LOG.info("删除话题完成");
 		} else if (action.equals("update")) {
-			kit.update(topicId);
+			kit.update(tid, mainpid);
 			LOG.info("更新话题完成");
 		} else {
 			throw new IllegalStateException("BAD topic action:" + action);
@@ -43,7 +45,7 @@ public class BeanstalkdTopicService extends BeanstalkdService{
 	@Override
 	protected void exception(BeanstalkdJob job) throws SessionException, SQLException {
 		JSONObject topic = JSON.parseObject(job.getData());
-		String topicId = checkNotNull(topic.getString("id"), "no topic's id with job:" + job.getId());
+		String topicId = checkNotNull(topic.getString("tid"), "no topic's id with job:" + job.getId());
 		String action = checkNotNull(topic.getString("action"), "no action with job:" + job.getId());
 		if (action.equals("create") || action.equals("update")) {
 			kit.reset(topicId);
