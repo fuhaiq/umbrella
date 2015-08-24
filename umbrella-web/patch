@@ -1,0 +1,2 @@
+gravatar/lib/gravatar.js中
+baseURL = '/gravatar/';

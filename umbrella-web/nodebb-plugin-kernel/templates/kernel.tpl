@@ -8,7 +8,7 @@
 <div class="panel panel-default">
   <div class="panel-heading"><button type="button" class="btn btn-primary" data-loading-text="正在运行..." autocomplete="off" id='kernel-evaluate'><i class="fa fa-fw fa-play"></i> 运行</button></div>
   <div class="panel-body">
-    <div id="kernel">(* 运行你的mathematica脚本 ^_^ *)</div>
+    <div id="kernel"></div>
   </div>
 </div>
 
@@ -36,6 +36,7 @@
                 });
                 return;
             }
+            content = [content];
 
             var $btn = $(this);
 
@@ -43,7 +44,9 @@
                 $.ajax({
                     method: 'POST',
                     url: "/kernel",
-                    data: {content : content},
+                    data: {
+                        content : JSON.stringify(content)
+                    },
                     headers: {
                         'x-csrf-token': csrf.get()
                     },

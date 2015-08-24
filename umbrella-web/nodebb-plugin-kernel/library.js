@@ -18,7 +18,8 @@ plugin.post = function(req, res, next) {
 	if(!content) {
 		return res.json({success: false, msg: '没有脚本可以运行'})
 	}
-	var kernel = {id:'kernel', dir:'/home/wesker/git/umbrella-web/public/kernel/temp/', scripts:[content]};
+	content = JSON.parse(content);
+	var kernel = {id:'kernel', dir:'/home/ubuntu/git/umbrella-web/public/kernel/temp/', scripts:content};
 	var conn = new net.Socket();
 		conn.connect(8001, 'localhost', function() {
 		conn.write(JSON.stringify(kernel));

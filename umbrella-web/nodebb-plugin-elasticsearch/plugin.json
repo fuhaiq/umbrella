@@ -8,16 +8,28 @@
 
 		{ "hook": "action:post.save", "method": "post.save"},
 		{ "hook": "action:post.delete", "method": "post.delete"},
+		{ "hook": "action:post.edit", "method": "post.edit"},
+		{ "hook": "action:post.move", "method": "post.move"},
 		{ "hook": "action:post.restore", "method": "post.restore"},
 		{ "hook": "action:post.purge", "method": "post.purge"},
 
 		{ "hook": "action:topic.post", "method": "topic.post"},
 		{ "hook": "action:topic.delete", "method": "topic.delete"},
+		{ "hook": "action:topic.edit", "method": "topic.edit"},
+		{ "hook": "action:topic.move", "method": "topic.move"},
 		{ "hook": "action:topic.restore", "method": "topic.restore"},
 		{ "hook": "action:topic.purge", "method": "topic.purge"},
 		
 		
         { "hook": "filter:search.query", "method": "search"},
-        { "hook": "filter:topic.search", "method": "searchTopic"}
-	]
+        { "hook": "filter:topic.search", "method": "searchTopic"},
+        { "hook": "filter:controllers.topic.get", "method": "morelikethis"}
+
+	],
+	"scripts": [
+		"static/lib/main.js"
+	],
+	"staticDirs": {
+		"static": "./static"
+	}
 }
