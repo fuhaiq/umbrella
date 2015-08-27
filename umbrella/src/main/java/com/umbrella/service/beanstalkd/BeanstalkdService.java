@@ -22,6 +22,8 @@ public abstract class BeanstalkdService extends AbstractExecutionThreadService {
 	
 	private final String tube;
 	
+	private static final int RELEASE_SEC = 5;
+	
 	protected BeanstalkdService(String tube, Logger LOG) {
 		this.tube = tube;
 		this.LOG = LOG;
@@ -51,22 +53,20 @@ public abstract class BeanstalkdService extends AbstractExecutionThreadService {
 			BeanstalkdJob job = bean.reserve();
 			if(!Objects.isNull(job)) {
 				try {
-					execute(job);
-					bean.delete(job.getId());
-				} catch(Exception e) {
-					LOG.error("exception when exec bean job, bury the job[id:"+job.getId()+"]: ", e);
-					try {
-						exception(job);
-					} catch (Exception catchEx) {
-						LOG.error("exception when exec exception method: ", catchEx);
+					if(execute(job)) {
+						bean.release(job.getId(), (long)(Math.pow(2, 32) -1), RELEASE_SEC);
+						LOG.info(RELEASE_SEC + "秒钟后重新调度任务[id:"+job.getId()+"]");
+					} else {
+						bean.delete(job.getId());
 					}
+				} catch(Exception e) {
+					LOG.error("执行任务发生错误,隐藏任务[id:"+job.getId()+"]: ", e);
 					bean.bury(job.getId(), (long) Math.pow(2, 31));
 				}
 			}
 		}
 	}
 	
-	protected abstract void execute(BeanstalkdJob job) throws Exception;
+	protected abstract boolean execute(BeanstalkdJob job) throws Exception;
 	
-	protected void exception(BeanstalkdJob job) throws Exception {}
 }

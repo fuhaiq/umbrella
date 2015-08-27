@@ -12,6 +12,8 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	
 	private int timeConstrainedTotal;
 	
+	private String imgDir;
+	
 	public String getUrl() {
 		return url;
 	}
@@ -42,6 +44,14 @@ public class KernelConfig extends GenericObjectPoolConfig{
 
 	public void setTimeConstrainedTotal(int timeConstrainedTotal) {
 		this.timeConstrainedTotal = timeConstrainedTotal;
+	}
+
+	public String getImgDir() {
+		return imgDir;
+	}
+
+	public void setImgDir(String imgDir) {
+		this.imgDir = imgDir;
 	}
 
 	class Libdir {

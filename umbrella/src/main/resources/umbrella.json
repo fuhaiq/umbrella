@@ -31,10 +31,11 @@
             "dir": "/usr/local/Wolfram/Mathematica/10.0/SystemFiles/Links/JLink/SystemFiles/Libraries/Linux-x86-64"
         }, 
         "maxWaitMillis": 3000, 
-        "timeConstrained": 10, 
-        "timeConstrainedTotal": 30,
+        "timeConstrained": 20, 
+        "timeConstrainedTotal": 60,
         "maxTotal": 5, 
-        "url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel", 
+        "url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel",
+        "imgDir": "/home/ubuntu/git/umbrella-web/public/kernel"
     }, 
     "service": {
         "json": {
