@@ -14,7 +14,7 @@
     <!-- BEGIN similar -->
     <tr>
       <th><a href="{config.relative_path}/topic/{similar.slug}" itemprop="url">{similar.title}</a></th>
-      <td>{similar.category.name}</td>
+      <td><a href="{config.relative_path}/category/{similar.category.slug}" class="label label-default" style="background-color: {similar.category.bgColor}; color: {similar.category.color};">{similar.category.name}</a></td>
       <td>{similar.postcount}</td>
       <td>{similar.viewcount}</td>
       <td>

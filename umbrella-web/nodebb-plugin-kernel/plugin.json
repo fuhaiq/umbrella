@@ -7,11 +7,20 @@
 		{ 
 			"hook": "static:app.load", "method": "init"
 		},
+		{
+			"hook": "action:post.save", "method": "post.save"
+		},
 		{ 
-			"hook": "action:topic.post", "method": "topic.post"
+			"hook": "action:post.edit", "method": "post.edit"
+		},
+		{ 
+			"hook": "action:post.purge", "method": "post.purge"
 		},
 		{
-			"hook": "filter:topics.get", "method": "getTopics"
+			"hook": "filter:topics.get", "method": "topic.list"
+		},
+		{
+			"hook": "filter:topic.get", "method": "topic.get"
 		}
 	],
 	"scripts": [

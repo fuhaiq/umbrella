@@ -47,18 +47,18 @@ $('document').ready(function() {
 	                        var data = JSON.parse(json.data);
 	                        data.forEach(function(item){
 	                        	if(item.type == 'return' || item.type == 'text') {
-	                                $(codes[item.index]).append('<div class="kernel result alert alert-success" role="alert">'+item.data+'</div>');
+	                                $(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">'+item.data+'</div>');
 	                                MathJax.Hub.Config({
 	                                    "HTML-CSS": { linebreaks: { automatic: true } },
 	                                    SVG: { linebreaks: { automatic: true } }
 	                                });
 	                                MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
 	                            }else if(item.type == "error") {
-	                                $(codes[item.index]).append('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
+	                                $(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
 	                            }else if(item.type == "abort") {
-	                                $(codes[item.index]).append('<div class="kernel result alert alert-warning" role="alert">运行超时</div>')
+	                                $(codes[item.index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>')
 	                            }else if(item.type == "image") {
-	                                $(codes[item.index]).append("<img class='kernel result' src='/kernel/temp/"+item.data+"''></img>")
+	                                $(codes[item.index]).after("<img class='kernel result' src='/kernel/temp/"+item.data+"''></img>")
 	                            }
 	                        });
 	                    }
@@ -88,5 +88,15 @@ $('document').ready(function() {
 			// return;
 		// }
 	});
+
+
+	$(window).on('action:topic.loaded', function(event) {
+		MathJax.Hub.Config({
+            "HTML-CSS": { linebreaks: { automatic: true } },
+            SVG: { linebreaks: { automatic: true } }
+        });
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub, 'content']);
+	});
+
 
 });

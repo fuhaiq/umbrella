@@ -297,26 +297,19 @@ plugin.post.delete = function(pid, callback) {
 
 plugin.post.edit = function(post, callback) {
 	callback = callback || function() {};
-	plugins.fireHook('filter:parse.raw', post.content, function (err, html){
-		if(err) {
-			winston.error(err);
-			return callback(err);
-		}
-		jsdom.env(
-			html,
-			['http://www.wiseker.com/vendor/jquery/js/jquery.js'],
-			function (err, window) {
-				if (err) {
-					window.close();
-					winston.error(err);
-					return callback(err);
-				}
-				var text = window.$(html).text();
+	jsdom.env(
+		post.content,
+		['http://www.wiseker.com/vendor/jquery/js/jquery.js'],
+		function (err, window) {
+			if (err) {
 				window.close();
-				return update('post', post.pid, html, callback);
-			});
-	});
-	
+				winston.error(err);
+				return callback(err);
+			}
+			var text = window.$(post.content).text();
+			window.close();
+			return update('post', post.pid, text, callback);
+		});
 };
 
 plugin.post.restore = function(post, callback) {
