@@ -162,7 +162,7 @@ public class PostKit {
 		Status status = Status.SUCCESS;
 		JSONArray result = new JSONArray();
 		outer:for(int i = 0; i < scripts.size(); i++) {
-			JSONArray json = kernel.evaluate(postPath, scripts.get(i));
+			JSONArray json = kernel.evaluate(scripts.get(i));
 			for(int j = 0; j < json.size(); j++) {
 				JSONObject obj = json.getJSONObject(j);
 				obj.put("index", i);

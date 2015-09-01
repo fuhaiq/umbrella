@@ -10,19 +10,17 @@ Umbrella::usage = "Evaluate expression to MathMLForm or GIF";
 
 Begin["`Private`"]
 
-
 Needs["WorldPlot`"]
 
-Umbrella[dir_, expr_] := Module[{result, expression},
-	{expression = ToExpression[expr]}
-	If[MemberQ[expression, _Graphics | _Graphics3D | _Graph | _Manipulate | _WorldGraphics, {0, \[Infinity]}],
-	result = CreateUUID[] <> ".BMP";
-	Export[dir <> result, expression, "BMP"];
-	,
-	result = ToString[expression, FormatType -> MathMLForm, PageWidth -> \[Infinity]];
-	];
-	Return[result];
-];
+Needs["JLink`"]
+
+(* Set MathMLForm *)
+$PrePrint = With[{expr = #},If[MemberQ[expr, _Graphics | _Graphics3D | _Graph | _Manipulate | _Rotate, {0, \[Infinity]}], LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[#]]], MathMLForm[expr]]] &;
+
+(* Set time constrained *)
+SetAttributes[timecon, HoldAll]
+timecon[new_] := TimeConstrained[new, 5]
+$Pre = timecon;
 
 End[]
 

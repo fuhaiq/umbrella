@@ -29,7 +29,7 @@ public class KernelTimeoutInterceptor implements MethodInterceptor{
 		CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
 		service.execute(()->{
 			try {
-				future.get(umbrella.getKernel().getTimeConstrainedTotal(), TimeUnit.SECONDS);
+				future.get(umbrella.getKernel().getTimeConstrained(), TimeUnit.SECONDS);
 			} catch(ExecutionException dontCare) {
 				/* completeExceptionally will handle this */
 			} catch (InterruptedException | TimeoutException e) {

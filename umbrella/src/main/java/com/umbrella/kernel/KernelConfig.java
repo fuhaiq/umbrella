@@ -10,8 +10,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	
 	private int timeConstrained;
 	
-	private int timeConstrainedTotal;
-	
 	private String imgDir;
 	
 	public String getUrl() {
@@ -36,14 +34,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 
 	public void setTimeConstrained(int timeConstrained) {
 		this.timeConstrained = timeConstrained;
-	}
-
-	public int getTimeConstrainedTotal() {
-		return timeConstrainedTotal;
-	}
-
-	public void setTimeConstrainedTotal(int timeConstrainedTotal) {
-		this.timeConstrainedTotal = timeConstrainedTotal;
 	}
 
 	public String getImgDir() {

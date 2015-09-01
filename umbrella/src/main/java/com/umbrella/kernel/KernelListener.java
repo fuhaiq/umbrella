@@ -37,27 +37,24 @@ public class KernelListener implements PacketListener{
 			ml.result().add(result);
 			break;
 		}
-		case MathLink.DISPLAYPKT: {
-			byte[] imageData = ml.getByteString((byte) 0);
-			result.put("type", "image");
-			result.put("data", imageData);
-			ml.result().add(result);
-			break;
-		}
-		case MathLink.RETURNPKT: {
+		case MathLink.RETURNTEXTPKT: {
 			String _return = ml.getString();
 			if("null".equalsIgnoreCase(_return)) break;
 			if(Kernel.NULL.equals(_return)) break;
 			if(Kernel.FAILED.equals(_return)) break;
 			if(Kernel.ABORT.equals(_return)) {
 				result.put("type", "abort");
-			} else if(_return.endsWith(".BMP")) {
-				result.put("type", "image");
-				result.put("data", _return);
 			} else {
 				result.put("type", "return");
 				result.put("data", _return);
 			}
+			ml.result().add(result);
+			break;
+		}
+		case MathLink.DISPLAYPKT: {
+			byte[] imageData = ml.getByteString((byte) 0);
+			result.put("type", "image");
+			result.put("data", imageData);
 			ml.result().add(result);
 			break;
 		}

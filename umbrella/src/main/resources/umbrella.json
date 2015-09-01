@@ -32,8 +32,7 @@
         }, 
         "maxWaitMillis": 3000, 
         "timeConstrained": 20, 
-        "timeConstrainedTotal": 60,
-        "maxTotal": 5, 
+        "maxTotal": 8, 
         "url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel",
         "imgDir": "/home/ubuntu/git/umbrella-web/public/kernel"
     }, 
