@@ -9,6 +9,7 @@ var plugin = {},
 	async = module.parent.require('async'),
 	topics = module.parent.require('./topics'),
 	plugins = module.parent.require('./plugins'),
+    db = module.parent.require('./database'),
 	posts = module.parent.require('./posts');
 
 plugin.http = {};
@@ -20,7 +21,7 @@ plugin.http.get = function(req, res, next) {
 plugin.http.post = function(req, res, next) {
 	var content = req.body.content;
 	if(!content) {
-		return res.json({success: false, msg: '没有脚本可以运行'})
+		return res.json({success: false, msg: '没有脚本可以运行', type: 'info'})
 	}
 	content = JSON.parse(content);
 	var kernel = {id:'kernel', dir:'/home/ubuntu/git/umbrella-web/public/kernel/temp/', scripts:content};
@@ -30,7 +31,12 @@ plugin.http.post = function(req, res, next) {
 	});
 	conn.on('data', function(data) {
 		conn.destroy();
-		return res.json({success: true, data: new Buffer(data).toString()});
+        var str = new Buffer(data).toString();
+        var act = JSON.parse(str);
+        if(act.id && act.id == 'exception') {
+            return res.json({success: false, msg: '计算内核错误.我们会尽快解决', type: 'danger'});
+        }
+		return res.json({success: true, data: str});
 	});
 	conn.on('error', function(err) {
 		winston.error(err);
@@ -77,18 +83,16 @@ plugin.topic.list = function(data, callback) {
 plugin.topic.get= function(data, callback) {
 	var topic = data.topic;
 	async.map(topic.posts, function (post, next) {
-		if(post.pid == topic.mainPid) {
-			if(post.status == 1) {
-				topic.waiting = true;
-			} else if(post.status == 2) {
-				topic.evaluate = true;
-			} else if(post.status == 3) {
-				topic.finished = true;
-			} else if(post.status == -1) {
-				topic.error = true;
-			} else if(post.status == -2) {
-				topic.aborted = true
-			}
+		if(post.status == 1) {
+			post.waiting = true;
+		} else if(post.status == 2) {
+			post.evaluate = true;
+		} else if(post.status == 3) {
+			post.finished = true;
+		} else if(post.status == -1) {
+			post.error = true;
+		} else if(post.status == -2) {
+			post.aborted = true
 		}
 		if(post.result && post.result.length > 0 && post.code && post.code.length > 0) {
 			jsdom.env(
@@ -138,42 +142,47 @@ plugin.post.edit = function(post, callback) {
             winston.error(err);
             return callback(err);
         }
-        var codes = window.$("code[class='language-mma']");
-        if (codes && codes.length > 0) {
-            var scripts = [];
-            for (var i = 0; i < codes.length; i++) {
-                scripts.push(window.$(codes[i]).text());
-            };
-            window.close();
-            var updateData = {
-                code: scripts,
-                status: 1
+        db.deleteObjectFields('post:' + post.pid, ['code', 'result'], function (err){
+            if(err) {
+                return callback(err);
             }
-            posts.setPostFields(post.pid, updateData, function (err) {
-                if (err) {
-                    return callback(err);
+            var codes = window.$("code[class='language-mma']");
+            if (codes && codes.length > 0) {
+                var scripts = [];
+                for (var i = 0; i < codes.length; i++) {
+                    scripts.push(window.$(codes[i]).text());
+                };
+                window.close();
+                var updateData = {
+                    code: scripts,
+                    status: 1
                 }
-                var beans = new fivebeans.client('localhost', 11300);
-                beans.on('connect', function() {
-                    beans.use('kernel', function (err) {
-                        if (err) {
-                            winston.error(err);
-                            return callback(err)
-                        }
-                        beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
-                            pid: post.pid,
-                            action: 'update'
-                        }), function (err, jobid) {
-                            beans.end();
-                            return callback(err, jobid);
+                posts.setPostFields(post.pid, updateData, function (err) {
+                    if (err) {
+                        return callback(err);
+                    }
+                    var beans = new fivebeans.client('localhost', 11300);
+                    beans.on('connect', function() {
+                        beans.use('kernel', function (err) {
+                            if (err) {
+                                winston.error(err);
+                                return callback(err)
+                            }
+                            beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
+                                pid: post.pid,
+                                action: 'update'
+                            }), function (err, jobid) {
+                                beans.end();
+                                return callback(err, jobid);
+                            });
                         });
-                    });
-                }).on('error', callback).connect();
-            });
-
-        } else {
-            posts.setPostField(post.pid, 'status', 0, callback);
-        }
+                    }).on('error', callback).connect();
+                });
+            } else {
+                window.close();
+                posts.setPostField(post.pid, 'status', 0, callback);
+            }
+        });
     });
 };
 

@@ -61,28 +61,36 @@
                         app.alert({
                             title: '消息',
                             message: json.msg,
-                            type: 'info',
+                            type: json.type,
                             timeout: 2000
                         });
                     } else {
                         var data = JSON.parse(json.data);
-                        data.forEach(function(item){
-                            if(item.type == 'return' || item.type == 'text') {
-                                $('#kernel-preview').append('<div class="alert alert-success" role="alert">'+item.data+'</div>');
-                                MathJax.Hub.Config({
-                                    "HTML-CSS": { linebreaks: { automatic: true } },
-                                    SVG: { linebreaks: { automatic: true } }
-                                });
-                                MathJax.Hub.Queue(["Typeset",MathJax.Hub,"kernel-preview"]);
-                            }else if(item.type == "error") {
-                                $('#kernel-preview').append('<div class="alert alert-danger" role="alert">'+item.data+'</div>')
-                            }else if(item.type == "abort") {
-                                $('#kernel-preview').append('<div class="alert alert-warning" role="alert">运行超时</div>')
-                            }else if(item.type == "image") {
-                                $('#kernel-preview').append("<img src='/kernel/temp/"+item.data+"''></img>")
-                            }
-                        });
-                        
+                        if(data.length == 0) {
+                            app.alert({
+                                title: '消息',
+                                message: '没有显示结果',
+                                type: 'info',
+                                timeout: 2000
+                            });
+                        } else {
+                            data.forEach(function(item){
+                                if(item.type == 'return' || item.type == 'text') {
+                                    $('#kernel-preview').append('<div class="alert alert-success" role="alert">'+item.data+'</div>');
+                                    MathJax.Hub.Config({
+                                        "HTML-CSS": { linebreaks: { automatic: true } },
+                                        SVG: { linebreaks: { automatic: true } }
+                                    });
+                                    MathJax.Hub.Queue(["Typeset",MathJax.Hub,"kernel-preview"]);
+                                }else if(item.type == "error") {
+                                    $('#kernel-preview').append('<div class="alert alert-danger" role="alert">'+item.data+'</div>')
+                                }else if(item.type == "abort") {
+                                    $('#kernel-preview').append('<div class="alert alert-warning" role="alert">运行超时</div>')
+                                }else if(item.type == "image") {
+                                    $('#kernel-preview').append("<img src='/kernel/temp/"+item.data+"'></img>")
+                                }
+                            });
+                        }
                     }
                 })
                 .fail(function() {

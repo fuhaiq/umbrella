@@ -12,6 +12,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -166,19 +167,27 @@ public class PostKit {
 			for(int j = 0; j < json.size(); j++) {
 				JSONObject obj = json.getJSONObject(j);
 				obj.put("index", i);
-			}
-			result.addAll(json);
-			for(int j = 0; j < json.size(); j++) {
-				JSONObject obj = json.getJSONObject(j);
-				if(obj.getString("type").equals("error")) {
-					status = Status.SYNTAX_ERROR;
+				if(obj.getString("type").equals("error") || obj.getString("type").equals("abort")) {
+					result.add(obj);
 					break outer;
-				} else if (obj.getString("type").equals("abort")) {
-					status = Status.ABORT;
-					break outer;
+				}else if(obj.getString("type").equals("image")) {
+					String uuid = UUID.randomUUID().toString() + ".gif";
+					com.google.common.io.Files.write(obj.getBytes("data"), new File(postPath + uuid));
+					obj.replace("data", uuid);
 				}
 			}
+			result.addAll(json);
 			json.clear();
+		}
+		for(int i = 0; i < result.size(); i++) {
+			JSONObject obj = result.getJSONObject(i);
+			if(obj.getString("type").equals("error")) {
+				status = Status.SYNTAX_ERROR;
+				break;
+			}else if(obj.getString("type").equals("abort")) {
+				status = Status.ABORT;
+				break;
+			}
 		}
 		JSONObject postResult = new JSONObject();
 		postResult.put("status", status.value);

@@ -23,12 +23,15 @@ public class KernelCommand implements JsonCommand {
 		String dir = checkNotNull(in.getString("dir"), "dir is null");
 		JSONArray scripts = JSON.parseArray(checkNotNull(in.getString("scripts"), "scripts is null"));
 		JSONArray result = new JSONArray();
-		for(int i = 0; i < scripts.size(); i++) {
+		outer:for(int i = 0; i < scripts.size(); i++) {
 			JSONArray json = kernel.evaluate(scripts.getString(i));
 			for(int j = 0; j < json.size(); j++) {
 				JSONObject obj = json.getJSONObject(j);
 				obj.put("index", i);
-				if(obj.getString("type").equals("image")) {
+				if(obj.getString("type").equals("error") || obj.getString("type").equals("abort")) {
+					result.add(obj);
+					break outer;
+				}else if(obj.getString("type").equals("image")) {
 					String uuid = UUID.randomUUID().toString() + ".gif";
 					Files.write(obj.getBytes("data"), new File(dir + uuid));
 					obj.replace("data", uuid);
