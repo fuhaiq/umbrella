@@ -25,11 +25,5 @@
         { "hook": "filter:topic.search", "method": "searchTopic"},
         { "hook": "filter:controllers.topic.get", "method": "morelikethis"}
 
-	],
-	"scripts": [
-		"static/lib/main.js"
-	],
-	"staticDirs": {
-		"static": "./static"
-	}
+	]
 }

@@ -40,7 +40,7 @@ $('document').ready(function() {
 	                        app.alert({
 	                            title: '消息',
 	                            message: json.msg,
-	                            type: 'info',
+	                            type: json.type,
 	                            timeout: 2000
 	                        });
 	                    } else {
@@ -98,4 +98,7 @@ $('document').ready(function() {
         MathJax.Hub.Queue(["Typeset", MathJax.Hub, 'content']);
 	});
 
+	socket.on('event:umbrella', function (json){
+		console.log(json)
+	});
 });
