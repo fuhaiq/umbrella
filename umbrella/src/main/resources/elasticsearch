@@ -26,44 +26,23 @@ http://localhost:9200/umbrella/_analyze?analyzer=standard&pretty=true&text=我�
 http://localhost:9200/umbrella/_analyze?analyzer=ik&pretty=true&text=我是中国人
 
 
-创建话题索引,并指定title,content为IK分词
 curl -XPUT "http://localhost:9200/umbrella/topic/_mapping" -d'
 {
    "topic": {
       "properties": {
-         "tags": {
-            "type": "string",
-            "indexAnalyzer": "whitespace",
-            "searchAnalyzer": "whitespace"
-         },
-         "title": {
-            "type": "string",
-            "indexAnalyzer": "ikAnalyzer",
-            "searchAnalyzer": "ikAnalyzer"
-         },
-         "content": {
-            "type": "string",
-            "indexAnalyzer": "ikAnalyzer",
-            "searchAnalyzer": "ikAnalyzer"
-         }
-      }
-   }
-}'
-
-创建回复索引,并指定content为IK分词
-curl -XPUT "http://localhost:9200/umbrella/reply/_mapping" -d'
-{
-   "reply": {
-      "properties": {
-      	 "topicid": {
-      	 	"type": "integer",
-      	 	"index": "not_analyzed"
-      	 },
-         "title": {
-            "type": "string",
-            "index": "no"
-         },
-         "content": {
+			"uid": {
+				"type": "integer",
+				"index": "not_analyzed"
+			},
+			"cid": {
+				"type": "integer",
+				"index": "not_analyzed"
+			},
+			"deleted": {
+				"type": "boolean",
+				"index": "not_analyzed"
+			},
+			"title": {
             "type": "string",
             "indexAnalyzer": "ikAnalyzer",
             "searchAnalyzer": "ikAnalyzer"
@@ -72,33 +51,23 @@ curl -XPUT "http://localhost:9200/umbrella/reply/_mapping" -d'
    }
 }'
 
-curl -XPUT "http://localhost:9200/umbrella/reply/_mapping" -d'
-{
-   "reply": {
-      "properties": {
-         "content": {
-            "type": "string",
-            "indexAnalyzer": "ikAnalyzer",
-            "searchAnalyzer": "ikAnalyzer"
-         }
-      }
-   }
-}'
 
-创建标签索引,并指定title,content为IK分词
-curl -XPUT "http://localhost:9200/umbrella/tag/_mapping" -d'
+curl -XPUT "http://localhost:9200/umbrella/post/_mapping" -d'
 {
-   "tag": {
+   "post": {
       "properties": {
-         "category": {
-            "type": "string",
-            "index": "not_analyzed"
-         },
-         "title": {
-            "type": "string",
-            "indexAnalyzer": "ikAnalyzer",
-            "searchAnalyzer": "ikAnalyzer"
-         },
+			"uid": {
+				"type": "integer",
+				"index": "not_analyzed"
+			},
+			"cid": {
+				"type": "integer",
+				"index": "not_analyzed"
+			},
+			"deleted": {
+				"type": "boolean",
+				"index": "not_analyzed"
+			},
          "content": {
             "type": "string",
             "indexAnalyzer": "ikAnalyzer",
