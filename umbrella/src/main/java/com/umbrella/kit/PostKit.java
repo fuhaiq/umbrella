@@ -32,6 +32,7 @@ import com.umbrella.session.Session;
 import com.umbrella.session.SessionException;
 import com.wolfram.jlink.MathLinkException;
 
+import io.socket.emitter.Emitter;
 import redis.clients.jedis.Jedis;
 
 public class PostKit {
@@ -67,6 +68,7 @@ public class PostKit {
 				List<String> scripts = post.get("code", List.class);
 				JSONObject json = evaluate(pid, scripts);
 				setResult(pid, json);
+				emitRooms(pid);
 			} catch(Exception e) {
 				mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "post:" + pid), new Document("$set", new Document("status", Status.WAITING.getValue())));
 				throw e;
@@ -92,6 +94,7 @@ public class PostKit {
 			return true;
 		}
 		if(status == Status.NO_CODE.value) {
+			emitRooms(pid);
 			return false;
 		}
 		return create(pid);
@@ -199,10 +202,32 @@ public class PostKit {
 		return postResult;
 	}
 	
+	@MongoCycle
 	public void setResult(String pid, JSONObject postResult) throws SessionException {
 		int status = postResult.getIntValue("status");
 		JSONArray result = postResult.getJSONArray("result");
 		mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "post:" + pid), new Document("$set", new Document("status", status).append("result", result)));
+	}
+	
+	@MongoCycle
+	@JedisCycle
+	public void emitRooms(String pid) throws SessionException, IOException {
+		Emitter emitter = new Emitter(jedisSession.get());
+		Document post = mongoSession.get().getDatabase("umbrella").getCollection("objects").find(eq("_key", "post:" + pid)).first();
+		Document topic = mongoSession.get().getDatabase("umbrella").getCollection("objects").find(eq("_key", "topic:" + post.getInteger("tid"))).first();
+		int tid = topic.getInteger("tid");
+		JSONObject json = new JSONObject();
+		json.put("status", post.getInteger("status"));
+		if(topic.getString("mainPid").equals(pid)) {
+			json.put("tid", tid);
+			emitter.to("category_" + topic.getInteger("cid")).emit("kernel:topic", json);
+			emitter.to("recent_topics").emit("kernel:topic", json);
+			emitter.to("popular_topics").emit("kernel:topic", json);
+			emitter.to("unread_topics").emit("kernel:topic", json);
+		}
+//		json.put("pid", pid);
+//		json.put("result", post.get("result"));
+//		emitter.to("topic_" + tid).emit("kernel:post", json);
 	}
 
 	public enum Status {

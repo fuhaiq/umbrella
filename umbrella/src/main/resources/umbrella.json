@@ -34,7 +34,7 @@
         "timeConstrained": 30, 
         "maxTotal": 8, 
         "url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel",
-        "imgDir": "/home/ubuntu/git/umbrella-web/public/kernel"
+        "imgDir": "/home/wesker/git/umbrella-web/public/kernel"
     }, 
     "service": {
         "json": {

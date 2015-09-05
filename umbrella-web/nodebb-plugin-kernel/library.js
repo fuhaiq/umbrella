@@ -24,7 +24,7 @@ plugin.http.post = function(req, res, next) {
 		return res.json({success: false, msg: '没有脚本可以运行', type: 'info'})
 	}
 	content = JSON.parse(content);
-	var kernel = {id:'kernel', dir:'/home/ubuntu/git/umbrella-web/public/kernel/temp/', scripts:content};
+	var kernel = {id:'kernel', dir:'/home/wesker/git/umbrella-web/public/kernel/temp/', scripts:content};
 	var conn = new net.Socket();
 		conn.connect(8001, 'localhost', function() {
 		conn.write(JSON.stringify(kernel));
@@ -135,6 +135,26 @@ plugin.post = {};
 
 plugin.post.edit = function(post, callback) {
 	callback = callback || function() {};
+
+    var beansJob = function (pid, callback) {
+        var beans = new fivebeans.client('localhost', 11300);
+        beans.on('connect', function() {
+            beans.use('kernel', function (err) {
+                if (err) {
+                    winston.error(err);
+                    return callback(err)
+                }
+                beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
+                    pid: pid,
+                    action: 'update'
+                }), function (err, jobid) {
+                    beans.end();
+                    return callback(err, jobid);
+                });
+            });
+        }).on('error', callback).connect();
+    };
+    
     jsdom.env(post.content, ['http://www.wiseker.com/vendor/jquery/js/jquery.js'],
     function (err, window) {
         if (err) {
@@ -161,26 +181,16 @@ plugin.post.edit = function(post, callback) {
                     if (err) {
                         return callback(err);
                     }
-                    var beans = new fivebeans.client('localhost', 11300);
-                    beans.on('connect', function() {
-                        beans.use('kernel', function (err) {
-                            if (err) {
-                                winston.error(err);
-                                return callback(err)
-                            }
-                            beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
-                                pid: post.pid,
-                                action: 'update'
-                            }), function (err, jobid) {
-                                beans.end();
-                                return callback(err, jobid);
-                            });
-                        });
-                    }).on('error', callback).connect();
+                    return beansJob(post.pid, callback);
                 });
             } else {
                 window.close();
-                posts.setPostField(post.pid, 'status', 0, callback);
+                posts.setPostField(post.pid, 'status', 0, function (err) {
+                    if (err) {
+                        return callback(err);
+                    }
+                    return beansJob(post.pid, callback); 
+                });
             }
         });
     });

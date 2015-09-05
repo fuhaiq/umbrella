@@ -12,6 +12,7 @@
   "directories": {},
   "dependencies": {
     "elasticsearch": ">=6.0.0",
-    "string": ">=3.3.1"
+    "string": ">=3.3.1",
+    "jsdom": ">=5.6.1"
   }
 }
