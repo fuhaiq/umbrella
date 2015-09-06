@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.inject.Inject;
@@ -57,23 +58,25 @@ public class PostKit {
 		}
 		int status = post.getInteger("status");
 		if(status != Status.WAITING.value) {
-			throw new IllegalStateException("回复状态错误["+ status +"], 期望值: " + Status.WAITING.getValue());
+			throw new IllegalStateException("回复["+pid+"]状态错误["+ status +"], 期望值: " + Status.WAITING.getValue());
 		}
 		boolean locked = lock(pid);
 		if(locked) {
 			try{
 				LOG.info("[计算]锁定回复.");
 				mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "post:" + pid), new Document("$set", new Document("status", Status.EVALUATE.getValue())));
+				emitRooms(pid);
 				@SuppressWarnings("unchecked")
 				List<String> scripts = post.get("code", List.class);
 				JSONObject json = evaluate(pid, scripts);
 				setResult(pid, json);
-				emitRooms(pid);
 			} catch(Exception e) {
+				LOG.warn("执行任务发生错误,重置话题状态");
 				mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "post:" + pid), new Document("$set", new Document("status", Status.WAITING.getValue())));
 				throw e;
 			} finally {
 				unlock(pid);
+				emitRooms(pid);
 				LOG.info("[计算]解除锁定.");
 			}
 		}else{
@@ -97,7 +100,30 @@ public class PostKit {
 			emitRooms(pid);
 			return false;
 		}
-		return create(pid);
+
+		boolean locked = lock(pid);
+		if(locked) {
+			try{
+				LOG.info("[修改]锁定回复.");
+				mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "post:" + pid), new Document("$set", new Document("status", Status.EVALUATE.getValue())));
+				emitRooms(pid);
+				@SuppressWarnings("unchecked")
+				List<String> scripts = post.get("code", List.class);
+				JSONObject json = evaluate(pid, scripts);
+				setResult(pid, json);
+			} catch(Exception e) {
+				LOG.warn("执行任务发生错误,重置话题状态");
+				mongoSession.get().getDatabase("umbrella").getCollection("objects").updateOne(eq("_key", "post:" + pid), new Document("$set", new Document("status", status)));
+				throw e;
+			} finally {
+				unlock(pid);
+				emitRooms(pid);
+				LOG.info("[修改]解除锁定.");
+			}
+		}else{
+			LOG.info("[修改]锁定回复失败，被别的计算内核抢到|此回复正在被删除(不需要计算)");
+		}
+		return false;
 	}
 	
 	public boolean delete(String pid) throws IOException {
@@ -216,18 +242,28 @@ public class PostKit {
 		Document post = mongoSession.get().getDatabase("umbrella").getCollection("objects").find(eq("_key", "post:" + pid)).first();
 		Document topic = mongoSession.get().getDatabase("umbrella").getCollection("objects").find(eq("_key", "topic:" + post.getInteger("tid"))).first();
 		int tid = topic.getInteger("tid");
+		int status = post.getInteger("status");
 		JSONObject json = new JSONObject();
-		json.put("status", post.getInteger("status"));
-		if(topic.getString("mainPid").equals(pid)) {
-			json.put("tid", tid);
-			emitter.to("category_" + topic.getInteger("cid")).emit("kernel:topic", json);
-			emitter.to("recent_topics").emit("kernel:topic", json);
-			emitter.to("popular_topics").emit("kernel:topic", json);
-			emitter.to("unread_topics").emit("kernel:topic", json);
+		json.put("status", status);
+		json.put("tid", tid);
+		emitter.to("category_" + topic.getInteger("cid")).emit("kernel:topic", json);
+		emitter.to("recent_topics").emit("kernel:topic", json);
+		emitter.to("popular_topics").emit("kernel:topic", json);
+		emitter.to("unread_topics").emit("kernel:topic", json);
+		json.clear();
+		json.put("status", status);
+		json.put("pid", pid);
+		@SuppressWarnings("unchecked")
+		List<Document> result = post.get("result", List.class);
+		if(result != null) {
+			JSONArray li = new JSONArray();
+			result.forEach((doc)->{
+				JSONObject obj = JSON.parseObject(doc.toJson());
+				li.add(obj);
+			});
+			json.put("result", li);
 		}
-//		json.put("pid", pid);
-//		json.put("result", post.get("result"));
-//		emitter.to("topic_" + tid).emit("kernel:post", json);
+		emitter.to("topic_" + tid).emit("kernel:post", json);
 	}
 
 	public enum Status {

@@ -5,6 +5,7 @@ $('document').ready(function() {
 
 
 	$(window).on('action:app.load', function() {
+
 		require(['components'], function(components) {
 
 			$(window).on('action:composer.loaded', function(err, data) {
@@ -105,27 +106,33 @@ $('document').ready(function() {
 
 			socket.on('kernel:topic', function (json){
 				var li = components.get('category/topic', 'tid', json.tid);
-				if(li) {
+				if(li && li.length) {
 					var title = $('[component="topic/header"] > a', li);
 					if(title && title.length) {
 						title = title[0];
-						var text = $(title).text();
+						$(title).find("span:first-child").remove();
 						if(json.status == 1) {
-							$(title).html('<span class="waiting"><i class="fa fa-clock-o"></i> 等待运算</span> ' + text);
+							$(title).prepend('<span class="waiting"><i class="fa fa-clock-o"></i> 等待运算</span>');
 						} else if(json.status == 2) {
-							$(title).html('<span class="evaluate"><i class="fa fa-play"></i> 正在计算</span> ' + text);
+							$(title).prepend('<span class="evaluate"><i class="fa fa-play"></i> 正在计算</span>');
 						} else if(json.status == 3) {
-							$(title).html('<span class="finished"><i class="fa fa-check"></i> 计算完成</span> ' + text);
+							$(title).prepend('<span class="finished"><i class="fa fa-check"></i> 计算完成</span>');
 						} else if(json.status == -1) {
-							$(title).html('<span class="error"><i class="fa fa-remove"></i> 语法错误</span> ' + text);
+							$(title).prepend('<span class="error"><i class="fa fa-remove"></i> 语法错误</span>');
 						} else if(json.status == -2) {
-							$(title).html('<span class="aborted"><i class="fa fa-exclamation"></i> 计算超时</span> ' + text);
-						} else if(json.status == 0) {
-							$(title).empty().html(text);
+							$(title).prepend('<span class="aborted"><i class="fa fa-exclamation"></i> 计算超时</span>');
 						}
 					}
 				}
 			});
+
+			socket.on('kernel:post', function (json) {
+				var li = components.get('post', 'pid', json.pid);
+				if(li && li.length) {
+					
+				}
+			});
+
 
 
 		});
