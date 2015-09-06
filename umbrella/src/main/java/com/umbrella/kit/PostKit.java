@@ -261,7 +261,7 @@ public class PostKit {
 				JSONObject obj = JSON.parseObject(doc.toJson());
 				li.add(obj);
 			});
-			json.put("result", li);
+			json.put("data", li);
 		}
 		emitter.to("topic_" + tid).emit("kernel:post", json);
 	}

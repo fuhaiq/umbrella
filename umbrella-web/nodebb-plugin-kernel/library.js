@@ -10,6 +10,7 @@ var plugin = {},
 	topics = module.parent.require('./topics'),
 	plugins = module.parent.require('./plugins'),
     db = module.parent.require('./database'),
+    nconf = module.parent.require('nconf'),
 	posts = module.parent.require('./posts');
 
 plugin.http = {};
@@ -24,7 +25,7 @@ plugin.http.post = function(req, res, next) {
 		return res.json({success: false, msg: '没有脚本可以运行', type: 'info'})
 	}
 	content = JSON.parse(content);
-	var kernel = {id:'kernel', dir:'/home/wesker/git/umbrella-web/public/kernel/temp/', scripts:content};
+	var kernel = {id:'kernel', dir: nconf.get('imgDir'), scripts:content};
 	var conn = new net.Socket();
 		conn.connect(8001, 'localhost', function() {
 		conn.write(JSON.stringify(kernel));
@@ -63,15 +64,15 @@ plugin.topic.list = function(data, callback) {
 				return next(err);
 			}
 			if(post.status == 1) {
-				topic.title = '<span class="waiting"><i class="fa fa-clock-o"></i> 等待运算</span> ' + topic.title;
+				topic.title = '<span class="kernel waiting"><i class="fa fa-clock-o"></i> 等待运算</span> ' + topic.title;
 			} else if(post.status == 2) {
-				topic.title = '<span class="evaluate"><i class="fa fa-play"></i> 正在计算</span> ' + topic.title;
+				topic.title = '<span class="kernel evaluate"><i class="fa fa-play"></i> 正在计算</span> ' + topic.title;
 			} else if(post.status == 3) {
-				topic.title = '<span class="finished"><i class="fa fa-check"></i> 计算完成</span> ' + topic.title;
+				topic.title = '<span class="kernel finished"><i class="fa fa-check"></i> 计算完成</span> ' + topic.title;
 			} else if(post.status == -1) {
-				topic.title = '<span class="error"><i class="fa fa-remove"></i> 语法错误</span> ' + topic.title;
+				topic.title = '<span class="kernel error"><i class="fa fa-remove"></i> 语法错误</span> ' + topic.title;
 			} else if(post.status == -2) {
-				topic.title = '<span class="aborted"><i class="fa fa-exclamation"></i> 计算超时</span> ' + topic.title;
+				topic.title = '<span class="kernel aborted"><i class="fa fa-exclamation"></i> 计算超时</span> ' + topic.title;
 			}
 			return next(null, topic);
 		});

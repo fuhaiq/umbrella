@@ -112,15 +112,15 @@ $('document').ready(function() {
 						title = title[0];
 						$(title).find("span:first-child").remove();
 						if(json.status == 1) {
-							$(title).prepend('<span class="waiting"><i class="fa fa-clock-o"></i> 等待运算</span>');
+							$(title).prepend('<span class="kernel waiting"><i class="fa fa-clock-o"></i> 等待运算</span>');
 						} else if(json.status == 2) {
-							$(title).prepend('<span class="evaluate"><i class="fa fa-play"></i> 正在计算</span>');
+							$(title).prepend('<span class="kernel evaluate"><i class="fa fa-play"></i> 正在计算</span>');
 						} else if(json.status == 3) {
-							$(title).prepend('<span class="finished"><i class="fa fa-check"></i> 计算完成</span>');
+							$(title).prepend('<span class="kernel finished"><i class="fa fa-check"></i> 计算完成</span>');
 						} else if(json.status == -1) {
-							$(title).prepend('<span class="error"><i class="fa fa-remove"></i> 语法错误</span>');
+							$(title).prepend('<span class="kernel error"><i class="fa fa-remove"></i> 语法错误</span>');
 						} else if(json.status == -2) {
-							$(title).prepend('<span class="aborted"><i class="fa fa-exclamation"></i> 计算超时</span>');
+							$(title).prepend('<span class="kernel aborted"><i class="fa fa-exclamation"></i> 计算超时</span>');
 						}
 					}
 				}
@@ -129,6 +129,61 @@ $('document').ready(function() {
 			socket.on('kernel:post', function (json) {
 				var li = components.get('post', 'pid', json.pid);
 				if(li && li.length) {
+					//Add status span
+					var span = $('span.kernel', li)
+					if(span && span.length) {
+						span = span[0];
+						if(json.status == 1) {
+							$(span).after('<span class="kernel waiting"><i class="fa fa-clock-o"></i> 等待运算</span>');
+						} else if(json.status == 2) {
+							$(span).after('<span class="kernel evaluate"><i class="fa fa-play"></i> 正在计算</span>');
+						} else if(json.status == 3) {
+							$(span).after('<span class="kernel finished"><i class="fa fa-check"></i> 计算完成</span>');
+						} else if(json.status == -1) {
+							$(span).after('<span class="kernel error"><i class="fa fa-remove"></i> 语法错误</span>');
+						} else if(json.status == -2) {
+							$(span).after('<span class="kernel aborted"><i class="fa fa-exclamation"></i> 计算超时</span>');
+						}
+						$(span).remove();
+					} else {
+						var span = $('.post-tools', li);
+						if(span && span.length) {
+							span = span[0];
+							if(json.status == 1) {
+								$(span).after('<span class="kernel waiting"><i class="fa fa-clock-o"></i> 等待运算</span>');
+							} else if(json.status == 2) {
+								$(span).after('<span class="kernel evaluate"><i class="fa fa-play"></i> 正在计算</span>');
+							} else if(json.status == 3) {
+								$(span).after('<span class="kernel finished"><i class="fa fa-check"></i> 计算完成</span>');
+							} else if(json.status == -1) {
+								$(span).after('<span class="kernel error"><i class="fa fa-remove"></i> 语法错误</span>');
+							} else if(json.status == -2) {
+								$(span).after('<span class="kernel aborted"><i class="fa fa-exclamation"></i> 计算超时</span>');
+							}
+						}
+					}
+					//Add result mathjax
+					if(json.status == 3 || json.status == -1 || json.status == -2) {
+						var codes = $('code.language-mma', li);
+						if(codes && codes.length) {
+							json.data.forEach(function (item){
+								if(item.type == 'return' || item.type == 'text') {
+	                                $(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">'+item.data+'</div>');
+	                                MathJax.Hub.Config({
+	                                    "HTML-CSS": { linebreaks: { automatic: true } },
+	                                    SVG: { linebreaks: { automatic: true } }
+	                                });
+	                                MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
+	                            }else if(item.type == "error") {
+	                                $(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
+	                            }else if(item.type == "abort") {
+	                                $(codes[item.index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>')
+	                            }else if(item.type == "image") {
+	                                $(codes[item.index]).after("<img class='kernel result' src='/kernel/temp/"+item.data+"''></img>")
+	                            }
+							});
+						}
+					}
 					
 				}
 			});

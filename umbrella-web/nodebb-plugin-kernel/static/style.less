@@ -1,29 +1,29 @@
-.evaluate {
+.kernel.evaluate {
 	border: 1px solid @brand-info;
 	color: @brand-info;
 }
 
-.waiting {
+.kernel.waiting {
 	border: 1px solid @brand-info;
 	color: @brand-info;
 }
 
-.finished {
+.kernel.finished {
 	border: 1px solid @brand-success;
 	color: @brand-success;
 }
 
-.aborted {
+.kernel.aborted {
 	border: 1px solid @brand-warning;
 	color: @brand-warning;
 }
 
-.error {
+.kernel.error {
 	border: 1px solid @brand-danger;
 	color: @brand-danger;
 }
 
-.evaluate, .waiting, .finished, .aborted, .error {
+.kernel.evaluate, .kernel.waiting, .kernel.finished, .kernel.aborted, .kernel.error {
 	text-transform: uppercase;
 	font-size: 10px;
 	padding: 2px 5px;
@@ -35,33 +35,33 @@
 }
 
 .breadcrumb {
-	.evaluate, .waiting, .finished, .aborted, .error {
+	.kernel.evaluate, .kernel.waiting, .kernel.finished, .kernel.aborted, .kernel.error {
 		display: none;
 	}
 }
 
 html .topic {
-	.evaluate {
+	.kernel.evaluate {
 		color: @brand-info;
 	}
 
-	.waiting {
+	.kernel.waiting {
 		color: @brand-info;
 	}
 
-	.finished {
+	.kernel.finished {
 		color: @brand-success;
 	}
 
-	.aborted {
+	.kernel.aborted {
 		color: @brand-warning;
 	}
 
-	.error {
+	.kernel.error {
 		color: @brand-danger;
 	}
 
-	.evaluate .waiting, .finished, .aborted, .error {
+	.kernel.evaluate .kernel.waiting, .kernel.finished, .kernel.aborted, .kernel.error {
 		padding: 2px 8px;
 		vertical-align: 21%;
 	}

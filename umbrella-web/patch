@@ -1,5 +1,7 @@
-gravatar/lib/gravatar.js中
+###################gravatar/lib/gravatar.js##################
 baseURL = '/gravatar/';
+
+###################config.json###############
 
 "redis": {
     "host":"127.0.0.1",
@@ -7,4 +9,5 @@ baseURL = '/gravatar/';
     "username":"",
     "password":"",
     "database":"0"
-}
+},
+"imgDir": "/home/ubuntu/git/umbrella-web/public/kernel/temp/"
