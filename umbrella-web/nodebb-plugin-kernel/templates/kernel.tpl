@@ -6,7 +6,10 @@
 </style>
 
 <div class="panel panel-default">
-  <div class="panel-heading"><button type="button" class="btn btn-primary" data-loading-text="正在运行..." autocomplete="off" id='kernel-evaluate'><i class="fa fa-fw fa-play"></i> 运行</button></div>
+  <div class="panel-heading">
+    <button type="button" class="btn btn-primary" data-loading-text="正在运行..." autocomplete="off" id='kernel-evaluate'><i class="fa fa-fw fa-play"></i> 运行</button>
+    按<kbd><kbd>alt</kbd> + <kbd>1</kbd></kbd>打开语法提示, <kbd><kbd>shift</kbd> + <kbd>enter</kbd></kbd>执行脚本, <kbd><kbd>ctrl</kbd> + <kbd>f</kbd></kbd>代码搜索.
+  </div>
   <div class="panel-body">
     <div id="kernel"></div>
   </div>
@@ -21,16 +24,16 @@
     $(document).ready(function() {
         ace.require("ace/ext/language_tools");
         var kernel = ace.edit("kernel");
-	    kernel.setTheme("ace/theme/twilight");
-	    kernel.getSession().setMode('ace/mode/mathematica');
+        kernel.setTheme("ace/theme/twilight");
+        kernel.getSession().setMode('ace/mode/mathematica');
         kernel.setOptions({
             enableBasicAutocompletion: true,
             enableSnippets: false,
             enableLiveAutocompletion: false
         });
+        kernel.commands.bindKey("alt-1", "startAutocomplete");
 
-        $('#kernel-evaluate').click(function(){
-
+        var evaluate = function (btn) {
             var content = $.trim(kernel.getValue());
 
             if(!content || content == '') {
@@ -44,8 +47,6 @@
             }
             content = [content];
 
-            var $btn = $(this);
-
             require(['csrf'], function(csrf) {
                 $.ajax({
                     method: 'POST',
@@ -57,7 +58,7 @@
                         'x-csrf-token': csrf.get()
                     },
                     beforeSend: function(xhr, settings) {
-                        $btn.button('loading');
+                        btn.button('loading');
                         kernel.setReadOnly(true);
                         $('#kernel-preview').empty();
                     }
@@ -99,11 +100,18 @@
                     app.alertError('Mathematica服务目前不可用');
                 })
                 .always(function() {
-                    $btn.button('reset');
+                    btn.button('reset');
                     kernel.setReadOnly(false);
                 });
             });
-            
+        }
+
+        $('#kernel-evaluate').click(function() {
+            evaluate($(this));
+        });
+
+        kernel.commands.bindKey("shift-enter", function() {
+            evaluate($('#kernel-evaluate'));
         });
     })
 </script>
