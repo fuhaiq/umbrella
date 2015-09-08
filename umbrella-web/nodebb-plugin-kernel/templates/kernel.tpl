@@ -19,9 +19,15 @@
 
 <script>
     $(document).ready(function() {
+        ace.require("ace/ext/language_tools");
         var kernel = ace.edit("kernel");
 	    kernel.setTheme("ace/theme/twilight");
 	    kernel.getSession().setMode('ace/mode/mathematica');
+        kernel.setOptions({
+            enableBasicAutocompletion: true,
+            enableSnippets: false,
+            enableLiveAutocompletion: false
+        });
 
         $('#kernel-evaluate').click(function(){
 
@@ -77,10 +83,6 @@
                             data.forEach(function(item){
                                 if(item.type == 'return' || item.type == 'text') {
                                     $('#kernel-preview').append('<div class="alert alert-success" role="alert">'+item.data+'</div>');
-                                    MathJax.Hub.Config({
-                                        "HTML-CSS": { linebreaks: { automatic: true } },
-                                        SVG: { linebreaks: { automatic: true } }
-                                    });
                                     MathJax.Hub.Queue(["Typeset",MathJax.Hub,"kernel-preview"]);
                                 }else if(item.type == "error") {
                                     $('#kernel-preview').append('<div class="alert alert-danger" role="alert">'+item.data+'</div>')

@@ -11,3 +11,13 @@ baseURL = '/gravatar/';
     "database":"0"
 },
 "imgDir": "/home/ubuntu/git/umbrella-web/public/kernel/temp/"
+
+###################custom header#################
+<script type="text/javascript" src="/vendor/mathjax/MathJax.js?config=MML_HTMLorMML-full"></script>
+<script type="text/javascript" src="/vendor/ace/ace.js"></script>
+<script type="text/javascript">
+    MathJax.Hub.Config({
+        "HTML-CSS": { linebreaks: { automatic: true } },
+        SVG: { linebreaks: { automatic: true } }
+    });
+</script>

@@ -54,10 +54,6 @@ $('document').ready(function() {
 			                        data.forEach(function(item){
 			                        	if(item.type == 'return' || item.type == 'text') {
 			                                $(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">'+item.data+'</div>');
-			                                MathJax.Hub.Config({
-			                                    "HTML-CSS": { linebreaks: { automatic: true } },
-			                                    SVG: { linebreaks: { automatic: true } }
-			                                });
 			                                MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
 			                            }else if(item.type == "error") {
 			                                $(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
@@ -97,10 +93,6 @@ $('document').ready(function() {
 
 
 			$(window).on('action:topic.loaded', function(event) {
-				MathJax.Hub.Config({
-		            "HTML-CSS": { linebreaks: { automatic: true } },
-		            SVG: { linebreaks: { automatic: true } }
-		        });
 		        MathJax.Hub.Queue(["Typeset", MathJax.Hub, 'content']);
 			});
 
@@ -167,19 +159,16 @@ $('document').ready(function() {
 						var codes = $('code.language-mma', li);
 						if(codes && codes.length) {
 							json.data.forEach(function (item){
+								var id = 'socket-io-kernel-post' + json.pid + '-' + item.index
 								if(item.type == 'return' || item.type == 'text') {
-	                                $(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">'+item.data+'</div>');
-	                                MathJax.Hub.Config({
-	                                    "HTML-CSS": { linebreaks: { automatic: true } },
-	                                    SVG: { linebreaks: { automatic: true } }
-	                                });
-	                                MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
+	                                $(codes[item.index]).after('<div id="'+id+'" class="kernel result alert alert-success" role="alert">'+item.data+'</div>');
+	                                MathJax.Hub.Queue(["Typeset", MathJax.Hub, id]);
 	                            }else if(item.type == "error") {
 	                                $(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
 	                            }else if(item.type == "abort") {
 	                                $(codes[item.index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>')
 	                            }else if(item.type == "image") {
-	                                $(codes[item.index]).after("<img class='kernel result' src='/kernel/temp/"+item.data+"''></img>")
+	                                $(codes[item.index]).after("<img class='kernel result' src='/kernel/"+json.pid+"/"+item.data+"''></img>")
 	                            }
 							});
 						}
