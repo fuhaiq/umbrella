@@ -34,7 +34,7 @@
         "timeConstrained": 30, 
         "maxTotal": 8, 
         "url": "-linkmode launch -linkname /usr/local/Wolfram/Mathematica/10.0/Executables/MathKernel",
-        "imgDir": "/home/ubuntu/git/umbrella-web/public/kernel"
+        "imgDir": "/home/umbrella/git/umbrella-web/public/kernel"
     }, 
     "service": {
         "json": {
@@ -47,8 +47,5 @@
             "port": 8000,
             "type": "EPOLL"
         }
-    },
-    "elasearch" : {
-    	"host": "http://localhost:9200/umbrella"
     }
 }
