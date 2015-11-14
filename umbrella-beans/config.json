@@ -1,0 +1,21 @@
+{
+	"beanstalkd": {
+		"host" : "localhost",
+		"port" : "11300",
+        "tube" : "kernel"
+	},
+	"mongo": {
+        "url" : "mongodb://localhost:27017/umbrella",
+        "username": "",
+        "password": ""
+    },
+    "redis": {
+        "host":"127.0.0.1",
+        "port":"6379",
+        "username":"",
+        "password":"",
+        "database":"0"
+    },
+    "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/post/",
+    "kernelUrl": "http://localhost/evaluate"
+}
