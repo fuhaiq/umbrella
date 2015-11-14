@@ -10,6 +10,13 @@ public class Umbrella {
 		Injector injector = Guice.createInjector(new ServiceManagerModule("umbrella.json"));
 		ServiceManager manager = injector.getInstance(ServiceManager.class);
 		manager.startAsync().awaitHealthy();
+		Runtime.getRuntime().addShutdownHook(new Thread(){
+			@Override
+			public void run() {
+				manager.stopAsync().awaitHealthy();
+				System.out.println("shutdown");
+			}
+		});
 	}
 
 }

@@ -1,17 +1,36 @@
 "use strict";
 
 var plugin = {},
-	net = require('net'),
+	http = require('http'),
 	jsdom = require("jsdom"),
 	fivebeans = require('fivebeans'),
 	string = require('string'),
-	winston = module.parent.require('winston'),
+    fs = require('fs-extra'),
+    jquery = fs.readFileSync("./node_modules/nodebb-plugin-kernel/jquery-2.1.4.min.js", "utf-8"),
 	async = module.parent.require('async'),
 	topics = module.parent.require('./topics'),
 	plugins = module.parent.require('./plugins'),
     db = module.parent.require('./database'),
     nconf = module.parent.require('nconf'),
-	posts = module.parent.require('./posts');
+    winston = module.parent.require('winston'),
+	posts = module.parent.require('./posts'),
+    io = module.parent.require('./socket.io');
+
+var emit = function (post, callback) {
+    posts.getTopicFields(post.pid, ['mainPid', 'cid', 'tid'], function (err, topic) {
+        if(err) {
+            return callback(err);
+        }
+        if(topic.mainPid == post.pid) {
+            var message = {status: post.status, tid: topic.tid};
+            io.in('category_' + topic.cid).emit('kernel:topic', message);
+            io.in('recent_topics').emit('kernel:topic', message);
+            io.in('popular_topics').emit('kernel:topic', message);
+            io.in('unread_topics').emit('kernel:topic', message);
+        }
+        return callback(null, null);
+    });
+};
 
 plugin.http = {};
 
@@ -25,24 +44,46 @@ plugin.http.post = function(req, res, next) {
 		return res.json({success: false, msg: '没有脚本可以运行', type: 'info'})
 	}
 	content = JSON.parse(content);
-	var kernel = {id:'kernel', dir: nconf.get('imgDir'), scripts:content};
-	var conn = new net.Socket();
-		conn.connect(8001, 'localhost', function() {
-		conn.write(JSON.stringify(kernel));
-	});
-	conn.on('data', function(data) {
-		conn.destroy();
-        var str = new Buffer(data).toString();
-        var act = JSON.parse(str);
-        if(act.id && act.id == 'exception') {
-            return res.json({success: false, msg: '计算内核错误.我们会尽快解决', type: 'danger'});
+	var kernel = JSON.stringify({dir: nconf.get('imgDir'), scripts:content});
+
+    var options = {
+        path: '/evaluate',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Content-Length': Buffer.byteLength(kernel, 'utf8')
         }
-		return res.json({success: true, data: str});
-	});
-	conn.on('error', function(err) {
-		winston.error(err);
-		return res.sendStatus(500);
-	});
+    };
+
+    var request = http.request(options, function(response) {
+        response.setEncoding('utf8');
+        response.on('data', function(chunk) {
+            switch(response.statusCode) {
+                case 200 :
+                    res.json({success: true, data: chunk});
+                    break;
+                case 502 :
+                    res.json({success: false, msg: '计算服务目前不可用', type: 'danger'});
+                    break;
+                case 500 :
+                    var act = JSON.parse(chunk);
+                    if(string(act.exception).contains('java.util.NoSuchElementException')) {
+                        res.json({success: false, msg: '目前没有空余的计算内核,请稍后再试', type: 'info'});
+                        break;
+                    } else if(string(act.exception).contains('java.util.concurrent.TimeoutException')) {
+                        res.json({success: false, msg: '这个计算太耗时了,算不出来啊', type: 'info'});
+                        break;
+                    } else {
+                        res.json({success: false, msg: '计算服务错误,我们会尽快解决', type: 'danger'});
+                        break;
+                    }
+                default :
+                    res.json({success: false, msg: '计算服务未知错误', type: 'danger'});
+            }
+        });
+    });
+    request.write(kernel);
+    request.end();
 };
 
 plugin.init = function(data, callback) {
@@ -95,35 +136,36 @@ plugin.topic.get= function(data, callback) {
 		} else if(post.status == -2) {
 			post.aborted = true
 		}
-		if(post.result && post.result.length > 0 && post.code && post.code.length > 0) {
-			jsdom.env(
-			post.content,
-			['http://www.wiseker.com/vendor/jquery/js/jquery.js'],
-			function (err, window) {
-				if (err) {
-					window.close();
-					winston.error(err);
-					return next(err);
-				}
-				var codes = window.$("code[class='language-mma']");
-				for(var i = 0; i < post.result.length; i++) {
-					if(post.result[i].type == 'return' || post.result[i].type == 'text') {
-						window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-success" role="alert">'+post.result[i].data+'</div>');		
-					} else if(post.result[i].type == 'error') {
-						window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');		
-					} else if(post.result[i].type == 'abort') {
-						window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>');		
-					} else if(post.result[i].type == 'image') {
-						window.$(codes[post.result[i].index]).after("<img class='kernel result' src='/kernel/"+post.pid+"/"+post.result[i].data+"'></img>");		
-					}
-				}
-				var html = window.document.documentElement.outerHTML;
-				window.close();
-				html = string(html).replaceAll('<html><head></head><body>', '').s;
-				html = string(html).replaceAll('<script class="jsdom" src="http://www.wiseker.com/vendor/jquery/js/jquery.js"></script></body></html>', '').s;
-				post.content = html;
-				return next(null);
-			});
+		if(post.result && post.result.length > 0) {
+
+            jsdom.env({
+                html: post.content,
+                src: [jquery],
+                done: function (err, window) {
+                    if(err) {
+                        return callback(err);
+                    }
+                    var codes = window.$("code[class='language-mma']");
+                    for(var i = 0; i < post.result.length; i++) {
+                        if(post.result[i].type == 'return' || post.result[i].type == 'text') {
+                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-success" role="alert">'+post.result[i].data+'</div>');       
+                        } else if(post.result[i].type == 'error') {
+                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');        
+                        } else if(post.result[i].type == 'abort') {
+                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>');      
+                        } else if(post.result[i].type == 'image') {
+                            window.$(codes[post.result[i].index]).after("<img class='kernel result' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");       
+                        }
+                    }
+                    var html = window.document.documentElement.outerHTML;
+                    window.close();
+                    html = string(html).replaceAll('<html><head></head><body>', '').s;
+                    html = string(html).replaceAll('<script class="jsdom" src="http://www.wiseker.com/vendor/jquery/js/jquery.js"></script></body></html>', '').s;
+                    post.content = html;
+                    return next(null);
+                }
+            });
+
 		} else {
 			return next(null);
 		}
@@ -136,134 +178,130 @@ plugin.post = {};
 
 plugin.post.edit = function(post, callback) {
 	callback = callback || function() {};
-
-    var beansJob = function (pid, callback) {
-        var beans = new fivebeans.client('localhost', 11300);
-        beans.on('connect', function() {
-            beans.use('kernel', function (err) {
-                if (err) {
-                    winston.error(err);
-                    return callback(err)
-                }
-                beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
-                    pid: pid,
-                    action: 'update'
-                }), function (err, jobid) {
-                    beans.end();
-                    return callback(err, jobid);
-                });
-            });
-        }).on('error', callback).connect();
-    };
-    
-    jsdom.env(post.content, ['http://www.wiseker.com/vendor/jquery/js/jquery.js'],
-    function (err, window) {
-        if (err) {
-            window.close();
-            winston.error(err);
+    db.deleteObjectField('post:' + post.pid, 'result', function (err) {
+        if(err) {
             return callback(err);
         }
-        db.deleteObjectFields('post:' + post.pid, ['code', 'result'], function (err){
-            if(err) {
-                return callback(err);
-            }
-            var codes = window.$("code[class='language-mma']");
-            if (codes && codes.length > 0) {
-                var scripts = [];
-                for (var i = 0; i < codes.length; i++) {
-                    scripts.push(window.$(codes[i]).text());
-                };
-                window.close();
-                var updateData = {
-                    code: scripts,
-                    status: 1
-                }
-                posts.setPostFields(post.pid, updateData, function (err) {
-                    if (err) {
-                        return callback(err);
-                    }
-                    return beansJob(post.pid, callback);
+        async.waterfall([
+            function (callback) {
+                plugins.fireHook('filter:parse.raw', post.content, callback);
+            },
+            function (html, callback) {
+                jsdom.env({
+                    html: html,
+                    src: [jquery],
+                    done: callback
                 });
-            } else {
+            },
+            function (window, callback) {
+                var codes = window.$("code[class='language-mma']");
                 window.close();
-                posts.setPostField(post.pid, 'status', 0, function (err) {
-                    if (err) {
-                        return callback(err);
+                return callback(null, codes);
+            },
+            function (codes, callback) {
+                posts.setPostField(post.pid, 'status', (codes && codes.length > 0) ? 1 : 0, function (err) {
+                    if(err) {
+                        return callback(err)
                     }
-                    return beansJob(post.pid, callback); 
+                    post.status = (codes && codes.length > 0) ? 1 : 0;
+                    emit(post, function (err) {
+                        if(err) {
+                            return callback(err)
+                        }
+                        var beans = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
+                        beans.on('connect', function() {
+                            beans.use('kernel', function (err) {
+                                if (err) {
+                                    return callback(err)
+                                }
+                                beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
+                                    pid: post.pid,
+                                    action: 'update'
+                                }), function (err, jobid) {
+                                    beans.end();
+                                    return callback(err, jobid);
+                                });
+                            });
+                        }).on('error', callback).connect();
+                    });
                 });
             }
-        });
+        ], callback);//end of waterfall
     });
 };
 
 plugin.post.save = function(post, callback) {
     callback = callback || function() {};
-    plugins.fireHook('filter:parse.raw', post.content,
-    function(err, html) {
-        if (err) {
-            winston.error(err);
+
+    async.waterfall([
+        function (callback) {
+            plugins.fireHook('filter:parse.raw', post.content, callback);
+        },
+        function (html, callback) {
+            jsdom.env({
+                html: html,
+                src: [jquery],
+                done: callback
+            });
+        },
+        function (window, callback) {
+            var codes = window.$("code[class='language-mma']");
+            window.close();
+            return callback(null, codes);
+        },
+        function (codes, callback) {
+            var send = false;
+            if (codes && codes.length > 0) {
+                send = true;                        
+            }
+            posts.setPostField(post.pid, 'status', (send) ? 1 : 0, function (err) {
+                post.status = (send) ? 1 : 0;
+                return callback(err, send);                            
+            });
+        }
+    ], function (err, send) {
+        if(err) {
             return callback(err);
         }
-        jsdom.env(html, ['http://www.wiseker.com/vendor/jquery/js/jquery.js'],
-        function (err, window) {
-            if (err) {
-                window.close();
-                winston.error(err);
-                return callback(err);
-            }
-            var codes = window.$("code[class='language-mma']");
-            if (codes && codes.length > 0) {
-                var scripts = [];
-                for (var i = 0; i < codes.length; i++) {
-                    scripts.push(window.$(codes[i]).text());
-                };
-                window.close();
-                var updateData = {
-                    code: scripts,
-                    status: 1
+        if(send) {
+            emit(post, function (err) {
+                if(err) {
+                    return callback(err);
                 }
-                posts.setPostFields(post.pid, updateData, function (err) {
-                    if (err) {
-                        return callback(err);
-                    }
-                    var beans = new fivebeans.client('localhost', 11300);
-                    beans.on('connect', function() {
-                        beans.use('kernel', function (err) {
-                            if (err) {
-                                winston.error(err);
-                                return callback(err)
-                            }
-                            beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
-                                pid: post.pid,
-                                action: 'create'
-                            }), function (err, jobid) {
-                                beans.end();
-                                return callback(err, jobid);
-                            });
+                var beans = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
+                beans.on('connect', function() {
+                    beans.use('kernel', function (err) {
+                        if (err) {
+                            return callback(err)
+                        }
+                        beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
+                            pid: post.pid,
+                            action: 'create'
+                        }), function (err, jobid) {
+                            beans.end();
+                            return callback(err, jobid);
                         });
-                    }).on('error', callback).connect();
-                });
-
-            } else {
-                posts.setPostField(post.pid, 'status', 0, callback);
-            }
-        });
+                    });
+                }).on('error', callback).connect();
+            })
+            
+        } else {
+            return callback(null, null);
+        }
     });
 };
 
 plugin.post.purge = function(pid, callback) {
 	callback = callback || function() {};
-	var beans = new fivebeans.client('localhost', 11300);
+	var beans = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
     beans.on('connect', function() {
         beans.use('kernel', function (err) {
             if (err) {
-                winston.error(err);
                 return callback(err)
             }
             beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
                 pid: pid,
-                action: 'delete'
+                action: 'purge'
             }), function (err, jobid) {
                 beans.end();
                 return callback(err, jobid);

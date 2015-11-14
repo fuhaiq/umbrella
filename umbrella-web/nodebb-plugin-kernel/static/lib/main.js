@@ -51,22 +51,28 @@ $('document').ready(function() {
 			                        });
 			                    } else {
 			                        var data = JSON.parse(json.data);
-			                        data.forEach(function(item){
-			                        	if(item.type == 'return' || item.type == 'text') {
-			                                $(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">'+item.data+'</div>');
-			                                MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
-			                            }else if(item.type == "error") {
-			                                $(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
-			                            }else if(item.type == "abort") {
-			                                $(codes[item.index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>')
-			                            }else if(item.type == "image") {
-			                                $(codes[item.index]).after("<img class='kernel result' src='/kernel/temp/"+item.data+"''></img>")
-			                            }
-			                        });
+			                        if(data.length == 0) {
+			                            app.alert({
+			                                title: '消息',
+			                                message: '没有显示结果',
+			                                type: 'info',
+			                                timeout: 2000
+			                            });
+			                        } else {
+			                        	data.forEach(function(item){
+				                        	if(item.type == 'return' || item.type == 'text') {
+				                                $(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">'+item.data+'</div>');
+				                                MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
+				                            }else if(item.type == "error") {
+				                                $(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
+				                            }else if(item.type == "abort") {
+				                                $(codes[item.index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>')
+				                            }else if(item.type == "image") {
+				                                $(codes[item.index]).after("<img class='kernel result' src='/kernel/temp/"+item.data+"''></img>")
+				                            }
+				                        });
+			                        }
 			                    }
-			                })
-			                .fail(function() {
-			                    app.alertError('Mathematica服务目前不可用');
 			                })
 			                .always(function() {
 			                	editor.attr('disabled', false);
@@ -102,7 +108,7 @@ $('document').ready(function() {
 					var title = $('[component="topic/header"] > a', li);
 					if(title && title.length) {
 						title = title[0];
-						$(title).find("span:first-child").remove();
+						$(title).find("span:first-child").remove(); //always remove the span first, this will handle status = 0
 						if(json.status == 1) {
 							$(title).prepend('<span class="kernel waiting"><i class="fa fa-clock-o"></i> 等待运算</span>');
 						} else if(json.status == 2) {

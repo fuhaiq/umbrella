@@ -1,3 +1,6 @@
+/node_modules/nodebb-theme-persona/templates/partials/topic/post.tpl
+
+
 <!-- IF posts.waiting -->
 <span class="kernel waiting"><i class="fa fa-clock-o"></i> 等待运算</span>
 <!-- ENDIF posts.waiting -->

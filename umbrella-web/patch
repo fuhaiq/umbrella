@@ -1,16 +1,27 @@
+sudo apt-get install libkrb5-dev imagemagick build-essential
+
+npm install kerberos connect-redis elasticsearch jsdom fivebeans
+
 ###################gravatar/lib/gravatar.js##################
 baseURL = '/gravatar/';
 
+###################header.tpl##################
+remove js and google css
+
 ###################config.json###############
 
-"redis": {
-    "host":"127.0.0.1",
-    "port":"6379",
-    "username":"",
-    "password":"",
-    "database":"0"
-},
-"imgDir": "/home/ubuntu/git/umbrella-web/public/kernel/temp/"
+	"redis": {
+        "host":"127.0.0.1",
+        "port":"6379",
+        "username":"",
+        "password":"",
+        "database":"0"
+    },
+    "beanstalkd": {
+        "host": "127.0.0.1",
+        "port": "11300"
+    },
+    "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/temp/"
 
 ###################custom header#################
 <script type="text/javascript" src="/vendor/mathjax/MathJax.js?config=MML_HTMLorMML-full"></script>

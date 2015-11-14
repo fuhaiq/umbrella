@@ -54,7 +54,7 @@ public class ServiceManagerModule extends AbstractModule{
 		serviceBinder = MapBinder.newMapBinder(binder(), String.class, Service.class);
 		install(new TelnetServiceModule(serviceBinder));
 		install(new JsonServiceModule(serviceBinder));
-		install(new BeanstalkdServiceModule(serviceBinder));
+//		install(new BeanstalkdServiceModule(serviceBinder));
 		
 		Multibinder<ServiceManager.Listener> listenerBinder = Multibinder.newSetBinder(binder(), ServiceManager.Listener.class);
 		listenerBinder.addBinding().to(ServiceManagerListener.class).in(Scopes.SINGLETON);
