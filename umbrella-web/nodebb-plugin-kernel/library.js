@@ -60,7 +60,7 @@ plugin.http.post = function(req, res, next) {
         response.on('data', function(chunk) {
             switch(response.statusCode) {
                 case 200 :
-                    res.json({success: true, data: chunk});
+                    res.json({success: true, result: chunk});
                     break;
                 case 502 :
                     res.json({success: false, msg: '计算服务目前不可用', type: 'danger'});

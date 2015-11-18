@@ -72,8 +72,8 @@
                             timeout: 2000
                         });
                     } else {
-                        var data = JSON.parse(json.data);
-                        if(data.length == 0) {
+                        var result = JSON.parse(json.result);
+                        if(result.length == 0) {
                             app.alert({
                                 title: '消息',
                                 message: '没有显示结果',
@@ -81,7 +81,7 @@
                                 timeout: 2000
                             });
                         } else {
-                            data.forEach(function(item){
+                            result.forEach(function(item){
                                 if(item.type == 'return' || item.type == 'text') {
                                     $('#kernel-preview').append('<div class="alert alert-success" role="alert">'+item.data+'</div>');
                                     MathJax.Hub.Queue(["Typeset",MathJax.Hub,"kernel-preview"]);

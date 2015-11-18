@@ -23,13 +23,15 @@ var BeanstalkdService = function(db, redis) {
 	            });
 	        },
 	        function (post, topic, callback) {
+	        	var message = {status: post.status, tid: topic.tid};
 	        	if(post.pid == topic.mainPid) {
-	        		var message = {status: post.status, tid: topic.tid};
 		            io.to('category_' + topic.cid).emit('kernel:topic', message);
 		            io.to('recent_topics').emit('kernel:topic', message);
 		            io.to('popular_topics').emit('kernel:topic', message);
 		            io.to('unread_topics').emit('kernel:topic', message);
 	        	}
+	        	message = {status: post.status, pid: pid};
+	        	io.to('topic_' + topic.tid).emit('kernel:post', message);
 	        	return callback(null, null);
 	        }
 	    ], callback);
@@ -159,7 +161,9 @@ var BeanstalkdService = function(db, redis) {
 			}
 			if(post.status == 0) {
 				fs.removeSync(dir + pid);
-				return callback(null, false);
+				return emit(pid, function () {
+					return callback(null, false);
+				});
 			} else if(post.status == 1) {
 				fs.removeSync(dir + pid);
 				return kernel(post, pid, dir, url, callback);
