@@ -28,6 +28,8 @@ var emit = function (post, callback) {
             io.in('popular_topics').emit('kernel:topic', message);
             io.in('unread_topics').emit('kernel:topic', message);
         }
+        message = {status: post.status, pid: post.pid};
+        io.in('topic_' + topic.tid).emit('kernel:post', message);
         return callback(null, null);
     });
 };
