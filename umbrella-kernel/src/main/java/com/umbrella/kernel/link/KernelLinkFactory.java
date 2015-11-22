@@ -28,6 +28,10 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 		kernelLink.connect();
 		kernelLink.discardAnswer();
 		kernelLink.addPacketListener(listener);
+		
+//		Needs["MSP`"]
+//		MSP`Utility`SetSecurity[ "SecurityConfiguration.m"];
+		
 		kernelLink.evaluate("Needs[\"" + KernelLink.PACKAGE_CONTEXT + "\"]");
 		kernelLink.discardAnswer();
 		kernelLink.evaluate("Needs[\"Umbrella`\"]");

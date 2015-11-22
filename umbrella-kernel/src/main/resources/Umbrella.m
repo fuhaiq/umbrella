@@ -10,8 +10,6 @@ Umbrella::usage = "Evaluate expression to MathMLForm or GIF";
 
 Begin["`Private`"]
 
-Needs["WorldPlot`"]
-
 Needs["JLink`"]
 
 (* Set MathMLForm *)
