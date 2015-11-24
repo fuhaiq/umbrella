@@ -1,0 +1,58 @@
+创建根索引
+curl -XPUT 'http://localhost:9200/umbrella'
+
+比较分词效果
+http://localhost:9200/umbrella/_analyze?analyzer=standard&pretty=true&text=我是中国人
+http://localhost:9200/umbrella/_analyze?analyzer=ik_max_word&pretty=true&text=我是中国人
+
+
+curl -XPUT "http://localhost:9200/umbrella/topic/_mapping" -d'
+{
+   "topic": {
+      "properties": {
+			"uid": {
+				"type": "integer",
+				"index": "not_analyzed"
+			},
+			"cid": {
+				"type": "integer",
+				"index": "not_analyzed"
+			},
+			"deleted": {
+				"type": "boolean",
+				"index": "not_analyzed"
+			},
+			"title": {
+	            "type": "string",
+	            "analyzer": "ik_max_word",
+	            "search_analyzer": "ik_max_word"
+         	}
+      }
+   }
+}'
+
+
+curl -XPUT "http://localhost:9200/umbrella/post/_mapping" -d'
+{
+   "post": {
+      "properties": {
+			"uid": {
+				"type": "integer",
+				"index": "not_analyzed"
+			},
+			"cid": {
+				"type": "integer",
+				"index": "not_analyzed"
+			},
+			"deleted": {
+				"type": "boolean",
+				"index": "not_analyzed"
+			},
+         "content": {
+            "type": "string",
+            "analyzer": "ik_max_word",
+            "search_analyzer": "ik_max_word"
+         }
+      }
+   }
+}'

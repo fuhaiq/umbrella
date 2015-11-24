@@ -1,4 +1,4 @@
-package com.umbrella.kernel;
+package com.umbrella.kernel.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -3,6 +3,8 @@
 var plugin = {},
 	string = require('string'),
 	elasticsearch = require('elasticsearch'),
+	fs = require('fs-extra'),
+    jquery = fs.readFileSync("./node_modules/nodebb-plugin-kernel/jquery-2.1.4.min.js", "utf-8"),
 	jsdom = require("jsdom"),
 	client = null,
 	async = module.parent.require('async'),
@@ -12,13 +14,16 @@ var plugin = {},
 	posts = module.parent.require('./posts'),
 	categories = module.parent.require('./categories'),
 	plugins = module.parent.require('./plugins'),
-	winston = module.parent.require('winston');
+	winston = module.parent.require('winston'),
+	nconf = module.parent.require('nconf');
 
+/*
 var isDeleted = function(pid, callback) {
 	topics.getTopicFieldByPid('deleted', pid, function(err, deleted) {
 		callback(err, parseInt(deleted, 10) === 1);
 	});
 };
+*/
 
 var insert = function(type, id, value, cid, uid, callback) {
 	var query = {
@@ -95,18 +100,20 @@ var purge = function(type, id, callback) {
 
 plugin.init = function(data, callback) {
 	client = new elasticsearch.Client({
-		host: 'localhost:9200',
+		host: nconf.get('elasticsearch:host') + ':' + nconf.get('elasticsearch:port'),
 		log: 'error'
 	});
 	callback();
 };
 
-plugin.searchTopic = function(quert, callback) {
-	callback = callback || function() {};
-	return callback(null);
-}
-
 plugin.search = function(data, callback) {
+	if (!data || !data.index) {
+		return callback(null, []);
+	}
+	if(!data.content) {
+		return callback(null, []);
+	}
+
 	var uid = [],
 		cid = [];
 
@@ -181,12 +188,24 @@ plugin.search = function(data, callback) {
 		};		
 	} else {
 		var msg = 'no this type of index ['+data.index+'] defined.'
-		winston.error(msg);
 		return callback(msg);
 	}
+
+	async.waterfall([
+		function (callback) {
+			client.search(query, callback);
+		},
+		function (res, httpCode, callback) {
+			var payload = res.hits.hits.map(function(result) {
+				return parseInt(result._id, 10);
+			});
+			return callback(null, payload);
+		}
+	], callback);
+
+/*
 	client.search(query, function(err, obj) {
     	if(err) {
-    		winston.error(err);
     		return callback(err);
     	}
     	if(obj && obj.hits && obj.hits.hits && obj.hits.hits.length > 0) {
@@ -213,6 +232,8 @@ plugin.search = function(data, callback) {
     		return callback(null, []);
     	}
     });
+*/
+
 };
 
 plugin.topic = {};
@@ -224,7 +245,24 @@ plugin.topic.post = function(topic, callback) {
 
 plugin.topic.delete = function(topic, callback) {
 	callback = callback || function() {};
-	return remove('topic', topic.tid, callback);
+	var query = {
+		body: [
+			{ update: { _index: 'umbrella', _type: 'topic', _id: topic.tid } },
+			{ doc: { deleted: true } }
+		]
+	};
+	topics.getPids(topic.tid, function (err, pids) {
+		if(err) {
+			return callback(err);
+		}
+		for(var index = 0; index < pids.length; index++) {
+			query.body.push(
+				{ update: { _index: 'umbrella', _type: 'post', _id: pids[index] } },
+				{ doc: { deleted: true } }
+			);
+		}
+		return client.bulk(query, callback);
+	});
 };
 
 plugin.topic.edit = function(topic, callback) {
@@ -234,7 +272,24 @@ plugin.topic.edit = function(topic, callback) {
 
 plugin.topic.restore = function(topic, callback) {
 	callback = callback || function() {};
-	return restore('topic', topic.tid, callback);
+	var query = {
+		body: [
+			{ update: { _index: 'umbrella', _type: 'topic', _id: topic.tid } },
+			{ doc: { deleted: false } }
+		]
+	};
+	topics.getPids(topic.tid, function (err, pids) {
+		if(err) {
+			return callback(err);
+		}
+		for(var index = 0; index < pids.length; index++) {
+			query.body.push(
+				{ update: { _index: 'umbrella', _type: 'post', _id: pids[index] } },
+				{ doc: { deleted: false } }
+			);
+		}
+		return client.bulk(query, callback);
+	});
 };
 
 plugin.topic.purge = function(tid, callback) {
@@ -252,7 +307,6 @@ plugin.topic.move = function(info, callback) {
 	};
 	topics.getPids(info.tid, function (err, pids) {
 		if(err) {
-			winston.error(err);
 			return callback(err);
 		}
 		for(var index = 0; index < pids.length; index++) {
@@ -269,25 +323,25 @@ plugin.post= {};
 
 plugin.post.save = function(post, callback) {
 	callback = callback || function() {};
-	plugins.fireHook('filter:parse.raw', post.content, function (err, html){
-		if(err) {
-			winston.error(err);
-			return callback(err);
-		}
-		jsdom.env(
-			html,
-			['http://www.wiseker.com/vendor/jquery/js/jquery.js'],
-			function (err, window) {
-				if (err) {
-					window.close();
-					winston.error(err);
-					return callback(err);
-				}
-				var text = window.$(html).text();
-				window.close();
-				return insert('post', post.pid, text, post.cid, post.uid, callback);
-			});
-	});
+	async.waterfall([
+	    function (callback) {
+	        plugins.fireHook('filter:parse.raw', post.content, callback);
+	    },
+	    function (html, callback) {
+	        jsdom.env({
+	            html: html,
+	            src: [jquery],
+	            done: function (err, window) {
+	            	return callback(err, window, html);
+	            }
+	        });
+	    },
+	    function (window, html, callback) {
+	        var text = window.$(html).text();
+			window.close();
+			return insert('post', post.pid, text, post.cid, post.uid, callback);
+	    }
+    ], callback);
 };
 
 plugin.post.delete = function(pid, callback) {
@@ -297,19 +351,25 @@ plugin.post.delete = function(pid, callback) {
 
 plugin.post.edit = function(post, callback) {
 	callback = callback || function() {};
-	jsdom.env(
-		post.content,
-		['http://www.wiseker.com/vendor/jquery/js/jquery.js'],
-		function (err, window) {
-			if (err) {
-				window.close();
-				winston.error(err);
-				return callback(err);
-			}
-			var text = window.$(post.content).text();
+	async.waterfall([
+	    function (callback) {
+	        plugins.fireHook('filter:parse.raw', post.content, callback);
+	    },
+	    function (html, callback) {
+	        jsdom.env({
+	            html: html,
+	            src: [jquery],
+	            done: function (err, window) {
+	            	return callback(err, window, html);
+	            }
+	        });
+	    },
+	    function (window, html, callback) {
+	        var text = window.$(html).text();
 			window.close();
 			return update('post', post.pid, text, callback);
-		});
+	    }
+    ], callback);
 };
 
 plugin.post.restore = function(post, callback) {
@@ -326,7 +386,6 @@ plugin.post.move = function(info, callback) {
 	callback = callback || function() {};
 	topics.getTopicField(info.tid, 'cid', function (err, cid) {
 		if(err) {
-			winston.error(err);
 			return callback(err);
 		}
 		return client.update(
@@ -383,58 +442,52 @@ plugin.morelikethis = function(topic, callback) {
 		}
 	};
 
+
 	client.search(query, function (err, res) {
 		if(err) {
-			winston.error(err);
 			return callback(err);
 		}
-		if(res.hits.length == 0) {
+		if(res.hits.hits.length == 0) {
 			return callback(null, topic);
-		} else {
-			var tids = [];
-			for(var index = 0; index < res.hits.hits.length; index++) {
-				tids.push(parseInt(res.hits.hits[index]._id, 10));
+		}
+		var tids = res.hits.hits.map(function(result) {
+			return parseInt(result._id, 10);
+		});
+		topics.getTopicsData(tids, function (err, similar) {
+			function mapFilter(array, field) {
+				return array.map(function(topic) {
+					return topic && topic[field] && topic[field].toString();
+				}).filter(function(value, index, array) {
+					return string(value).isNumeric() && array.indexOf(value) === index;
+				});
 			}
-
-			topics.getTopicsData(tids, function (err, similar) {
-				function mapFilter(array, field) {
-					return array.map(function(topic) {
-						return topic && topic[field] && topic[field].toString();
-					}).filter(function(value, index, array) {
-						return string(value).isNumeric() && array.indexOf(value) === index;
-					});
+			if (err) {
+				return callback(err);
+			}
+			var cids = mapFilter(similar, 'cid');
+			async.parallel({
+				teasers: function(next) {
+					topics.getTeasers(similar, next);
+				},
+				categories: function(next) {
+					categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'bgColor', 'color', 'disabled'], next);
 				}
+			}, function (err, results) {
 				if (err) {
-					winston.error(err);
 					return callback(err);
 				}
-				var cids = mapFilter(similar, 'cid');
-				async.parallel({
-					teasers: function(next) {
-						topics.getTeasers(similar, next);
-					},
-					categories: function(next) {
-						categories.getMultipleCategoryFields(cids, ['cid', 'name', 'slug', 'icon', 'bgColor', 'color', 'disabled'], next);
+				var categories = _.object(cids, results.categories);
+				for (var i = 0; i < similar.length; ++i) {
+					if (similar[i]) {
+						similar[i].category = categories[similar[i].cid];
+						similar[i].teaser = results.teasers[i];
+						similar[i].unreplied = parseInt(similar[i].postcount, 10) <= 1 && meta.config.teaserPost !== 'first';
 					}
-				}, function (err, results) {
-					if (err) {
-						winston.error(err);
-						return callback(err);
-					}
-					var categories = _.object(cids, results.categories);
-					for (var i=0; i<similar.length; ++i) {
-						if (similar[i]) {
-							similar[i].category = categories[similar[i].cid];
-							similar[i].teaser = results.teasers[i];
-							similar[i].unreplied = parseInt(similar[i].postcount, 10) <= 1 && meta.config.teaserPost !== 'first';
-						}
-					}
-					topic.similar = similar;
-					return callback(null, topic);
-
-				});
+				}
+				topic.similar = similar;
+				return callback(null, topic);
 			});
-		}
+		});
 	});
 }
 

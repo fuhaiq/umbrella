@@ -10,12 +10,13 @@
   "license": "BSD-2-Clause",
   "_id": "nodebb-plugin-search@0.0.1",
   "nbbpm": {
-    "compatibility": "^0.7.0 || ^0.8.0 || ^0.9.0"
+    "compatibility": "^0.9.0"
   },
   "directories": {},
   "dependencies": {
     "elasticsearch": ">=8.2.0",
     "string": "^3.0.0",
-    "jsdom": ">=7.0.2"
+    "jsdom": ">=7.0.2",
+    "fs-extra" : ">=0.26.2"
   }
 }

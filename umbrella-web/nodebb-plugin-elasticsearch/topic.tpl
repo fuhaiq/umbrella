@@ -1,3 +1,6 @@
+/node_modules/nodebb-theme-persona/templates/topic.tpl
+
+
 <!-- IF similar.length -->
 <h4>相似话题</h4>
 <table class="table table-striped">

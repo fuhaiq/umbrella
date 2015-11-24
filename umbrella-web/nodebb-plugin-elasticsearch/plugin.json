@@ -22,7 +22,6 @@
 		
 		
         { "hook": "filter:search.query", "method": "search"},
-        { "hook": "filter:topic.search", "method": "searchTopic"},
         { "hook": "filter:controllers.topic.get", "method": "morelikethis"}
 
 	]

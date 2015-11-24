@@ -6,12 +6,12 @@ import java.util.concurrent.Executors;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.env.Environment;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -20,39 +20,54 @@ import com.wolfram.jlink.KernelLink;
 
 @Configuration
 @PropertySource("classpath:/application.properties")
-public class KernelApplicationProvider {
+public class KernelConfiguration {
 	
-	private final Logger LOG = LoggerFactory.getLogger(KernelApplicationProvider.class);
-
+	private @Value("${kernel.libdir.name}") String libDirName;
+	
+	private @Value("${kernel.libdir.dir}") String libDir;
+	
+	private @Value("${kernel.maxWaitMillis}") long maxWaitMillis;
+	
+	private @Value("${kernel.timeConstrained}") int timeConstrained;
+	
+	private @Value("${kernel.maxTotal}") int maxTotal;
+	
+	private @Value("${kernel.url}") String url;
+	
+	private @Value("${kernel.imgDir}") String imgDir;
+	
+	@Bean
+	public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+		return new PropertySourcesPlaceholderConfigurer();
+	}
+	
 	@Autowired
 	@Bean
 	public KernelConfig provideKernelConfig(Environment env) {
 		KernelConfig config = new KernelConfig();
-		config.getLibdir().setName(env.getProperty("kernel.libdir.name"));
-		config.getLibdir().setDir(env.getProperty("kernel.libdir.dir"));
-		config.setMaxWaitMillis(env.getProperty("kernel.maxWaitMillis", Long.class));
-		config.setTimeConstrained(env.getProperty("kernel.timeConstrained", Integer.class));
-		config.setMaxTotal(env.getProperty("kernel.maxTotal", Integer.class));
-		config.setUrl(env.getProperty("kernel.url"));
-		config.setImgDir(env.getProperty("kernel.imgDir"));
+		config.getLibdir().setName(libDirName);
+		config.getLibdir().setDir(libDir);
+		config.setMaxWaitMillis(maxWaitMillis);
+		config.setTimeConstrained(timeConstrained);
+		config.setMaxTotal(maxTotal);
+		config.setUrl(url);
+		config.setImgDir(imgDir);
 		config.setJmxEnabled(false);
 		return config;
 	}
 	
 	@Autowired
-	@Bean
+	@Bean(destroyMethod = "close")
 	public ObjectPool<KernelLink> provideKernelLinkPool(KernelConfig kernelConfig, PooledObjectFactory<KernelLink> kernelFactory) {
 		System.setProperty(kernelConfig.getLibdir().getName(), kernelConfig.getLibdir().getDir());
 		GenericObjectPool<KernelLink> pool = new GenericObjectPool<KernelLink>(kernelFactory, kernelConfig);
-		LOG.info("初始化Mathematica内核池完成");
 		return pool;
 	}
 	
 	@Autowired
-	@Bean
+	@Bean(destroyMethod = "shutdown")
 	public ExecutorService provideKernelTimeoutExecutorService(KernelConfig kernelConfig) {
 		ExecutorService service = Executors.newFixedThreadPool(kernelConfig.getMaxTotal(), new ThreadFactoryBuilder().setNameFormat("kernel-timeout-thread").build());
-		LOG.info("初始化Mathematica计算超时控制器完成");
 		return service;
 	}
 	

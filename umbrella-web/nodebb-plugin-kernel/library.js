@@ -99,6 +99,27 @@ plugin.init = function(data, callback) {
 
 plugin.topic = {};
 
+var populateStatus = function (status, topicOrPost) {
+    switch(status) {
+        case 1 :
+            topicOrPost.waiting = true;
+            break;
+        case 2 :
+            topicOrPost.evaluate = true;
+            break;
+        case 3 :
+            topicOrPost.finished = true;
+            break;
+        case -1 :
+            topicOrPost.error = true;
+            break;
+        case -2 :
+            topicOrPost.aborted = true;
+            break;
+    }
+    return topicOrPost;
+}
+
 plugin.topic.list = function(data, callback) {
 	var topic_list = data.topics;
 	async.map(topic_list, function(topic, next) {
@@ -106,17 +127,7 @@ plugin.topic.list = function(data, callback) {
 			if(err) {
 				return next(err);
 			}
-			if(post.status == 1) {
-				topic.title = '<span class="kernel waiting"><i class="fa fa-clock-o"></i> 等待运算</span> ' + topic.title;
-			} else if(post.status == 2) {
-				topic.title = '<span class="kernel evaluate"><i class="fa fa-play"></i> 正在计算</span> ' + topic.title;
-			} else if(post.status == 3) {
-				topic.title = '<span class="kernel finished"><i class="fa fa-check"></i> 计算完成</span> ' + topic.title;
-			} else if(post.status == -1) {
-				topic.title = '<span class="kernel error"><i class="fa fa-remove"></i> 语法错误</span> ' + topic.title;
-			} else if(post.status == -2) {
-				topic.title = '<span class="kernel aborted"><i class="fa fa-exclamation"></i> 计算超时</span> ' + topic.title;
-			}
+            topic = populateStatus(post.status, topic);
 			return next(null, topic);
 		});
 	}, function(err) {
@@ -127,19 +138,8 @@ plugin.topic.list = function(data, callback) {
 plugin.topic.get= function(data, callback) {
 	var topic = data.topic;
 	async.map(topic.posts, function (post, next) {
-		if(post.status == 1) {
-			post.waiting = true;
-		} else if(post.status == 2) {
-			post.evaluate = true;
-		} else if(post.status == 3) {
-			post.finished = true;
-		} else if(post.status == -1) {
-			post.error = true;
-		} else if(post.status == -2) {
-			post.aborted = true
-		}
+        post = populateStatus(post.status, post);
 		if(post.result && post.result.length > 0) {
-
             jsdom.env({
                 html: post.content,
                 src: [jquery],
@@ -167,7 +167,6 @@ plugin.topic.get= function(data, callback) {
                     return next(null);
                 }
             });
-
 		} else {
 			return next(null);
 		}
