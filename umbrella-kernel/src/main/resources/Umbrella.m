@@ -12,30 +12,25 @@ Begin["`Private`"]
 
 Needs["JLink`"]
 
-(* Set MathMLForm *)
-
-$PrePrint = With[{expr = #},If[MemberQ[expr, _Graphics | _Graphics3D | _Graph | _Manipulate | _Rotate, {0, \[Infinity]}], LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[expr]]], MathMLForm[expr]]] &;
-
-
-(*
-
 Needs["MSP`"]
 
-MSP`Utility`SetSecurity[ "SecurityConfiguration.m"];
+MSP`Utility`SetSecurity["/home/wesker/SecurityConfiguration.m"]
 
 $Pre = Function[expr, 
-      Module[
-        {expr$ = ToString[Unevaluated[expr], InputForm]},
-         MSPToExpression[expr$]
-  ],
-  HoldAll
-]
-*)
+	Module[
+		{expr$ = ToString[Unevaluated[expr], InputForm]},
+		
+		$$result = TimeConstrained[MSPToExpression[expr$], 20];
 
-(* Set time constrained *)
-SetAttributes[timecon, HoldAll]
-timecon[new_] := TimeConstrained[new, 10]
-$Pre = timecon;
+		If[MemberQ[$$result, _Graphics | _Graphics3D | _Graph | _Manipulate | _Rotate, {0, \[Infinity]}], 
+			LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[$$result]]]
+			, 
+			MathMLForm[$$result]
+		]
+	],
+	
+	HoldAllComplete
+]
 
 End[]
 

@@ -28,8 +28,6 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 		kernelLink.connect();
 		kernelLink.discardAnswer();
 		kernelLink.addPacketListener(listener);
-		kernelLink.evaluate("Needs[\"" + KernelLink.PACKAGE_CONTEXT + "\"]");
-		kernelLink.discardAnswer();
 		kernelLink.evaluate("Needs[\"Umbrella`\"]");
 		kernelLink.discardAnswer();
 		LOG.info("创建Mathematica内核 [" + kernelLink.toString() + "] 入池");

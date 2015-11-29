@@ -4,6 +4,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -32,7 +34,14 @@ public class KernelImpl implements Kernel {
 
 	@Autowired
 	private KernelConfig config;
-
+	
+	private final Set<Character> bad;
+	
+	public KernelImpl() {
+		bad = new HashSet<Character>();
+		bad.add((char) 92);
+	}
+	
 	@Override
 	public JSONArray evaluate(JSONObject in) throws Exception {
 		String dir = checkNotNull(in.getString("dir"), "参数错误: 图片目录不存在");
@@ -89,6 +98,16 @@ public class KernelImpl implements Kernel {
 	}
 
 	private JSONArray kernel(KernelLink kernelLink, String expression) throws MathLinkException {
+		for(char badChar : bad) {
+			if(expression.indexOf(badChar) != -1) {
+				JSONArray result = new JSONArray();
+				JSONObject obj = new JSONObject();
+				obj.put("type", "error");
+				obj.put("data", "Syntax::sntxf Bad character " + badChar);
+				result.add(obj);
+				return result;
+			}
+		}
 		expression = expression.replace((char) 160, (char) 32);
 		kernelLink.putFunction("EnterTextPacket", 1);
 		kernelLink.put(expression);
