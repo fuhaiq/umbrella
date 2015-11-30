@@ -61,34 +61,6 @@ var update = function(type, id, value, callback) {
 	return client.update(query, callback);
 };
 
-var remove = function(type, id, callback) {
-	return client.update(
-	{
-		index: 'umbrella',
-		type: type,
-		id: id,
-		body: {
-			doc: {
-				deleted: true
-			}
-		}
-	}, callback);
-};
-
-var restore = function(type, id, callback) {
-	return client.update(
-	{
-		index: 'umbrella',
-		type: type,
-		id: id,
-		body: {
-			doc: {
-				deleted: false
-			}
-		}
-	}, callback);
-};
-
 var purge = function(type, id, callback) {
 	return client.delete(
 	{
@@ -346,7 +318,17 @@ plugin.post.save = function(post, callback) {
 
 plugin.post.delete = function(pid, callback) {
 	callback = callback || function() {};
-	return remove('post', pid, callback);
+	return client.update(
+	{
+		index: 'umbrella',
+		type: 'post',
+		id: pid,
+		body: {
+			doc: {
+				deleted: true
+			}
+		}
+	}, callback);
 };
 
 plugin.post.edit = function(post, callback) {
@@ -374,7 +356,17 @@ plugin.post.edit = function(post, callback) {
 
 plugin.post.restore = function(post, callback) {
 	callback = callback || function() {};
-	return restore('post', post.pid, callback);
+	return client.update(
+		{
+			index: 'umbrella',
+			type: 'post',
+			id: post.pid,
+			body: {
+				doc: {
+					deleted: false
+				}
+			}
+		}, callback);
 };
 
 plugin.post.purge = function(pid, callback) {

@@ -21,6 +21,12 @@
 		},
 		{
 			"hook": "filter:topic.get", "method": "topic.get"
+		},
+		{
+			"hook": "filter:post.edit", "method": "post.filterEdit"
+		},
+		{
+			"hook": "filter:post.delete", "method": "post.filterDelete"
 		}
 	],
 	"scripts": [

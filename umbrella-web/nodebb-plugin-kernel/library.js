@@ -14,6 +14,7 @@ var plugin = {},
     nconf = module.parent.require('nconf'),
     winston = module.parent.require('winston'),
 	posts = module.parent.require('./posts'),
+    redis = require("redis"),
     io = module.parent.require('./socket.io');
 
 var emit = function (post, callback) {
@@ -176,6 +177,36 @@ plugin.topic.get= function(data, callback) {
 };
 
 plugin.post = {};
+
+plugin.post.filterEdit = function(postData, callback) {
+    callback = callback || function() {};
+    var client = redis.createClient(nconf.get('redis:port'), nconf.get('redis:host'));
+    client.exists('post:lock:' + postData.post.pid, function (err, reply) {
+        client.quit();
+        if(err) {
+            return callback(err);
+        }
+        if(reply == 1) {
+            return callback(new Error('帖子正在计算,暂时不能修改.'));
+        }
+        return callback(null, postData);
+    });
+};
+
+plugin.post.filterDelete = function(pid, callback) {
+    callback = callback || function() {};
+    var client = redis.createClient(nconf.get('redis:port'), nconf.get('redis:host'));
+    client.exists('post:lock:' + pid, function (err, reply) {
+        client.quit();
+        if(err) {
+            return callback(err);
+        }
+        if(reply == 1) {
+            return callback(new Error('帖子正在计算,暂时不能删除.'));
+        }
+        return callback(null, pid);
+    });
+};
 
 plugin.post.edit = function(post, callback) {
 	callback = callback || function() {};

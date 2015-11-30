@@ -1,9 +1,6 @@
 sudo apt-get install libkrb5-dev imagemagick build-essential
 
-npm install kerberos connect-redis elasticsearch jsdom fivebeans
-
-###################gravatar/lib/gravatar.js##################
-baseURL = '/gravatar/';
+npm install kerberos connect-redis elasticsearch jsdom fivebeans fs-extra
 
 ###################header.tpl##################
 remove js and google css
@@ -36,3 +33,13 @@ remove js and google css
         SVG: { linebreaks: { automatic: true } }
     });
 </script>
+
+###################post/delete.js#################
+function(next) {
+    plugins.fireHook('filter:post.delete', pid, function (err) {
+        if(err) {
+            return next(err)
+        }
+        Posts.setPostField(pid, 'deleted', 1, next);
+    });
+},
