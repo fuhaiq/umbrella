@@ -111,6 +111,7 @@ plugin.search = function(data, callback) {
 		index: 'umbrella',
 		type: data.index,
 		body: {
+			fields: [],	//use empty fields to minimize I/O
 			query: {
 				bool: {
 					must: [
@@ -125,7 +126,8 @@ plugin.search = function(data, callback) {
 					},
 					minimum_should_match: 1
 				}
-			}
+			},
+			size: 1000
 		}
 	};
 
@@ -168,6 +170,7 @@ plugin.search = function(data, callback) {
 			client.search(query, callback);
 		},
 		function (res, httpCode, callback) {
+			winston.warn(res.hits)
 			var payload = res.hits.hits.map(function(result) {
 				return parseInt(result._id, 10);
 			});
@@ -430,7 +433,8 @@ plugin.morelikethis = function(topic, callback) {
 					},
 					minimum_should_match: 1
 				}
-			}
+			},
+			size: 10
 		}
 	};
 
