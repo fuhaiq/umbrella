@@ -12,7 +12,8 @@
     "markdown-it": ">=5.0.1",
     "jsdom": ">=7.0.2",
     "fs-extra" : ">=0.26.2",
-    "string": ">=3.3.1"
+    "string": ">=3.3.1",
+    "kerberos": ">=0.0.17"
   },
   "engine": "node 5.0.0"
 }

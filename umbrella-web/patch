@@ -1,6 +1,6 @@
 sudo apt-get install libkrb5-dev imagemagick build-essential
 
-npm install kerberos connect-redis elasticsearch jsdom fivebeans fs-extra
+npm install kerberos connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards
 
 ###################header.tpl##################
 remove js and google css

@@ -1,34 +1,36 @@
 /node_modules/nodebb-theme-persona/templates/topic.tpl
 
-
 <!-- IF similar.length -->
-<h4>相似话题</h4>
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>话题</th>
-      <th>版面</th>
-      <th>帖子</th>
-      <th>浏览</th>
-      <th>动态</th>
-    </tr>
-  </thead>
-  <tbody>
+<div class="topic col-lg-10">
+<!-- ELSE -->
+<div class="topic col-lg-12">
+<!-- ENDIF similar.length -->
+--------------------------------------------------
+<!-- IF similar.length -->
+<div class="topic col-lg-2">
+  <h4>相似话题</h4>
+  <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
     <!-- BEGIN similar -->
-    <tr>
-      <th><a href="{config.relative_path}/topic/{similar.slug}" itemprop="url">{similar.title}</a></th>
-      <td><a href="{config.relative_path}/category/{similar.category.slug}" class="label label-default" style="background-color: {similar.category.bgColor}; color: {similar.category.color};">{similar.category.name}</a></td>
-      <td>{similar.postcount}</td>
-      <td>{similar.viewcount}</td>
-      <td>
-      <!-- IF similar.unreplied -->
-        <small class="timeago" title="{similar.relativeTime}"></small>
-      <!-- ELSE -->
-        <small class="timeago" title="{similar.teaser.timestamp}"></small>
-      <!-- ENDIF similar.unreplied -->
-      </td>
-    </tr>
+    <li component="categories/category" data-cid="1" data-numrecentreplies="1" class="row clearfix">
+      <div class="card" style="border-color: {similar.category.bgColor}">
+        <div component="category/posts">
+          <p>
+            <a href="{config.relative_path}/user/{similar.user.userslug}">
+              <!-- IF similar.user.picture -->
+              <img title="{similar.user.username}" class="user-img" src="{similar.user.picture}" />
+              <!-- ELSE -->
+              <span title="{similar.user.username}" class="user-icon user-img" style="background-color: {similar.user.icon:bgColor};">{similar.user.icon:text}</span>
+              <!-- ENDIF similar.user.picture -->
+            </a>
+            <small>{similar.postcount}帖子 | {similar.viewcount}浏览</small>
+          </p>
+          <div class="post-content">
+            <a href="{config.relative_path}/topic/{similar.slug}" itemprop="url">{similar.title}</a>
+          </div>
+        </div>
+      </div>
+    </li>
     <!-- END similar -->
-  </tbody>
-</table>
+  </ul>
+</div>
 <!-- ENDIF similar.length -->

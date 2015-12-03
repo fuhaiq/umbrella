@@ -1,27 +1,28 @@
 "use strict";
 
 var plugin = {},
-	string = require('string'),
-	elasticsearch = require('elasticsearch'),
-	fs = require('fs-extra'),
-    jquery = fs.readFileSync("./node_modules/nodebb-plugin-kernel/jquery-2.1.4.min.js", "utf-8"),
-	jsdom = require("jsdom"),
-	client = null,
-	async = module.parent.require('async'),
-	_ = module.parent.require('underscore'),
-	meta = module.parent.require('./meta'),
-	topics = module.parent.require('./topics'),
-	posts = module.parent.require('./posts'),
-	categories = module.parent.require('./categories'),
-	plugins = module.parent.require('./plugins'),
-	winston = module.parent.require('winston'),
-	nconf = module.parent.require('nconf');
+string = require('string'),
+elasticsearch = require('elasticsearch'),
+fs = require('fs-extra'),
+jquery = fs.readFileSync("./node_modules/nodebb-plugin-kernel/jquery-2.1.4.min.js", "utf-8"),
+jsdom = require("jsdom"),
+client = null,
+async = module.parent.require('async'),
+_ = module.parent.require('underscore'),
+meta = module.parent.require('./meta'),
+topics = module.parent.require('./topics'),
+posts = module.parent.require('./posts'),
+user = module.parent.require('./user'),
+categories = module.parent.require('./categories'),
+plugins = module.parent.require('./plugins'),
+winston = module.parent.require('winston'),
+nconf = module.parent.require('nconf');
 
 /*
 var isDeleted = function(pid, callback) {
-	topics.getTopicFieldByPid('deleted', pid, function(err, deleted) {
-		callback(err, parseInt(deleted, 10) === 1);
-	});
+topics.getTopicFieldByPid('deleted', pid, function(err, deleted) {
+callback(err, parseInt(deleted, 10) === 1);
+});
 };
 */
 
@@ -35,12 +36,12 @@ var insert = function(type, id, value, cid, uid, callback) {
 			cid: parseInt(cid, 10),
 			uid: parseInt(uid, 10)
 		}
-    }
-    if(type == 'topic') {
-    	query.body.title = value;
-    } else {
-    	query.body.content = value;
-    }
+	}
+	if(type == 'topic') {
+		query.body.title = value;
+	} else {
+		query.body.content = value;
+	}
 	return client.create(query, callback);
 };
 
@@ -63,12 +64,12 @@ var update = function(type, id, value, callback) {
 
 var purge = function(type, id, callback) {
 	return client.delete(
-	{
-		index: 'umbrella',
-		type: type,
-		id: id
-	}, callback)
-};
+		{
+			index: 'umbrella',
+			type: type,
+			id: id
+		}, callback)
+	};
 
 plugin.init = function(data, callback) {
 	client = new elasticsearch.Client({
@@ -87,12 +88,12 @@ plugin.search = function(data, callback) {
 	}
 
 	var uid = [],
-		cid = [];
+	cid = [];
 
 	if(data.uid && data.uid.length > 0) {
 		for(var index = 0; index < data.uid.length; index++) {
 			if(string(data.uid[index]).isNumeric()) {
-				uid.push(data.uid[index]);	
+				uid.push(data.uid[index]);
 			} else {
 				uid.push(-99);
 			}
@@ -102,7 +103,7 @@ plugin.search = function(data, callback) {
 	if(data.cid && data.cid.length > 0) {
 		for(var index = 0; index < data.cid.length; index++) {
 			if(string(data.cid[index]).isNumeric()) {
-				cid.push(data.cid[index]);	
+				cid.push(data.cid[index]);
 			}
 		}
 	}
@@ -134,20 +135,20 @@ plugin.search = function(data, callback) {
 	if(uid.length > 0) {
 		query.body.query.bool.must.push(
 			{
-               terms: {
-                  uid: uid
-               }
-            }
+				terms: {
+					uid: uid
+				}
+			}
 		);
 	}
 
 	if(cid.length > 0) {
 		query.body.query.bool.must.push(
 			{
-               terms: {
-                  cid: cid
-               }
-            }
+				terms: {
+					cid: cid
+				}
+			}
 		);
 	}
 
@@ -155,11 +156,11 @@ plugin.search = function(data, callback) {
 		query.body.query.bool.should.match = {
 			title: data.content
 		};
-		
+
 	} else if(data.index == 'post') {
 		query.body.query.bool.should.match = {
 			content: data.content
-		};		
+		};
 	} else {
 		var msg = 'no this type of index ['+data.index+'] defined.'
 		return callback(msg);
@@ -170,7 +171,6 @@ plugin.search = function(data, callback) {
 			client.search(query, callback);
 		},
 		function (res, httpCode, callback) {
-			winston.warn(res.hits)
 			var payload = res.hits.hits.map(function(result) {
 				return parseInt(result._id, 10);
 			});
@@ -178,35 +178,35 @@ plugin.search = function(data, callback) {
 		}
 	], callback);
 
-/*
+	/*
 	client.search(query, function(err, obj) {
-    	if(err) {
-    		return callback(err);
-    	}
-    	if(obj && obj.hits && obj.hits.hits && obj.hits.hits.length > 0) {
-    		if(data.index == 'topic') {
-    			var payload = obj.hits.hits.map(function(result) {
-					return parseInt(result._id, 10);
-				});
-				return callback(null, payload);
-    		} else {
-    			async.map(obj.hits.hits, function (hit, callback){
-    				isDeleted(hit._id, function (err, deleted) {
-    					if(err) {
-    						return callback(err);
-    					}
-    					if(deleted) {
-    						return callback(null, null);
-    					} else {
-    						return callback(null, parseInt(hit._id, 10));	
-    					}
-    				});
-    			}, callback);
-    		}
-    	} else {
-    		return callback(null, []);
-    	}
-    });
+	if(err) {
+	return callback(err);
+}
+if(obj && obj.hits && obj.hits.hits && obj.hits.hits.length > 0) {
+if(data.index == 'topic') {
+var payload = obj.hits.hits.map(function(result) {
+return parseInt(result._id, 10);
+});
+return callback(null, payload);
+} else {
+async.map(obj.hits.hits, function (hit, callback){
+isDeleted(hit._id, function (err, deleted) {
+if(err) {
+return callback(err);
+}
+if(deleted) {
+return callback(null, null);
+} else {
+return callback(null, parseInt(hit._id, 10));
+}
+});
+}, callback);
+}
+} else {
+return callback(null, []);
+}
+});
 */
 
 };
@@ -299,62 +299,62 @@ plugin.post= {};
 plugin.post.save = function(post, callback) {
 	callback = callback || function() {};
 	async.waterfall([
-	    function (callback) {
-	        plugins.fireHook('filter:parse.raw', post.content, callback);
-	    },
-	    function (html, callback) {
-	        jsdom.env({
-	            html: html,
-	            src: [jquery],
-	            done: function (err, window) {
-	            	return callback(err, window, html);
-	            }
-	        });
-	    },
-	    function (window, html, callback) {
-	        var text = window.$(html).text();
+		function (callback) {
+			plugins.fireHook('filter:parse.raw', post.content, callback);
+		},
+		function (html, callback) {
+			jsdom.env({
+				html: html,
+				src: [jquery],
+				done: function (err, window) {
+					return callback(err, window, html);
+				}
+			});
+		},
+		function (window, html, callback) {
+			var text = window.$(html).text();
 			window.close();
 			return insert('post', post.pid, text, post.cid, post.uid, callback);
-	    }
-    ], callback);
+		}
+	], callback);
 };
 
 plugin.post.delete = function(pid, callback) {
 	callback = callback || function() {};
 	return client.update(
-	{
-		index: 'umbrella',
-		type: 'post',
-		id: pid,
-		body: {
-			doc: {
-				deleted: true
+		{
+			index: 'umbrella',
+			type: 'post',
+			id: pid,
+			body: {
+				doc: {
+					deleted: true
+				}
 			}
-		}
-	}, callback);
-};
+		}, callback);
+	};
 
 plugin.post.edit = function(post, callback) {
 	callback = callback || function() {};
 	async.waterfall([
-	    function (callback) {
-	        plugins.fireHook('filter:parse.raw', post.content, callback);
-	    },
-	    function (html, callback) {
-	        jsdom.env({
-	            html: html,
-	            src: [jquery],
-	            done: function (err, window) {
-	            	return callback(err, window, html);
-	            }
-	        });
-	    },
-	    function (window, html, callback) {
-	        var text = window.$(html).text();
+		function (callback) {
+			plugins.fireHook('filter:parse.raw', post.content, callback);
+		},
+		function (html, callback) {
+			jsdom.env({
+				html: html,
+				src: [jquery],
+				done: function (err, window) {
+					return callback(err, window, html);
+				}
+			});
+		},
+		function (window, html, callback) {
+			var text = window.$(html).text();
 			window.close();
 			return update('post', post.pid, text, callback);
-	    }
-    ], callback);
+		}
+	], callback);
 };
 
 plugin.post.restore = function(post, callback) {
@@ -370,7 +370,7 @@ plugin.post.restore = function(post, callback) {
 				}
 			}
 		}, callback);
-};
+	};
 
 plugin.post.purge = function(pid, callback) {
 	callback = callback || function() {};
@@ -384,22 +384,22 @@ plugin.post.move = function(info, callback) {
 			return callback(err);
 		}
 		return client.update(
-		{
-			index: 'umbrella',
-			type: 'post',
-			id: info.post.pid,
-			body: {
-				doc: {
-					cid: parseInt(cid, 10)
+			{
+				index: 'umbrella',
+				type: 'post',
+				id: info.post.pid,
+				body: {
+					doc: {
+						cid: parseInt(cid, 10)
+					}
 				}
-			}
-		}, callback);
-	});
+			}, callback);
+		});
 };
 
 plugin.morelikethis = function(topic, callback) {
 	callback = callback || function() {};
-	var query = 
+	var query =
 	{
 		index: 'umbrella',
 		type: 'topic',
@@ -438,7 +438,6 @@ plugin.morelikethis = function(topic, callback) {
 		}
 	};
 
-
 	client.search(query, function (err, res) {
 		if(err) {
 			return callback(err);
@@ -461,9 +460,10 @@ plugin.morelikethis = function(topic, callback) {
 				return callback(err);
 			}
 			var cids = mapFilter(similar, 'cid');
+			var uids = mapFilter(similar, 'uid');
 			async.parallel({
-				teasers: function(next) {
-					topics.getTeasers(similar, next);
+				users: function(next) {
+					user.getUsersFields(uids, ['uid', 'username', 'userslug', 'picture'], next);
 				},
 				categories: function(next) {
 					categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'bgColor', 'color', 'disabled'], next);
@@ -473,11 +473,11 @@ plugin.morelikethis = function(topic, callback) {
 					return callback(err);
 				}
 				var categories = _.object(cids, results.categories);
+				var users = _.object(uids, results.users);
 				for (var i = 0; i < similar.length; ++i) {
 					if (similar[i]) {
 						similar[i].category = categories[similar[i].cid];
-						similar[i].teaser = results.teasers[i];
-						similar[i].unreplied = parseInt(similar[i].postcount, 10) <= 1 && meta.config.teaserPost !== 'first';
+						similar[i].user = users[similar[i].uid];
 					}
 				}
 				topic.similar = similar;
@@ -486,6 +486,5 @@ plugin.morelikethis = function(topic, callback) {
 		});
 	});
 }
-
 
 module.exports = plugin;
