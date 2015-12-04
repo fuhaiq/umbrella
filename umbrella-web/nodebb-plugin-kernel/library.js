@@ -151,13 +151,13 @@ plugin.topic.get= function(data, callback) {
                     var codes = window.$("code[class='language-mma']");
                     for(var i = 0; i < post.result.length; i++) {
                         if(post.result[i].type == 'return' || post.result[i].type == 'text') {
-                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-success" role="alert">'+post.result[i].data+'</div>');       
+                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-success" role="alert">'+post.result[i].data+'</div>');
                         } else if(post.result[i].type == 'error') {
-                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');        
+                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');
                         } else if(post.result[i].type == 'abort') {
-                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>');      
+                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>');
                         } else if(post.result[i].type == 'image') {
-                            window.$(codes[post.result[i].index]).after("<img class='kernel result' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");       
+                            window.$(codes[post.result[i].index]).after("<img class='kernel result' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");
                         }
                     }
                     var html = window.document.documentElement.outerHTML;
@@ -284,11 +284,11 @@ plugin.post.save = function(post, callback) {
         function (codes, callback) {
             var send = false;
             if (codes && codes.length > 0) {
-                send = true;                        
+                send = true;
             }
             posts.setPostField(post.pid, 'status', (send) ? 1 : 0, function (err) {
                 post.status = (send) ? 1 : 0;
-                return callback(err, send);                            
+                return callback(err, send);
             });
         }
     ], function (err, send) {
@@ -316,7 +316,7 @@ plugin.post.save = function(post, callback) {
                     });
                 }).on('error', callback).connect();
             })
-            
+
         } else {
             return callback(null, null);
         }
