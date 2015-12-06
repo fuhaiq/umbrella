@@ -4,16 +4,16 @@
 	"description": "A nodebb-plugin-kernel plugin for NodeBB which allows users to post topics to be evaluated by kernel",
 	"library": "./library.js",
 	"hooks": [
-		{ 
+		{
 			"hook": "static:app.load", "method": "init"
 		},
 		{
 			"hook": "action:post.save", "method": "post.save"
 		},
-		{ 
+		{
 			"hook": "action:post.edit", "method": "post.edit"
 		},
-		{ 
+		{
 			"hook": "action:post.purge", "method": "post.purge"
 		},
 		{
@@ -27,6 +27,9 @@
 		},
 		{
 			"hook": "filter:post.delete", "method": "post.filterDelete"
+		},
+		{
+			"hook": "action:notification.pushed", "method": "notification"
 		}
 	],
 	"scripts": [

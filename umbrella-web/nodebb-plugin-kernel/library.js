@@ -342,4 +342,13 @@ plugin.post.purge = function(pid, callback) {
     }).on('error', callback).connect();
 };
 
+
+plugin.notification = function(data, callback) {
+	callback = callback || function() {};
+	var uids = data.uids,
+		notification = data.notification;
+	console.log(notification);
+	return callback(null,null);
+};
+
 module.exports = plugin;

@@ -16,6 +16,6 @@
         "password":"",
         "database":"0"
     },
-    "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/post/",
+    "imgDir": "/home/wesker/git/umbrella-web/public/kernel/post/",
     "kernelUrl": "http://localhost/evaluate"
 }
