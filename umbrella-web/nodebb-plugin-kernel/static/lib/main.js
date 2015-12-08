@@ -127,31 +127,6 @@ $('document').ready(function() {
 				}
 			});
 
-			socket.on('kernel:post', function(json) {
-				var post = components.get('post', 'pid', json.pid);
-				if (!post || !post.length) {
-					return;
-				}
-				$('span.kernel', post).remove();// always remove the status span, this will handle status = 0
-				var pullLeft = $('small.pull-left', post);
-				switch (json.status) {
-					case 1:
-						pullLeft.append(statusMapping.waiting);
-						break;
-					case 2:
-						pullLeft.append(statusMapping.evaluate);
-						break;
-					case 3:
-						pullLeft.append(statusMapping.finished);
-						break;
-					case -1:
-						pullLeft.append(statusMapping.error);
-						break;
-					case -2:
-						pullLeft.append(statusMapping.aborted);
-						break;
-				}
-			});
 
 		}); // end of require(['components']
 	}); // end of action:app.load

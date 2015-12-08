@@ -1,7 +1,8 @@
 'use strict';
 
 var async = require('async'),
-  uuid = require('uuid');
+  uuid = require('uuid'),
+  string = require('string');
 
 var notification = function(db, io) {
 
@@ -136,7 +137,7 @@ var notification = function(db, io) {
 
   var create = function(data, callback) {
 		if (!data.nid) {
-			return callback(new Error('no-notification-id'));
+			return callback('no-notification-id: notification 没有 ID');
 		}
 		data.importance = data.importance || 5;
 		getObject('notifications:' + data.nid, function(err, oldNotification) {
@@ -210,7 +211,7 @@ var notification = function(db, io) {
 				},
 				function(err) {
 					if (err) {
-						winston.error(err.stack);
+						LOG.error(err.stack);
 					}
 				}
 			);
@@ -218,24 +219,28 @@ var notification = function(db, io) {
 		callback();
 	};
 
-  this.notice = function(uid, post, callback) {
-    db.collection("objects").findOne({_key:'topic:' + post.tid}, function(err, topic) {
-      if(err) {
-        return callback(err)
+  this.notice = function(post, callback) {
+    async.waterfall([
+      function(callback){
+        db.collection("objects").findOne({_key:'topic:' + post.tid}, callback);
+      },
+      function(topic, callback) {
+        var msg = (post.pid == topic.mainPid) ? topic.title : 'RE: ' + topic.title;
+        var notification = {
+          bodyShort: '[[umbrella:notification.post_done, ' + msg + ']]',
+          nid: 'kernel:post:' + post.pid + ':uid:' + post.uid + ":id:" + uuid.v1(),
+          pid:post.pid,
+          datetime: Date.now()
+        };
+        return callback(null, notification);
+      },
+      function(notification, callback) {
+        create(notification, callback);
+      },
+      function(notification, callback) {
+        push(notification, post.uid, callback);
       }
-      var id = uuid.v1();
-      create({
-        bodyShort: '',
-        image: 'brand:logo',
-        nid: 'kernel:post:' + post.pid + ':uid:' + post.uid + ":id:" + id,
-        path: 'topic/' + topic.slug,
-        datetime: Date.now()
-      }, function(err, notification) {
-        if (!err && notification) {
-          push(notification, post.uid, callback);
-        }
-      });
-    });
+    ], callback);
   };
 
 }

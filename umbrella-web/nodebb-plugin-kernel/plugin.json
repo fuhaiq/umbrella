@@ -27,9 +27,6 @@
 		},
 		{
 			"hook": "filter:post.delete", "method": "post.filterDelete"
-		},
-		{
-			"hook": "action:notification.pushed", "method": "notification"
 		}
 	],
 	"scripts": [

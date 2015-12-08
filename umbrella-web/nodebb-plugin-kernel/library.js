@@ -29,8 +29,6 @@ var emit = function (post, callback) {
             io.in('popular_topics').emit('kernel:topic', message);
             io.in('unread_topics').emit('kernel:topic', message);
         }
-        message = {status: post.status, pid: post.pid};
-        io.in('topic_' + topic.tid).emit('kernel:post', message);
         return callback(null, null);
     });
 };
@@ -340,15 +338,6 @@ plugin.post.purge = function(pid, callback) {
             });
         });
     }).on('error', callback).connect();
-};
-
-
-plugin.notification = function(data, callback) {
-	callback = callback || function() {};
-	var uids = data.uids,
-		notification = data.notification;
-	console.log(notification);
-	return callback(null,null);
 };
 
 module.exports = plugin;

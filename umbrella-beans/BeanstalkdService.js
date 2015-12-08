@@ -134,19 +134,9 @@ var BeanstalkdService = function(db, redis) {
         if(needRelease) {
           return callback(null, true);
         } else {
-          notify.create({
-          	bodyShort: '测试消息',
-          	image: 'brand:logo',
-          	nid: 'kernel:post:' + pid + ':uid:' + post.uid,
-            path: '',
-          	datetime: Date.now()
-          }, function(err, notification) {
-          	if (!err && notification) {
-          		notify.push(notification, post.uid, function() {
-                return callback(null, false);
-              });
-          	}
-          });//end of notify.create
+          notify.notice(post, function(err) {
+            return callback(err, false);
+          })
         }
   		})//end of emit
 		}
