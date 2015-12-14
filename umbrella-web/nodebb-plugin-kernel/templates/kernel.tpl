@@ -1,5 +1,5 @@
 <style type="text/css" media="screen">
-    #kernel { 
+    #kernel {
         width: 100%;
         height: 300px;
     }
@@ -8,7 +8,7 @@
 
 <div class="panel panel-default">
   <div class="panel-heading">
-    <button type="button" class="btn btn-primary" data-loading-text="正在运行..." autocomplete="off" id='kernel-evaluate'><i class="fa fa-fw fa-play"></i> 运行</button>
+    <button type="button" class="btn btn-primary" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><i class="fa fa-fw fa-play"></i> 执行脚本</button>
     按<kbd><kbd>alt</kbd> + <kbd>q</kbd></kbd>打开语法提示, <kbd><kbd>shift</kbd> + <kbd>enter</kbd></kbd>执行脚本, <kbd><kbd>ctrl</kbd> + <kbd>f</kbd></kbd>代码搜索.
   </div>
   <div class="panel-body">
@@ -88,7 +88,7 @@
                                 }else if(item.type == "error") {
                                     $('#kernel-preview').append('<div class="alert alert-danger" role="alert">'+item.data+'</div>')
                                 }else if(item.type == "abort") {
-                                    $('#kernel-preview').append('<div class="alert alert-warning" role="alert">运行超时</div>')
+                                    $('#kernel-preview').append('<div class="alert alert-warning" role="alert">计算超时</div>')
                                 }else if(item.type == "image") {
                                     $('#kernel-preview').append("<img src='/kernel/temp/"+item.data+"'></img>")
                                 }

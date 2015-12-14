@@ -227,7 +227,7 @@ var notification = function(db, io) {
       function(topic, callback) {
         var msg = (post.pid == topic.mainPid) ? topic.title : 'RE: ' + topic.title;
         var notification = {
-          bodyShort: '[[umbrella:notification.post_done, ' + msg + ']]',
+          bodyShort: '[[kernel:notification.post_done, ' + msg + ']]',
           nid: 'kernel:post:' + post.pid + ':uid:' + post.uid + ":id:" + uuid.v1(),
           pid:post.pid,
           datetime: Date.now()

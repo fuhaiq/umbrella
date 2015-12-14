@@ -1,11 +1,11 @@
 "use strict";
 
 var statusMapping = {
-	waiting: '<span class="kernel waiting"><i class="fa fa-clock-o"></i> 等待运算</span>',
-	evaluate: '<span class="kernel evaluate"><i class="fa fa-play"></i> 正在计算</span>',
-	finished: '<span class="kernel finished"><i class="fa fa-check"></i> 计算完成</span>',
-	error: '<span class="kernel error"><i class="fa fa-remove"></i> 语法错误</span>',
-	aborted: '<span class="kernel aborted"><i class="fa fa-exclamation"></i> 计算超时</span>'
+	waiting: '<span class="ui blue basic label"><i class="fa fa-clock-o"></i>等待计算</span>',
+	evaluate: '<span class="ui purple basic label"><i class="fa fa-play"></i>正在计算</span>',
+	finished: '<span class="ui green basic label"><i class="fa fa-check"></i>计算成功</span>',
+	error: '<span class="ui orange basic label"><i class="fa fa-remove"></i>语法错误</span>',
+	aborted: '<span class="ui yellow basic label"><i class="fa fa-exclamation"></i>计算超时</span>'
 };
 
 $('document').ready(function() {
@@ -64,7 +64,7 @@ $('document').ready(function() {
 												} else if (item.type == "error") {
 													$(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">' + item.data + '</div>')
 												} else if (item.type == "abort") {
-													$(codes[item.index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>')
+													$(codes[item.index]).after('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
 												} else if (item.type == "image") {
 													$(codes[item.index]).after("<img class='kernel result' src='/kernel/temp/" + item.data + "''></img>")
 												}

@@ -153,7 +153,7 @@ plugin.topic.get= function(data, callback) {
                         } else if(post.result[i].type == 'error') {
                             window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');
                         } else if(post.result[i].type == 'abort') {
-                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-warning" role="alert">运行超时</div>');
+                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-warning" role="alert">计算超时</div>');
                         } else if(post.result[i].type == 'image') {
                             window.$(codes[post.result[i].index]).after("<img class='kernel result' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");
                         }
