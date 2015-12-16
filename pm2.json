@@ -1,1 +1,23 @@
-
+{
+  "apps" :
+  [
+    {
+      "name"        : "umbrella-web",
+      "cwd" : "/home/umbrella/git/umbrella-web",
+      "script"      : "app.js",
+      "watch" : false
+    },
+    {
+      "name"        : "umbrella-beans",
+      "cwd" : "/home/umbrella/git/umbrella/umbrella-beans",
+      "script"      : "app.js",
+      "watch" : false
+    },
+    {
+      "name"        : "mongodb-console",
+      "cwd" : "/home/umbrella/lx-mms",
+      "script"      : "server.js",
+      "watch" : false
+    }
+  ]
+}
