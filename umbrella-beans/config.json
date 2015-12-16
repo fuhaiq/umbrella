@@ -21,7 +21,7 @@
 			"dir": "/home/umbrella/git/umbrella-web/public/kernel/temp/",
 			"timeZone": "Asia/Shanghai",
 			"cronTime": "*/30 * * * * *",
-			"second": 3000
+			"second": 300
 		},
     "kernelUrl": "http://localhost/evaluate"
 }
