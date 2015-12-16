@@ -199,6 +199,24 @@ var BeanstalkdService = function(db, redis) {
 		});
 	};
 
+  this.clean = function(dir, second, callback) {
+    var total = 0;
+    var current = new Date();
+    fs.walk(dir).on('data', function(file) {
+      if(file.stats.isFile()) {
+        var createTime = file.stats.birthtime.getTime();
+        var span = ((current.getTime() - createTime) / 1000);
+        if(span > second) {
+          fs.removeSync(file.path);
+          total++;
+        }
+      }
+    })
+    .on('end', function () {
+      callback(null, total);
+    })
+  };
+
 }
 
 module.exports = BeanstalkdService;

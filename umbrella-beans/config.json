@@ -17,5 +17,11 @@
         "database":"0"
     },
     "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/post/",
+		"clean" : {
+			"dir": "/home/umbrella/git/umbrella-web/public/kernel/temp/",
+			"timeZone": "Asia/Shanghai",
+			"cronTime": "*/30 * * * * *",
+			"second": 3000
+		},
     "kernelUrl": "http://localhost/evaluate"
 }

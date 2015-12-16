@@ -19,6 +19,7 @@ var fs = require('fs-extra'),
     BeanstalkdService = require("./BeanstalkdService"),
     fivebeans = require('fivebeans'),
     string = require('string'),
+		CronJob = require("cron").CronJob,
     db = null,
     redisClient = null,
     beanstalkd = null,
@@ -59,7 +60,7 @@ var reserve = function () {
                         function (callback) {
                             var fn = null;
                             switch(jobData.action) {
-                                case 'create' : 
+                                case 'create' :
                                     fn = service.create;
                                     break;
                                 case 'update' :
@@ -156,6 +157,26 @@ async.parallel({
                 reserve();
             }
         });
+				//start clean cron job
+				var cleanJob = new CronJob({
+				  cronTime: config.clean.cronTime,
+				  onTick: function() {
+						LOG.info('执行清理任务');
+						service.clean(config.clean.dir, config.clean.second, function(err, total){
+							if(err) {
+								LOG.error(err);
+							} else {
+								if(total > 0) {
+					        LOG.warn('共删除个'+total+'文件');
+					      }
+								LOG.info('执行清理任务完毕');
+							}
+						});
+				  },
+				  start: true,
+				  timeZone: config.clean.timeZone
+				});
+				cleanJob.start();
     }
 });
 
