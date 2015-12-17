@@ -5,17 +5,17 @@ var plugin = {},
 	jsdom = require("jsdom"),
 	fivebeans = require('fivebeans'),
 	string = require('string'),
-    fs = require('fs-extra'),
-    jquery = fs.readFileSync("./node_modules/nodebb-plugin-kernel/jquery-2.1.4.min.js", "utf-8"),
+  fs = require('fs-extra'),
+  jquery = fs.readFileSync("./node_modules/nodebb-plugin-kernel/jquery-2.1.4.min.js", "utf-8"),
 	async = module.parent.require('async'),
 	topics = module.parent.require('./topics'),
 	plugins = module.parent.require('./plugins'),
-    db = module.parent.require('./database'),
-    nconf = module.parent.require('nconf'),
-    winston = module.parent.require('winston'),
+  db = module.parent.require('./database'),
+  nconf = module.parent.require('nconf'),
+  winston = module.parent.require('winston'),
 	posts = module.parent.require('./posts'),
-    redis = require("redis"),
-    io = module.parent.require('./socket.io');
+  redis = require("redis"),
+  io = module.parent.require('./socket.io');
 
 var emit = function (post, callback) {
     posts.getTopicFields(post.pid, ['mainPid', 'cid', 'tid'], function (err, topic) {
@@ -45,7 +45,7 @@ plugin.http.post = function(req, res, next) {
 		return res.json({success: false, msg: '没有脚本可以运行', type: 'info'})
 	}
 	content = JSON.parse(content);
-	var kernel = JSON.stringify({dir: nconf.get('imgDir'), scripts:content});
+	var kernel = JSON.stringify({dir: nconf.get('kernel:imgDir'), scripts:content});
 
     var options = {
         path: '/evaluate',
@@ -53,7 +53,8 @@ plugin.http.post = function(req, res, next) {
         headers: {
             'Content-Type': 'application/json;charset=UTF-8',
             'Content-Length': Buffer.byteLength(kernel, 'utf8')
-        }
+        },
+				auth: nconf.get('kernel:username') + ':' + nconf.get('kernel:password')
     };
 
     var request = http.request(options, function(response) {

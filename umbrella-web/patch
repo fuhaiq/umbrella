@@ -1,4 +1,7 @@
-sudo apt-get install libkrb5-dev imagemagick build-essential
+sudo apt-get install libkrb5-dev imagemagick build-essential apache2-utils
+
+###################password####################
+htpasswd -c -d /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
 npm install kerberos connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards
 
@@ -22,7 +25,11 @@ remove js and google css
     "host": "127.0.0.1",
     "port": "9200"
 },
-"imgDir": "/home/umbrella/git/umbrella-web/public/kernel/temp/"
+"kernel": {
+  "username": "umbrella",
+  "password": "guice4now",
+  "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/temp/",
+}
 
 ###################custom header#################
 <script type="text/javascript" src="/vendor/mathjax/MathJax.js?config=MML_HTMLorMML-full"></script>

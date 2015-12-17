@@ -36,7 +36,7 @@ var BeanstalkdService = function(db, redis) {
     ], callback);
 	};
 
-	var kernel = function (post, pid, dir, url, callback) {
+	var kernel = function (post, pid, dir, url, username, password, callback) {
 	   async.waterfall([
 			function (callback) {
 			  var html = md.render(post.content);
@@ -75,7 +75,8 @@ var BeanstalkdService = function(db, redis) {
   		        headers: {
   		            'Content-Type': 'application/json;charset=UTF-8',
   		            'Content-Length': Buffer.byteLength(kernel, 'utf8')
-  		        }
+  		        },
+              auth: username + ':' + password
 				    };
 				    var request = http.request(options, function(response) {
   		        response.setEncoding('utf8');
@@ -152,7 +153,9 @@ var BeanstalkdService = function(db, redis) {
 	this.update = function (jobData, callback) {
 		var dir = jobData.dir,
 			pid = jobData.pid,
-			url = jobData.url;
+			url = jobData.url,
+      username = jobData.username,
+      password = jobData.password;
 		db.collection("objects").findOne({_key:'post:' + pid}, function (err, post) {
 			if(err) {
 				return callback(err);
@@ -167,7 +170,7 @@ var BeanstalkdService = function(db, redis) {
 				});
 			} else if(post.status == 1) {
 				fs.removeSync(dir + pid);
-				return kernel(post, pid, dir, url, callback);
+				return kernel(post, pid, dir, url, username, password, callback);
 			} else {
 				return callback('回复[post:'+post.pid+']状态错误['+post.status+'], 期望值: 1或0');
 			}
@@ -184,7 +187,9 @@ var BeanstalkdService = function(db, redis) {
 	this.create = function (jobData, callback) {
 		var dir = jobData.dir,
 			pid = jobData.pid,
-			url = jobData.url;
+			url = jobData.url,
+      username = jobData.username,
+      password = jobData.password;
 		db.collection("objects").findOne({_key:'post:' + pid}, function (err, post) {
 			if(err) {
 				return callback(err);
@@ -195,7 +200,7 @@ var BeanstalkdService = function(db, redis) {
 			if(post.status != 1) {
 				return callback('回复[post:'+post.pid+']状态错误['+post.status+'], 期望值: 1');
 			}
-			return kernel(post, pid, dir, url, callback);
+			return kernel(post, pid, dir, url, username, password, callback);
 		});
 	};
 

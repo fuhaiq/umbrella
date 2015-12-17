@@ -5,23 +5,27 @@
         "tube" : "kernel"
 	},
 	"mongo": {
-        "url" : "mongodb://localhost:27017/umbrella",
-        "username": "",
-        "password": ""
-    },
-    "redis": {
-        "host":"127.0.0.1",
-        "port":"6379",
-        "username":"",
-        "password":"",
-        "database":"0"
-    },
-    "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/post/",
-		"clean" : {
-			"dir": "/home/umbrella/git/umbrella-web/public/kernel/temp/",
-			"timeZone": "Asia/Shanghai",
-			"cronTime": "*/30 * * * * *",
-			"second": 300
-		},
-    "kernelUrl": "http://localhost/evaluate"
+	  "url" : "mongodb://localhost:27017/umbrella",
+	  "username": "",
+	  "password": ""
+  },
+  "redis": {
+	  "host":"127.0.0.1",
+	  "port":"6379",
+	  "username":"",
+	  "password":"",
+	  "database":"0"
+  },
+	"clean" : {
+		"dir": "/home/umbrella/git/umbrella-web/public/kernel/temp/",
+		"timeZone": "Asia/Shanghai",
+		"cronTime": "*/30 * * * * *",
+		"second": 300
+	},
+	"kernel" : {
+		"url" : "http://localhost/evaluate",
+		"imgDir": "/home/umbrella/git/umbrella-web/public/kernel/post/",
+		"username": "umbrella",
+		"password": "guice4now"
+	}
 }

@@ -33,8 +33,10 @@ var reserve = function () {
         },
         function (jobid, payload, callback) {
             var jobData = JSON.parse(payload.toString());
-            jobData.dir = config.imgDir;
-            jobData.url = config.kernelUrl;
+            jobData.dir = config.kernel.imgDir;
+            jobData.url = config.kernel.url;
+						jobData.username = config.kernel.username;
+						jobData.password = config.kernel.password;
             if(!string(jobData.pid).isNumeric()) {
                 return callback('回复pid为不是数字', null);
             }
@@ -43,6 +45,12 @@ var reserve = function () {
             }
             if(string(jobData.url).isEmpty()) {
                 return callback('计算url为空', null);
+            }
+						if(string(jobData.username).isEmpty()) {
+                return callback('kernel认证用户名为空', null);
+            }
+						if(string(jobData.password).isEmpty()) {
+                return callback('kernel认证密码为空', null);
             }
             return callback(null, jobid, jobData);
         },
