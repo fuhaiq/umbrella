@@ -1,7 +1,7 @@
 sudo apt-get install libkrb5-dev imagemagick build-essential apache2-utils
 
 ###################password####################
-htpasswd -c -d /home/umbrella/git/umbrella/umbrella-web/password umbrella
+htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
 npm install kerberos connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards
 
@@ -9,21 +9,21 @@ npm install kerberos connect-redis elasticsearch jsdom fivebeans fs-extra nodebb
 remove js and google css
 
 ###################config.json###############
-
+"port": ["4567"],
 "redis": {
-    "host":"127.0.0.1",
-    "port":"6379",
-    "username":"",
-    "password":"",
-    "database":"0"
+  "host":"127.0.0.1",
+  "port":"6379",
+  "username":"",
+  "password":"",
+  "database":"0"
 },
 "beanstalkd": {
-    "host": "127.0.0.1",
-    "port": "11300"
+  "host": "127.0.0.1",
+  "port": "11300"
 },
 "elasticsearch": {
-    "host": "127.0.0.1",
-    "port": "9200"
+  "host": "127.0.0.1",
+  "port": "9200"
 },
 "kernel": {
   "username": "umbrella",

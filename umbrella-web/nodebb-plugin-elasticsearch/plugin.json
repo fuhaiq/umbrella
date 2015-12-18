@@ -20,9 +20,8 @@
 		{ "hook": "action:topic.restore", "method": "topic.restore"},
 		{ "hook": "action:topic.purge", "method": "topic.purge"},
 		
-		
-        { "hook": "filter:search.query", "method": "search"},
-        { "hook": "filter:controllers.topic.get", "method": "morelikethis"}
+    { "hook": "filter:search.query", "method": "search"},
+    { "hook": "filter:controllers.topic.get", "method": "morelikethis"}
 
 	]
 }
