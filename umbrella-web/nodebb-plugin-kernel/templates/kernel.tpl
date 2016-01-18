@@ -8,18 +8,15 @@
 
 <div class="panel panel-default">
   <div class="panel-heading">
-    <button type="button" class="btn btn-primary" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><i class="fa fa-fw fa-play"></i> 执行脚本</button>
-    按<kbd><kbd>alt</kbd> + <kbd>q</kbd></kbd>打开语法提示, <kbd><kbd>shift</kbd> + <kbd>enter</kbd></kbd>执行脚本, <kbd><kbd>ctrl</kbd> + <kbd>f</kbd></kbd>代码搜索.
+    <kbd><kbd>alt</kbd> + <kbd>q</kbd></kbd>打开语法提示, <kbd><kbd>ctrl</kbd> + <kbd>f</kbd></kbd>代码搜索.
+    <button type="button" class="btn btn-success btn-xs" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><i class="fa fa-fw fa-play"></i> <var>shift</var> + <var>enter</var> = 执行脚本</button>
   </div>
   <div class="panel-body">
     <div id="kernel"></div>
   </div>
 </div>
 
-<div class="panel panel-default">
-  <div class="panel-heading">执行结果</div>
-  <div class="panel-body" id='kernel-preview'></div>
-</div>
+<div id='kernel-preview'></div>
 
 <script>
     $(document).ready(function() {
@@ -82,15 +79,14 @@
                             });
                         } else {
                             result.forEach(function(item){
-                                if(item.type == 'return' || item.type == 'text') {
-                                    $('#kernel-preview').append('<div class="alert alert-success" role="alert">'+item.data+'</div>');
-                                    MathJax.Hub.Queue(["Typeset",MathJax.Hub,"kernel-preview"]);
+                                if (item.type == 'text') {
+                                    $('#kernel-preview').append('<samp>' + item.data + '</samp>');
                                 }else if(item.type == "error") {
                                     $('#kernel-preview').append('<div class="alert alert-danger" role="alert">'+item.data+'</div>')
                                 }else if(item.type == "abort") {
                                     $('#kernel-preview').append('<div class="alert alert-warning" role="alert">计算超时</div>')
                                 }else if(item.type == "image") {
-                                    $('#kernel-preview').append("<img src='/kernel/temp/"+item.data+"'></img>")
+                                    $('#kernel-preview').append("<p><img src='/kernel/temp/"+item.data+"'></img></p>")
                                 }
                             });
                         }

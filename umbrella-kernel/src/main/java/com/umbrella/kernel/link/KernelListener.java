@@ -16,6 +16,10 @@ public class KernelListener implements PacketListener{
 	
 	private final String security = "MSP`MSPException[SecurityError]]";
 	
+	private final String ABORT = "$Aborted";
+	
+	private final String FAILED = "$Failed";
+	
 	@Override
 	public boolean packetArrived(PacketArrivedEvent evt) throws MathLinkException {
 		KernelLink ml = (KernelLink) evt.getSource();
@@ -49,10 +53,8 @@ public class KernelListener implements PacketListener{
 			}
 			case MathLink.RETURNTEXTPKT: {
 				String _return = ml.getString();
-				if("null".equalsIgnoreCase(_return)) break;
-				if(Kernel.NULL.equals(_return)) break;
-				if(Kernel.FAILED.equals(_return)) break;
-				if(Kernel.ABORT.equals(_return)) {
+				if(FAILED.equals(_return)) break;
+				if(ABORT.equals(_return)) {
 					result.put("type", "abort");
 				} else {
 					result.put("type", "return");

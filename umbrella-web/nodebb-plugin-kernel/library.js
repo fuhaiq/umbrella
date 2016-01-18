@@ -36,7 +36,7 @@ var emit = function (post, callback) {
 plugin.http = {};
 
 plugin.http.get = function(req, res, next) {
-	return res.render('kernel', {});
+	res.render('kernel', {});
 };
 
 plugin.http.post = function(req, res, next) {
@@ -149,9 +149,9 @@ plugin.topic.get= function(data, callback) {
                     }
                     var codes = window.$("code[class='language-mma']");
                     for(var i = 0; i < post.result.length; i++) {
-                        if(post.result[i].type == 'return' || post.result[i].type == 'text') {
-                            window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-success" role="alert">'+post.result[i].data+'</div>');
-                        } else if(post.result[i].type == 'error') {
+												if (post.result[i].type == 'text') {
+														window.$(codes[post.result[i].index]).after('<samp>'+post.result[i].data+'</samp>');
+												} else if(post.result[i].type == 'error') {
                             window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');
                         } else if(post.result[i].type == 'abort') {
                             window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-warning" role="alert">计算超时</div>');

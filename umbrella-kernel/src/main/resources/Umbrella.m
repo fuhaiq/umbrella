@@ -14,19 +14,17 @@ Needs["JLink`"]
 
 Needs["MSP`"]
 
-MSP`Utility`SetSecurity["/home/wesker/SecurityConfiguration.m"]
+MSP`Utility`SetSecurity["/home/umbrella/SecurityConfiguration.m"]
 
 $Pre = Function[expr, 
 	Module[
 		{expr$ = ToString[Unevaluated[expr], InputForm]},
 		
-		$$result = TimeConstrained[MSPToExpression[expr$], 20];
+		$$result = TimeConstrained[MSPToExpression[expr$], 60];
 
-		If[MemberQ[$$result, _Graphics | _Graphics3D | _Graph | _Manipulate | _Rotate, {0, \[Infinity]}], 
-			LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[$$result]]]
-			, 
-			MathMLForm[$$result]
-		]
+		If[SameQ[$$result, $Aborted], Abort[]];
+
+		If[UnsameQ[$$result, Null], LinkWrite[$ParentLink, DisplayPacket[EvaluateToTypeset[$$result]]]];		
 	],
 	
 	HoldAllComplete

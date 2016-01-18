@@ -1,9 +1,9 @@
-sudo apt-get install libkrb5-dev imagemagick build-essential apache2-utils
+sudo apt-get install libkrb5-dev imagemagick build-essential
 
 ###################password####################
 htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
-npm install kerberos connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards
+npm install connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards
 
 ###################header.tpl##################
 remove js and google css
@@ -28,7 +28,7 @@ remove js and google css
 "kernel": {
   "username": "umbrella",
   "password": "guice4now",
-  "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/temp/",
+  "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/temp/"
 }
 
 ###################custom header#################
@@ -50,3 +50,19 @@ function(next) {
         Posts.setPostField(pid, 'deleted', 1, next);
     });
 },
+
+deprecated!!##################mathjax##################
+MathJax.Hub.Queue(["Typeset",MathJax.Hub,"kernel-preview"]);
+
+if (item.type == 'return' || item.type == 'text') {
+  $(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">' + item.data + '</div>');
+  MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
+}
+
+if(post.result[i].type == 'return' || post.result[i].type == 'text') {
+    window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-success" role="alert">'+post.result[i].data+'</div>');
+}
+
+$(window).on('action:topic.loaded', function(event) {
+  MathJax.Hub.Queue(["Typeset", MathJax.Hub, 'content']);
+});

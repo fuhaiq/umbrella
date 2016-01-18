@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.core.env.Environment;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.umbrella.kernel.link.KernelConfig;
@@ -43,7 +42,7 @@ public class KernelConfiguration {
 	
 	@Autowired
 	@Bean
-	public KernelConfig provideKernelConfig(Environment env) {
+	public KernelConfig provideKernelConfig() {
 		KernelConfig config = new KernelConfig();
 		config.getLibdir().setName(libDirName);
 		config.getLibdir().setDir(libDir);

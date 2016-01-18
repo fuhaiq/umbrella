@@ -58,9 +58,8 @@ $('document').ready(function() {
 											});
 										} else {
 											result.forEach(function(item) {
-												if (item.type == 'return' || item.type == 'text') {
-													$(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">' + item.data + '</div>');
-													MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
+												if(item.type == "text") {
+													$(codes[item.index]).after('<samp>' + item.data + '</samp>')
 												} else if (item.type == "error") {
 													$(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">' + item.data + '</div>')
 												} else if (item.type == "abort") {
@@ -92,10 +91,6 @@ $('document').ready(function() {
 				// return;
 				// }
 			}); //end of action:composer.loaded
-
-			$(window).on('action:topic.loaded', function(event) {
-				MathJax.Hub.Queue(["Typeset", MathJax.Hub, 'content']);
-			});
 
 			socket.on('kernel:topic', function(json) {
 				var topic = components.get('category/topic', 'tid', json.tid);

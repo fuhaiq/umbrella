@@ -44,7 +44,7 @@
 
 
 
-/node_modules/nodebb-theme-persona/templates/partials/topic_list.tpl
+/node_modules/nodebb-theme-persona/templates/partials/topics_list.tpl
 <!-- IF topics.waiting -->
 <span class="ui blue basic label">
   <i class="fa fa-clock-o"></i>
