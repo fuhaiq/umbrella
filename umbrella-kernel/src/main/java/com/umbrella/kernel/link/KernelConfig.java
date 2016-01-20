@@ -10,8 +10,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix="kernel")
 public class KernelConfig extends GenericObjectPoolConfig{
 	
-	private Set<Integer> badChar;
-	
 	private String url;
 	
 	private final Libdir libdir = new Libdir();
@@ -19,6 +17,8 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	private int timeConstrained;
 	
 	private String imgDir;
+	
+	private Set<Integer> badChar;
 	
 	private Set<String> escapes;
 	
