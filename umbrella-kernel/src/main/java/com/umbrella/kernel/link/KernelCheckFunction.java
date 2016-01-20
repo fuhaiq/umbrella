@@ -23,6 +23,7 @@ public class KernelCheckFunction implements Function<JSONArray, JSONArray> {
 				if (script.indexOf(badChar) != -1) {
 					JSONArray result = new JSONArray();
 					JSONObject obj = new JSONObject();
+					obj.put("index", i);
 					obj.put("type", "error");
 					obj.put("data", "Syntax::sntxf Bad character " + (char) badChar);
 					result.add(obj);
@@ -33,6 +34,7 @@ public class KernelCheckFunction implements Function<JSONArray, JSONArray> {
 			if (!Strings.isNullOrEmpty(errMsg)) {
 				JSONArray result = new JSONArray();
 				JSONObject obj = new JSONObject();
+				obj.put("index", i);
 				obj.put("type", "error");
 				obj.put("data", "Syntax::sntxf " + errMsg);
 				result.add(obj);
