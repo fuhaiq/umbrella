@@ -42,7 +42,6 @@ public class KernelListener implements PacketListener{
 						} else {
 							last.put("data", txt);
 						}
-						
 						break;
 					}
 				}

@@ -1,8 +1,16 @@
 package com.umbrella.kernel.link;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import java.util.Set;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Component
+@ConfigurationProperties(prefix="kernel")
 public class KernelConfig extends GenericObjectPoolConfig{
+	
+	private Set<Integer> badChar;
 	
 	private String url;
 	
@@ -11,6 +19,8 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	private int timeConstrained;
 	
 	private String imgDir;
+	
+	private Set<String> escapes;
 	
 	public String getUrl() {
 		return url;
@@ -38,6 +48,22 @@ public class KernelConfig extends GenericObjectPoolConfig{
 
 	public void setImgDir(String imgDir) {
 		this.imgDir = imgDir;
+	}
+
+	public Set<Integer> getBadChar() {
+		return badChar;
+	}
+
+	public void setBadChar(Set<Integer> badChar) {
+		this.badChar = badChar;
+	}
+
+	public Set<String> getEscapes() {
+		return escapes;
+	}
+
+	public void setEscapes(Set<String> escapes) {
+		this.escapes = escapes;
 	}
 
 	public class Libdir {
