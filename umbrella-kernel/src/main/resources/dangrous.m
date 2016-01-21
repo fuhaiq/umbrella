@@ -190,7 +190,6 @@ $Epilog
 $EvaluationCloudObject
 $EvaluationEnvironment
 $ExportFormats
-$Failed
 $FinancialDataSource
 $FormatType
 $FrontEnd

@@ -31,7 +31,7 @@ WaitAll,WaitAsynchronousTask,WaitNext,WaitUntil,WakebyDistribution,WalleniusHype
 XMLElement,XMLObject,XMLTemplate,XYZColor,Xnor,Xor,
 Yellow,Yesterday,YuleDissimilarity,ZIPCodeData,ZTest,ZTransform,ZernikeR,ZeroSymmetric,ZeroTest,
 ZeroWidthTimes,Zeta,ZetaZero,ZipfDistribution,
-$Aborted
+$Aborted,$Failed
 
 ]
 }
