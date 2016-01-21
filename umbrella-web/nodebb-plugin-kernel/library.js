@@ -15,7 +15,8 @@ var plugin = {},
   winston = module.parent.require('winston'),
 	posts = module.parent.require('./posts'),
   redis = require("redis"),
-  io = module.parent.require('./socket.io');
+  io = module.parent.require('./socket.io'),
+	helpers = module.parent.require('./routes/helpers');
 
 var emit = function (post, callback) {
     posts.getTopicFields(post.pid, ['mainPid', 'cid', 'tid'], function (err, topic) {
@@ -90,7 +91,7 @@ plugin.http.post = function(req, res, next) {
 
 plugin.init = function(data, callback) {
 
-	data.router.get('/api/kernel', plugin.http.get);
+	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], plugin.http.get);
 
 	data.router.post('/kernel', data.middleware.applyCSRF, plugin.http.post);
 
