@@ -66,3 +66,29 @@ if(post.result[i].type == 'return' || post.result[i].type == 'text') {
 $(window).on('action:topic.loaded', function(event) {
   MathJax.Hub.Queue(["Typeset", MathJax.Hub, 'content']);
 });
+
+
+############################footer########################
+<hr>
+<div class="row">
+  <div class="col-md-8">
+    <div class="ui horizontal bulleted link large list">
+      <div class="item">
+        Copyright &copy; 威思客(wiseker.com)
+      </div>
+      <a class="item">
+        关于我们
+      </a>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="ui horizontal link large list">
+      <div class="item">
+        手机客户端
+      </div>
+      <a class="item">
+        <i class="fa fa-android fa-2x"></i>
+      </a>
+    </div>
+  </div>
+</div>

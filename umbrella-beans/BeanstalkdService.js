@@ -14,30 +14,23 @@ notification = require("./notification");
 
 var BeanstalkdService = function(db, redis) {
 
-  var emit = function (pid, callback) {
-    async.waterfall([
-      function (callback) {
-        db.collection("objects").findOne({_key:'post:' + pid}, callback);
-      },
-      function (post, callback) {
-        db.collection("objects").findOne({_key:'topic:' + post.tid}, function (err, topic) {
-          return callback(err, post, topic);
-        });
-      },
-      function (post, topic, callback) {
-        if(post.pid == topic.mainPid) {
-          var message = {status: post.status, tid: topic.tid};
-          io.to('category_' + topic.cid).emit('kernel:topic', message);
-          io.to('recent_topics').emit('kernel:topic', message);
-          io.to('popular_topics').emit('kernel:topic', message);
-          io.to('unread_topics').emit('kernel:topic', message);
-        }
-        return callback(null, null);
+  var emit = function (post, callback) {
+    db.collection("objects").findOne({_key:'topic:' + post.tid}, function (err, topic) {
+      if(err) {
+        return callback(err)
       }
-    ], callback);
+      if(post.pid == topic.mainPid) {
+        var message = {status: post.status, tid: topic.tid};
+        io.to('category_' + topic.cid).emit('kernel:topic', message);
+        io.to('recent_topics').emit('kernel:topic', message);
+        io.to('popular_topics').emit('kernel:topic', message);
+        io.to('unread_topics').emit('kernel:topic', message);
+      }
+      return callback(null, null);
+    });
   };
 
-  var kernel = function (post, pid, dir, url, username, password, callback) {
+  var kernel = function (post, dir, url, username, password, callback) {
     async.waterfall([
       function (callback) {
         var html = md.render(post.content);
@@ -63,13 +56,13 @@ var BeanstalkdService = function(db, redis) {
         });
       },
       function (scripts, callback) {
-        db.collection("objects").updateOne({_key:'post:' + pid}, {$set:{status:2}}, function (err) {
+        db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:{status:2}}, function (err) {
           if(err) {
             return callback(err);
           }
-          emit(pid, function () {
-            fs.mkdirsSync(dir + pid);
-            var kernel = JSON.stringify({dir: dir + pid + '/', scripts:scripts});
+          emit(post, function () {
+            fs.mkdirsSync(dir + post.pid);
+            var kernel = JSON.stringify({dir: dir + post.pid + '/', scripts:scripts});
             var options = {
               path: url,
               method: 'POST',
@@ -84,30 +77,29 @@ var BeanstalkdService = function(db, redis) {
               response.on('data', function(chunk) {
                 var set = {};
                 var needRelease = false;
-                if(response.statusCode == 200 || response.statusCode == 500) {
+                if(response.statusCode == 200) {
                   var act = JSON.parse(chunk);
-                  if(response.statusCode == 200) {
-                    set.status = 3;
-                    var lastData = act[act.length - 1];
-                    if(lastData.type == 'error') {
-                      set.status = -1;
-                    } else if (lastData.type == 'abort') {
-                      set.status = -2;
-                    }
-                    set.result = act;
-                  } else { // 500
-                    if(string(act.exception).contains('java.util.concurrent.TimeoutException')) {
-                      set.status = -2;
-                    } else {
-                      set.status = 1;
-                      needRelease = true;
-                    }
+                  set.status = 3;
+                  var lastData = act[act.length - 1];
+                  if(lastData.type == 'error') {
+                    set.status = -1;
+                  } else if (lastData.type == 'abort') {
+                    set.status = -2;
+                  }
+                  set.result = act;
+                } else if (response.statusCode == 500) {
+                  var act = JSON.parse(chunk);
+                  if(string(act.exception).contains('java.util.concurrent.TimeoutException')) {
+                    set.status = -2;
+                  } else {
+                    set.status = 1;
+                    needRelease = true;
                   }
                 } else {
                   set.status = 1;
                   needRelease = true;
                 }
-                db.collection("objects").updateOne({_key:'post:' + pid}, {$set:set}, function (err) {
+                db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:set}, function (err) {
                   return callback(err, needRelease);
                 });
               });// end of response.on('data'...
@@ -119,13 +111,13 @@ var BeanstalkdService = function(db, redis) {
       }
     ], function (err, needRelease) {
       if(err) {
-        db.collection("objects").updateOne({_key:'post:' + pid}, {$set:{status:1}}, function () {
-          emit(pid, function () {
+        db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:{status:1}}, function () {
+          emit(post, function () {
             return callback(err);
           });
         });
       } else {
-        emit(pid, function () {
+        emit(post, function () {
           if(needRelease) {
             return callback(null, true);
           } else {
@@ -159,12 +151,12 @@ var BeanstalkdService = function(db, redis) {
       }
       if(post.status == 0) {
         fs.removeSync(dir + pid);
-        return emit(pid, function () {
+        return emit(post, function () {
           return callback(null, false);
         });
       } else if(post.status == 1) {
         fs.removeSync(dir + pid);
-        return kernel(post, pid, dir, url, username, password, callback);
+        return kernel(post, dir, url, username, password, callback);
       } else {
         return callback('回复[post:'+post.pid+']状态错误['+post.status+'], 期望值: 1或0');
       }
@@ -194,7 +186,7 @@ var BeanstalkdService = function(db, redis) {
       if(post.status != 1) {
         return callback('回复[post:'+post.pid+']状态错误['+post.status+'], 期望值: 1');
       }
-      return kernel(post, pid, dir, url, username, password, callback);
+      return kernel(post, dir, url, username, password, callback);
     });
   };
 
