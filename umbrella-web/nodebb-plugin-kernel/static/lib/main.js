@@ -10,8 +10,51 @@ var statusMapping = {
 
 $('document').ready(function() {
 	$(window).on('action:app.load', function() {
-		require(['components'], function(components) {
+
+		require(['composer/formatting', 'composer/controls', 'components'], function(formatting, controls, components) {
+
+			socket.on('kernel:topic', function(json) {
+				var topic = components.get('category/topic', 'tid', json.tid);
+				if (!topic || !topic.length) {
+					return;
+				}
+				var title = $('[component="topic/header"] > a', topic);
+				if (!title || !title.length) {
+					return;
+				}
+				title = title[0];
+				$(title).find("span:first-child").remove(); //always remove the span first, this will handle status = 0
+				switch (json.status) {
+					case 1:
+						$(title).prepend(statusMapping.waiting);
+						break;
+					case 2:
+						$(title).prepend(statusMapping.evaluate);
+						break;
+					case 3:
+						$(title).prepend(statusMapping.finished);
+						break;
+					case -1:
+						$(title).prepend(statusMapping.error);
+						break;
+					case -2:
+						$(title).prepend(statusMapping.aborted);
+						break;
+				}
+			});
+
 			$(window).on('action:composer.loaded', function(err, data) {
+				//Add dispatch button
+				formatting.addButton('code', function(textarea, selectionStart, selectionEnd){
+					if (selectionStart === selectionEnd) {
+							controls.insertIntoTextarea(textarea, '````mma\n(*mathematica code*)\n````');
+							controls.updateTextareaSelection(textarea, selectionStart + 8, selectionStart + 28);
+						} else {
+							controls.wrapSelectionInTextareaWith(textarea, '````mma\n', '\n````');
+							controls.updateTextareaSelection(textarea, selectionStart + 8, selectionEnd + 8);
+						}
+				});
+				//Add kernel button
 				var btn = $('<button class="btn btn-success composer-evaluate" data-action="evaluate" tabindex="-2"><i class="fa fa-play"></i> 执行脚本</button>');
 				var showBtn = $('#cmp-uuid-' + data.post_uuid).find('.write-container .toggle-preview');
 				var editor = $('#cmp-uuid-' + data.post_uuid).find('textarea');
@@ -90,39 +133,8 @@ $('document').ready(function() {
 				// Do nothing, as this is a reply, not a new post
 				// return;
 				// }
+				
 			}); //end of action:composer.loaded
-
-			socket.on('kernel:topic', function(json) {
-				var topic = components.get('category/topic', 'tid', json.tid);
-				if (!topic || !topic.length) {
-					return;
-				}
-				var title = $('[component="topic/header"] > a', topic);
-				if (!title || !title.length) {
-					return;
-				}
-				title = title[0];
-				$(title).find("span:first-child").remove(); //always remove the span first, this will handle status = 0
-				switch (json.status) {
-					case 1:
-						$(title).prepend(statusMapping.waiting);
-						break;
-					case 2:
-						$(title).prepend(statusMapping.evaluate);
-						break;
-					case 3:
-						$(title).prepend(statusMapping.finished);
-						break;
-					case -1:
-						$(title).prepend(statusMapping.error);
-						break;
-					case -2:
-						$(title).prepend(statusMapping.aborted);
-						break;
-				}
-			});
-
-
 		}); // end of require(['components']
 	}); // end of action:app.load
 }); // end of $('document').ready

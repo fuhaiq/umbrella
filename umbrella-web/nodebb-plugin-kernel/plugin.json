@@ -27,6 +27,9 @@
 		},
 		{
 			"hook": "filter:post.delete", "method": "post.filterDelete"
+		},
+		{
+			"hook": "filter:composer.formatting", "method": "registerFormatting"
 		}
 	],
 	"scripts": [

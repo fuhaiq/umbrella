@@ -342,4 +342,18 @@ plugin.post.purge = function(pid, callback) {
     }).on('error', callback).connect();
 };
 
+plugin.registerFormatting = function (payload, callback) {
+	var formatting = ['code'];
+
+	formatting.reverse();
+	formatting.forEach(function (format) {
+		payload.options.unshift({
+			name: format,
+			className: 'fa fa-' + format
+		});
+	});
+
+	callback(null, payload);
+}
+
 module.exports = plugin;

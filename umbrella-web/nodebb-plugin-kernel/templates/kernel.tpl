@@ -4,7 +4,6 @@
         height: 300px;
     }
 </style>
-<script src="/vendor/ace/ext-language_tools.js"></script>
 
 <div class="panel panel-default">
   <div class="panel-heading">

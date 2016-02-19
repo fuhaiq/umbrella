@@ -3,7 +3,7 @@ sudo apt-get install libkrb5-dev imagemagick build-essential
 ###################password####################
 htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
-npm install connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards
+npm install connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards nodebb-plugin-katex
 
 ###################header.tpl##################
 remove js and google css
@@ -32,14 +32,9 @@ remove js and google css
 }
 
 ###################custom header#################
-<script type="text/javascript" src="/vendor/mathjax/MathJax.js?config=MML_HTMLorMML-full"></script>
+
 <script type="text/javascript" src="/vendor/ace/ace.js"></script>
-<script type="text/javascript">
-    MathJax.Hub.Config({
-        "HTML-CSS": { linebreaks: { automatic: true } },
-        SVG: { linebreaks: { automatic: true } }
-    });
-</script>
+<script type="text/javascript" src="/vendor/ace/ext-language_tools.js"></script>
 
 ###################post/delete.js#################
 function(next) {
@@ -51,23 +46,6 @@ function(next) {
     });
 },
 
-deprecated!!##################mathjax##################
-MathJax.Hub.Queue(["Typeset",MathJax.Hub,"kernel-preview"]);
-
-if (item.type == 'return' || item.type == 'text') {
-  $(codes[item.index]).after('<div class="kernel result alert alert-success" role="alert">' + item.data + '</div>');
-  MathJax.Hub.Queue(["Typeset", MathJax.Hub, '#cmp-uuid-' + data.post_uuid]);
-}
-
-if(post.result[i].type == 'return' || post.result[i].type == 'text') {
-    window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-success" role="alert">'+post.result[i].data+'</div>');
-}
-
-$(window).on('action:topic.loaded', function(event) {
-  MathJax.Hub.Queue(["Typeset", MathJax.Hub, 'content']);
-});
-
-
 ############################footer########################
 <hr>
 <div class="row">
@@ -76,6 +54,9 @@ $(window).on('action:topic.loaded', function(event) {
       <div class="item">
         Copyright &copy; 威思客(wiseker.com)
       </div>
+      <a class="item" href="http://reference.wolfram.com/language/">
+        参考资料中心
+      </a>
       <a class="item">
         关于我们
       </a>
@@ -92,3 +73,12 @@ $(window).on('action:topic.loaded', function(event) {
     </div>
   </div>
 </div>
+
+#############nodebb-plugin-katex/plugin.json#########################
+"staticDirs": {
+  "js": "static/js",
+  "fonts": "static/fonts"
+},
+
+############nodebb-plugin-katex/static/less/fonts.less###############
+@font-folder: "plugins/nodebb-plugin-katex/fonts";
