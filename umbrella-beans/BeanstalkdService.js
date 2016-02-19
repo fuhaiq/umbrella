@@ -60,6 +60,7 @@ var BeanstalkdService = function(db, redis) {
           if(err) {
             return callback(err);
           }
+          post.status = 2;
           emit(post, function () {
             fs.mkdirsSync(dir + post.pid);
             var kernel = JSON.stringify({dir: dir + post.pid + '/', scripts:scripts});
@@ -99,6 +100,7 @@ var BeanstalkdService = function(db, redis) {
                   set.status = 1;
                   needRelease = true;
                 }
+                post.status = set.status;
                 db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:set}, function (err) {
                   return callback(err, needRelease);
                 });
@@ -112,6 +114,7 @@ var BeanstalkdService = function(db, redis) {
     ], function (err, needRelease) {
       if(err) {
         db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:{status:1}}, function () {
+          post.status = 1;
           emit(post, function () {
             return callback(err);
           });

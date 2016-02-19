@@ -55,7 +55,7 @@ $('document').ready(function() {
 						}
 				});
 				//Add kernel button
-				var btn = $('<button class="btn btn-success composer-evaluate" data-action="evaluate" tabindex="-2"><i class="fa fa-play"></i> 执行脚本</button>');
+				var btn = $('<button class="btn btn-success composer-evaluate" data-action="evaluate" tabindex="-2"><i class="fa fa-play"></i> 执行</button>');
 				var showBtn = $('#cmp-uuid-' + data.post_uuid).find('.write-container .toggle-preview');
 				var editor = $('#cmp-uuid-' + data.post_uuid).find('textarea');
 				btn.on('click', function() {
@@ -133,7 +133,7 @@ $('document').ready(function() {
 				// Do nothing, as this is a reply, not a new post
 				// return;
 				// }
-				
+
 			}); //end of action:composer.loaded
 		}); // end of require(['components']
 	}); // end of action:app.load

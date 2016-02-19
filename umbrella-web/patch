@@ -47,6 +47,24 @@ function(next) {
 },
 
 ############################footer########################
+
+<hr>
+<div class="ui horizontal link large list">
+  <a class="item" href="/">
+    &copy; 威思客
+  </a>
+  <a class="item" href="http://reference.wolfram.com/language/">
+    参考资料中心
+  </a>
+  <a class="item">
+    关于我们
+  </a>
+  <a class="item" href="/app">
+    App下载
+  </a>
+</div>
+
+
 <hr>
 <div class="row">
   <div class="col-md-8">

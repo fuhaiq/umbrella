@@ -36,10 +36,6 @@ var emit = function (post, callback) {
 
 plugin.http = {};
 
-plugin.http.get = function(req, res, next) {
-	res.render('kernel', {});
-};
-
 plugin.http.post = function(req, res, next) {
 	var content = req.body.content;
 	if(!content) {
@@ -91,7 +87,13 @@ plugin.http.post = function(req, res, next) {
 
 plugin.init = function(data, callback) {
 
-	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], plugin.http.get);
+	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], (req, res, next)=>{
+		res.render('kernel', {});
+	});
+
+	helpers.setupPageRoute(data.router, '/app', data.middleware, [], (req, res, next)=>{
+		res.render('app', {});
+	});
 
 	data.router.post('/kernel', data.middleware.applyCSRF, plugin.http.post);
 
