@@ -34,12 +34,12 @@ public interface KernelLink extends MathLink {
 	/**
 	 * The version string identifying this release.
 	 */
-	String VERSION = "4.8.0";
+	String VERSION = "4.9.0";
 
 	/**
 	 * The major version number identifying this release.
 	 */
-	double VERSION_NUMBER = 1.0 * 4.8;
+	double VERSION_NUMBER = 1.0 * 4.9;
 
 	// The one and only place that must be changed if I change the package context for the
 	// supporting .m file.
@@ -1038,6 +1038,7 @@ public interface KernelLink extends MathLink {
 	 * @see #beginManual()
 	 */
 	void clearInterrupt();
-
+	
 	JSONArray result();
+
 }

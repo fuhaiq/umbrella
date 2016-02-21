@@ -13,7 +13,6 @@ package com.wolfram.jlink;
 
 import com.alibaba.fastjson.JSONArray;
 
-
 // WrappedKernelLink is the only full implementation of KernelLink in J/Link. The idea is to implement KernelLink
 // by "wrapping" a MathLink instance, which is responsible for all the transport-specific details. In other
 // words, if you give me a MathLink implementation, I can create a KernelLink implementation by simply doing:
@@ -375,6 +374,5 @@ public class WrappedKernelLink extends KernelLinkImpl implements KernelLink {
 	public JSONArray result() {
 		return array;
 	}
-
 
 }
