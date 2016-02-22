@@ -14,8 +14,8 @@ notification = require("./notification");
 
 var BeanstalkdService = function(db, redis) {
 
-  var emit = function (post, callback) {
-    db.collection("objects").findOne({_key:'topic:' + post.tid}, function (err, topic) {
+  var emit = (post, callback) => {
+    db.collection("objects").findOne({_key:'topic:' + post.tid}, (err, topic) => {
       if(err) {
         return callback(err)
       }
@@ -32,105 +32,112 @@ var BeanstalkdService = function(db, redis) {
 
   var kernel = function (post, dir, url, username, password, callback) {
     async.waterfall([
-      function (callback) {
+      (callback) => {
         var html = md.render(post.content);
         jsdom.env({
           html: html,
           src: [jquery],
-          done: function (err, window) {
-            if(err) {
-              return callback(err);
-            }
-            var codes = window.$("code[class='language-mma']");
-            if(codes.length < 1) {
-              window.close();
-              return callback('回复[post:'+post.pid+']内容找不到执行脚本');
-            }
-            var scripts = []
-            for(var i = 0; i < codes.length; i++) {
-              scripts.push(window.$(codes[i]).text())
-            }
-            window.close();
-            return callback(null, scripts);
-          }
+          done: callback
         });
       },
-      function (scripts, callback) {
-        db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:{status:2}}, function (err) {
-          if(err) {
-            return callback(err);
+      (window, callback) => {
+        var codes = window.$("code[class='language-mma']");
+        if(codes.length < 1) {
+          window.close();
+          return callback('回复[post:'+post.pid+']内容找不到执行脚本');
+        }
+        var scripts = []
+        for(var i = 0; i < codes.length; i++) {
+          scripts.push(window.$(codes[i]).text())
+        }
+        window.close();
+        return callback(null, scripts);
+      },
+      (scripts, callback) => {
+        post.status = 2;
+        emit(post, (err) => {
+          return callback(err, scripts);
+        })
+      },
+      (scripts, callback) => {
+        db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set: {status: post.status}}, (err) => {
+          return callback(err, scripts);
+        })
+      },
+      (scripts, callback) => {
+        fs.mkdirsSync(dir + post.pid);
+        var kernel = JSON.stringify({dir: dir + post.pid + '/', scripts:scripts});
+        var options = {
+          path: url,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Content-Length': Buffer.byteLength(kernel, 'utf8')
+          },
+          auth: username + ':' + password
+        };
+        var request = http.request(options, (response) => {
+          return callback(null, response);
+        });
+        request.write(kernel);
+        request.end();
+      },
+      (response, callback) => {
+        response.setEncoding('utf8');
+        response.on('data', (chunk) => {
+          return callback(null, response.statusCode, chunk);
+        });
+      },
+      (statusCode, chunk, callback) => {
+        var pack = {set : {}, needRelease : false};
+        if(statusCode == 200) {
+          var act = JSON.parse(chunk);
+          pack.set.status = 3;
+          var lastData = act[act.length - 1];
+          if(lastData.type == 'error') {
+            pack.set.status = -1;
+          } else if (lastData.type == 'abort') {
+            pack.set.status = -2;
           }
-          post.status = 2;
-          emit(post, function () {
-            fs.mkdirsSync(dir + post.pid);
-            var kernel = JSON.stringify({dir: dir + post.pid + '/', scripts:scripts});
-            var options = {
-              path: url,
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json;charset=UTF-8',
-                'Content-Length': Buffer.byteLength(kernel, 'utf8')
-              },
-              auth: username + ':' + password
-            };
-            var request = http.request(options, function(response) {
-              response.setEncoding('utf8');
-              response.on('data', function(chunk) {
-                var set = {};
-                var needRelease = false;
-                if(response.statusCode == 200) {
-                  var act = JSON.parse(chunk);
-                  set.status = 3;
-                  var lastData = act[act.length - 1];
-                  if(lastData.type == 'error') {
-                    set.status = -1;
-                  } else if (lastData.type == 'abort') {
-                    set.status = -2;
-                  }
-                  set.result = act;
-                } else if (response.statusCode == 500) {
-                  var act = JSON.parse(chunk);
-                  if(string(act.exception).contains('java.util.concurrent.TimeoutException')) {
-                    set.status = -2;
-                  } else {
-                    set.status = 1;
-                    needRelease = true;
-                  }
-                } else {
-                  set.status = 1;
-                  needRelease = true;
-                }
-                post.status = set.status;
-                db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:set}, function (err) {
-                  return callback(err, needRelease);
-                });
-              });// end of response.on('data'...
-            });// end of http.request
-            request.write(kernel);
-            request.end();
-          })
-        });
-      }
-    ], function (err, needRelease) {
-      if(err) {
-        db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:{status:1}}, function () {
-          post.status = 1;
-          emit(post, function () {
-            return callback(err);
-          });
-        });
-      } else {
-        emit(post, function () {
-          if(needRelease) {
-            return callback(null, true);
+          pack.set.result = act;
+        } else if (statusCode == 500) {
+          var act = JSON.parse(chunk);
+          if(string(act.exception).contains('java.util.concurrent.TimeoutException')) {
+            pack.set.status = -2;
           } else {
-            notify.notice(post, function(err) {
-              return callback(err, false);
-            })
+            pack.set.status = 1;
+            pack.needRelease = true;
           }
-        })//end of emit
+        } else {
+          pack.set.status = 1;
+          pack.needRelease = true;
+        }
+        return callback(null, pack);
+      },
+      (pack, callback) => {
+        post.status = pack.set.status;
+        db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set:pack.set}, (err) => {
+          return callback(err, pack.needRelease);
+        })
+      },
+      (needRelease, callback) => {
+        emit(post, (err) => {
+          return callback(err, needRelease);
+        })
+      },
+      (needRelease, callback) => {
+        notify.notice(post, (err) => {
+          return callback(err, needRelease);
+        });
       }
-    }); // end of waterfall
+    ], (err, needRelease) => {
+      if(err) {
+        db.collection("objects").updateOne({_key:'post:' + post.pid}, {$set: {status: 1}}, (dbErr) => {
+          return callback(err);
+        })
+      }
+      return callback(null, needRelease);
+    })
   };
 
   var db = db;
@@ -145,7 +152,7 @@ var BeanstalkdService = function(db, redis) {
     url = jobData.url,
     username = jobData.username,
     password = jobData.password;
-    db.collection("objects").findOne({_key:'post:' + pid}, function (err, post) {
+    db.collection("objects").findOne({_key:'post:' + pid}, (err, post) => {
       if(err) {
         return callback(err);
       }
@@ -154,8 +161,8 @@ var BeanstalkdService = function(db, redis) {
       }
       if(post.status == 0) {
         fs.removeSync(dir + pid);
-        return emit(post, function () {
-          return callback(null, false);
+        return emit(post, (err) => {
+          return callback(err, false);
         });
       } else if(post.status == 1) {
         fs.removeSync(dir + pid);
@@ -179,7 +186,7 @@ var BeanstalkdService = function(db, redis) {
     url = jobData.url,
     username = jobData.username,
     password = jobData.password;
-    db.collection("objects").findOne({_key:'post:' + pid}, function (err, post) {
+    db.collection("objects").findOne({_key:'post:' + pid}, (err, post) => {
       if(err) {
         return callback(err);
       }
@@ -196,7 +203,7 @@ var BeanstalkdService = function(db, redis) {
   this.clean = function(dir, second, callback) {
     var total = 0;
     var current = new Date();
-    fs.walk(dir).on('data', function(file) {
+    fs.walk(dir).on('data', (file) => {
       if(file.stats.isFile()) {
         var createTime = file.stats.birthtime.getTime();
         var span = ((current.getTime() - createTime) / 1000);
@@ -206,7 +213,7 @@ var BeanstalkdService = function(db, redis) {
         }
       }
     })
-    .on('end', function () {
+    .on('end', () => {
       callback(null, total);
     })
   };
