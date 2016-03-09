@@ -142,11 +142,11 @@ $(document).ready(function() {
 														if (item.type == 'text') {
 																$('#kernel-preview').append('<samp>' + item.data + '</samp>');
 														}else if(item.type == "error") {
-																$('#kernel-preview').append('<div class="alert alert-danger" role="alert">'+item.data+'</div>')
+																$('#kernel-preview').append('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
 														}else if(item.type == "abort") {
-																$('#kernel-preview').append('<div class="alert alert-warning" role="alert">计算超时</div>')
+																$('#kernel-preview').append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
 														}else if(item.type == "image") {
-																$('#kernel-preview').append("<p><img src='/kernel/temp/"+item.data+"'></img></p>")
+																$('#kernel-preview').append("<img class='kernel result img-responsive' src='/kernel/temp/"+item.data+"'></img>")
 														}
 												});
 										}

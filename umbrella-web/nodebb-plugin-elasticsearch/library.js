@@ -18,14 +18,6 @@ plugins = module.parent.require('./plugins'),
 winston = module.parent.require('winston'),
 nconf = module.parent.require('nconf');
 
-/*
-var isDeleted = function(pid, callback) {
-topics.getTopicFieldByPid('deleted', pid, function(err, deleted) {
-callback(err, parseInt(deleted, 10) === 1);
-});
-};
-*/
-
 var insert = function(type, id, value, cid, uid, callback) {
 	var query = {
 		index: 'umbrella',
@@ -177,37 +169,6 @@ plugin.search = function(data, callback) {
 			return callback(null, payload);
 		}
 	], callback);
-
-	/*
-	client.search(query, function(err, obj) {
-	if(err) {
-	return callback(err);
-}
-if(obj && obj.hits && obj.hits.hits && obj.hits.hits.length > 0) {
-if(data.index == 'topic') {
-var payload = obj.hits.hits.map(function(result) {
-return parseInt(result._id, 10);
-});
-return callback(null, payload);
-} else {
-async.map(obj.hits.hits, function (hit, callback){
-isDeleted(hit._id, function (err, deleted) {
-if(err) {
-return callback(err);
-}
-if(deleted) {
-return callback(null, null);
-} else {
-return callback(null, parseInt(hit._id, 10));
-}
-});
-}, callback);
-}
-} else {
-return callback(null, []);
-}
-});
-*/
 
 };
 
@@ -397,7 +358,7 @@ plugin.post.move = function(info, callback) {
 		});
 };
 
-plugin.morelikethis = function(topic, callback) {
+plugin.morelikethis = function(data, callback) {
 	callback = callback || function() {};
 	var query =
 	{
@@ -423,7 +384,7 @@ plugin.morelikethis = function(topic, callback) {
 								{
 									_index: "umbrella",
 									_type: "topic",
-									_id: parseInt(topic.tid, 10)
+									_id: parseInt(data.topicData.tid, 10)
 								}
 							],
 							min_term_freq: 1,
@@ -443,7 +404,7 @@ plugin.morelikethis = function(topic, callback) {
 			return callback(err);
 		}
 		if(res.hits.hits.length == 0) {
-			return callback(null, topic);
+			return callback(null, data);
 		}
 		var tids = res.hits.hits.map(function(result) {
 			return parseInt(result._id, 10);
@@ -480,8 +441,8 @@ plugin.morelikethis = function(topic, callback) {
 						similar[i].user = users[similar[i].uid];
 					}
 				}
-				topic.similar = similar;
-				return callback(null, topic);
+				data.topicData.similar = similar;
+				return callback(null, data);
 			});
 		});
 	});

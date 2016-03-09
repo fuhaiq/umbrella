@@ -153,13 +153,13 @@ plugin.topic.get= function(data, callback) {
 					var codes = window.$("code[class='language-mma']");
 					for(var i = 0; i < post.result.length; i++) {
 						if (post.result[i].type == 'text') {
-							window.$(codes[post.result[i].index]).after('<samp>'+post.result[i].data+'</samp>');
+							window.$(codes[post.result[i].index]).parent().append('<samp>'+post.result[i].data+'</samp>');
 						} else if(post.result[i].type == 'error') {
-							window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');
+							window.$(codes[post.result[i].index]).parent().append('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');
 						} else if(post.result[i].type == 'abort') {
-							window.$(codes[post.result[i].index]).after('<div class="kernel result alert alert-warning" role="alert">计算超时</div>');
+							window.$(codes[post.result[i].index]).parent().append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>');
 						} else if(post.result[i].type == 'image') {
-							window.$(codes[post.result[i].index]).after("<img class='kernel result' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");
+							window.$(codes[post.result[i].index]).parent().append("<img class='kernel result img-responsive' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");
 						}
 					}
 					var html = window.document.documentElement.outerHTML;
@@ -195,18 +195,18 @@ plugin.post.filterEdit = function(postData, callback) {
 	});
 };
 
-plugin.post.filterDelete = function(pid, callback) {
+plugin.post.filterPurge = function(postData, callback) {
 	callback = callback || function() {};
 	var client = redis.createClient(nconf.get('redis:port'), nconf.get('redis:host'));
-	client.exists('post:lock:' + pid, function (err, reply) {
+	client.exists('post:lock:' + postData.pid, function (err, reply) {
 		client.quit();
 		if(err) {
 			return callback(err);
 		}
 		if(reply == 1) {
-			return callback(new Error('帖子正在计算,暂时不能删除.'));
+			return callback(new Error('帖子正在计算,暂时不能清除.'));
 		}
-		return callback(null, pid);
+		return callback(null, postData);
 	});
 };
 

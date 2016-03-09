@@ -126,6 +126,9 @@ var BeanstalkdService = function(db, redis) {
         })
       },
       (needRelease, callback) => {
+        if(needRelease) {
+          return callback(null, needRelease)
+        }
         notify.notice(post, (err) => {
           return callback(err, needRelease);
         });

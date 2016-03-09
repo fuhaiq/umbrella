@@ -26,7 +26,7 @@
 			"hook": "filter:post.edit", "method": "post.filterEdit"
 		},
 		{
-			"hook": "filter:post.delete", "method": "post.filterDelete"
+			"hook": "filter:post.purge", "method": "post.filterPurge"
 		},
 		{
 			"hook": "filter:composer.formatting", "method": "registerFormatting"

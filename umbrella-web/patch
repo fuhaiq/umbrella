@@ -3,7 +3,10 @@ sudo apt-get install libkrb5-dev imagemagick build-essential
 ###################password####################
 htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
-npm install connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards nodebb-plugin-katex
+npm install hiredis connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards nodebb-plugin-katex
+
+mkdir /home/umbrella/git/umbrella-web/public/kernel/temp/
+mkdir /home/umbrella/git/umbrella-web/public/kernel/post/
 
 ###################header.tpl##################
 remove js and google css
@@ -36,16 +39,6 @@ remove js and google css
 <script type="text/javascript" src="/vendor/ace/ace.js"></script>
 <script type="text/javascript" src="/vendor/ace/ext-language_tools.js"></script>
 
-###################post/delete.js#################
-function(next) {
-    plugins.fireHook('filter:post.delete', pid, function (err) {
-        if(err) {
-            return next(err)
-        }
-        Posts.setPostField(pid, 'deleted', 1, next);
-    });
-},
-
 ############################footer########################
 
 <hr>
@@ -62,34 +55,6 @@ function(next) {
   <a class="item" href="/app">
     App下载
   </a>
-</div>
-
-
-<hr>
-<div class="row">
-  <div class="col-md-8">
-    <div class="ui horizontal bulleted link large list">
-      <div class="item">
-        Copyright &copy; 威思客(wiseker.com)
-      </div>
-      <a class="item" href="http://reference.wolfram.com/language/">
-        参考资料中心
-      </a>
-      <a class="item">
-        关于我们
-      </a>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="ui horizontal link large list">
-      <div class="item">
-        手机客户端
-      </div>
-      <a class="item">
-        <i class="fa fa-android fa-2x"></i>
-      </a>
-    </div>
-  </div>
 </div>
 
 #############nodebb-plugin-katex/plugin.json#########################

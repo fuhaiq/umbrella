@@ -1,11 +1,11 @@
 "use strict";
 
 var statusMapping = {
-	waiting: '<span class="ui blue basic label"><i class="fa fa-clock-o"></i>等待计算</span>',
-	evaluate: '<span class="ui purple basic label"><i class="fa fa-play"></i>正在计算</span>',
-	finished: '<span class="ui green basic label"><i class="fa fa-check"></i>计算成功</span>',
-	error: '<span class="ui orange basic label"><i class="fa fa-remove"></i>语法错误</span>',
-	aborted: '<span class="ui yellow basic label"><i class="fa fa-exclamation"></i>计算超时</span>'
+	waiting: '<span class="ui blue basic label"><i class="fa fa-clock-o"></i> 等待计算</span>',
+	evaluate: '<span class="ui purple basic label"><i class="fa fa-play"></i> 正在计算</span>',
+	finished: '<span class="ui green basic label"><i class="fa fa-check"></i> 计算成功</span>',
+	error: '<span class="ui orange basic label"><i class="fa fa-remove"></i> 语法错误</span>',
+	aborted: '<span class="ui yellow basic label"><i class="fa fa-exclamation"></i> 计算超时</span>'
 };
 
 $('document').ready(function() {
@@ -102,13 +102,13 @@ $('document').ready(function() {
 										} else {
 											result.forEach(function(item) {
 												if(item.type == "text") {
-													$(codes[item.index]).after('<samp>' + item.data + '</samp>')
+													$(codes[item.index]).parent().append('<samp>' + item.data + '</samp>')
 												} else if (item.type == "error") {
-													$(codes[item.index]).after('<div class="kernel result alert alert-danger" role="alert">' + item.data + '</div>')
+													$(codes[item.index]).parent().append('<div class="kernel result alert alert-danger" role="alert">' + item.data + '</div>')
 												} else if (item.type == "abort") {
-													$(codes[item.index]).after('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
+													$(codes[item.index]).parent().append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
 												} else if (item.type == "image") {
-													$(codes[item.index]).after("<img class='kernel result' src='/kernel/temp/" + item.data + "''></img>")
+													$(codes[item.index]).parent().append("<img class='kernel result img-responsive' src='/kernel/temp/" + item.data + "'></img>")
 												}
 											});
 										}
