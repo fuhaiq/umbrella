@@ -25,160 +25,121 @@ redisClient = null,
 beanstalkd = null,
 service = null;
 
-var reserve = function () {
+var reserve = () => {
 	async.waterfall([
-		(callback) => {
-			LOG.info('开始接收beanstalkd任务');
-			beanstalkd.reserve(callback);
+		(next) => beanstalkd.reserve(next),
+		(jobid, payload, next) => {
+			var job = JSON.parse(payload.toString());
+			job.id = jobid;
+			job.dir = config.kernel.imgDir;
+			job.url = config.kernel.url;
+			job.username = config.kernel.username;
+			job.password = config.kernel.password;
+			if(!string(job.pid).isNumeric()) {
+				return next('回复pid为不是数字');
+			}
+			if(string(job.dir).isEmpty()) {
+				return next('回复文件路径dir为空');
+			}
+			if(string(job.url).isEmpty()) {
+				return next('计算url为空', null);
+			}
+			if(string(job.username).isEmpty()) {
+				return next('kernel认证用户名为空');
+			}
+			if(string(job.password).isEmpty()) {
+				return next('kernel认证密码为空');
+			}
+			next(null, job)
 		},
-		(jobid, payload, callback) => {
-			var jobData = JSON.parse(payload.toString());
-			jobData.id = jobid;
-			jobData.dir = config.kernel.imgDir;
-			jobData.url = config.kernel.url;
-			jobData.username = config.kernel.username;
-			jobData.password = config.kernel.password;
-			if(!string(jobData.pid).isNumeric()) {
-				return callback('回复pid为不是数字');
+		(job, next) => redisClient.setnx('post:lock:' + job.pid, 'locked', (err, buffer) => next(err, job, (buffer.toString() == 0))),
+		(job, locked, next) => {
+			if(locked) {
+				LOG.warn('回复[post:'+job.pid+']被锁定,延时5秒后重新调度任务[jobid:'+job.id+']');
+				beanstalkd.release(job.id, Math.pow(2, 32), 5, (err) => next(err || 'POST_LOCKED'))
+			} else {
+				next(null, job)
 			}
-			if(string(jobData.dir).isEmpty()) {
-				return callback('回复文件路径dir为空');
-			}
-			if(string(jobData.url).isEmpty()) {
-				return callback('计算url为空', null);
-			}
-			if(string(jobData.username).isEmpty()) {
-				return callback('kernel认证用户名为空');
-			}
-			if(string(jobData.password).isEmpty()) {
-				return callback('kernel认证密码为空');
-			}
-			redisClient.setnx('post:lock:' + jobData.pid, 'locked', (err, buffer) => {
-				if(err) {
-					return callback(err)
-				}
-				if(buffer.toString() == 0) {
-					LOG.warn('回复[post:'+jobData.pid+']被锁定,延时5秒后重新调度任务[jobid:'+jobData.id+']');
-		      beanstalkd.release(jobid, Math.pow(2, 32), 5, (err) => {
-						return callback(err || 'locked')
-					});
-				}
-				return callback(null, jobData)
-			});
 		},
-		(jobData, callback) => {
+		(job, next) => {
 			var fn = null;
-			if(jobData.action == 'create') {
+			if(job.action == 'create') {
 				fn = service.create;
-			} else if (jobData.action == 'update') {
+			} else if (job.action == 'update') {
 				fn = service.update;
-			}	else if (jobData.action == 'purge') {
+			}	else if (job.action == 'purge') {
 				fn = service.purge;
 			}	else {
-				LOG.warn('没有此类型['+jobData.action+']任务,直接删除');
-				fn = (jobData, callback) => {
-					return callback(null, false);
-				};
+				LOG.warn('没有此类型['+job.action+']任务,直接删除');
+				fn = (job, next) => next(null, false)
 			}
-			fn(jobData, (err, needRelease) => {
-				return callback(err, jobData, needRelease)
-			})
+			fn(job, (err, needRelease) => next(err, job, needRelease))
 		},
-		(jobData, needRelease, callback) => {
+		(job, needRelease, next) => {
 			if(needRelease) {
-				LOG.warn('回复[post:'+jobData.pid+']未操作,延时5秒后重新调度任务[jobid:'+jobData.id+']')
-				beanstalkd.release(jobData.id, Math.pow(2, 32), 5, (err) => {
-					return callback(err, jobData)
-				});
+				LOG.warn('回复[post:'+job.pid+']未操作,延时5秒后重新调度任务[jobid:'+job.id+']')
+				beanstalkd.release(job.id, Math.pow(2, 32), 5, err => next(err, job))
 			} else {
-				LOG.info('完成操作,删除任务')
-				beanstalkd.destroy(jobData.id, (err) => {
-					return callback(err, jobData)
-				});
+				beanstalkd.destroy(job.id, err => next(err, job))
 			}
 		},
-		(jobData, callback) => {
-			redisClient.del('post:lock:' + jobData.pid, callback);
-		}
+		(job, next) => redisClient.del('post:lock:' + job.pid, next)
 	], (err) => {
-		if(err && err != 'locked') {
+		if(err && err != 'POST_LOCKED') {
 			LOG.error(err);
 		}
-		reserve();
-	});
+		reserve()
+	})
 };
 
 async.parallel({
-	mongodb: function (callback) {
-		MongoClient.connect(config.mongo.url, function (err, db) {
-			if(err) {
-				LOG.error('链接mongodb出错:');
-				return callback(err);
-			}
-			return callback(null, db);
-		});
-	},
-	redis: function (callback) {
-		var client = redis.createClient(config.redis.port, config.redis.host, {
+	mongodb: (next) => MongoClient.connect(config.mongo.url, next),
+	redis: (next) => {
+		var conn = redis.createClient(config.redis.port, config.redis.host, {
 			return_buffers : true
-		});
-		client.on("connect", function (){
-			return callback(null, client);
-		});
-		client.on("error", function (err) {
-			LOG.error('链接redis出错:');
-			return callback(err);
-		});
+		})
+		conn.on('connect', () => next(null, conn))
+		conn.on('error', err => next(err))
 	},
-	beanstalkd: function (callback) {
-		var client = new fivebeans.client(config.beanstalkd.host, config.beanstalkd.port);
-		client.on('connect', function () {
-			return callback(null, client);
-		})
-		.on('error', function (err) {
-			LOG.error('链接beanstalkd出错:');
-			return callback(err);
-		})
-		.connect();
+	beanstalkd: (next) => {
+		var conn = new fivebeans.client(config.beanstalkd.host, config.beanstalkd.port)
+		conn.on('connect', () => next(null, conn)).on('error', err => next(err)).connect()
 	}
-},function (err, conns){
+}, (err, conns) => {
 	if(err) {
-		LOG.error(err);
+		LOG.error(err)
 		return;
 	}
+
 	db = conns.mongodb;
 	redisClient = conns.redis;
 	beanstalkd = conns.beanstalkd;
 	service = new BeanstalkdService(db, redisClient);
-	//start kernel job
-	beanstalkd.watch(config.beanstalkd.tube, function (err) {
-		if(err) {
-			LOG.error(err);
-		} else {
-			reserve();
-		}
-	});
-	//start clean cron job
-	var cleanJob = new CronJob({
-		cronTime: config.clean.cronTime,
-		onTick: function() {
-			LOG.info('执行清理任务');
-			service.clean(config.clean.dir, config.clean.second, function(err, total){
-				if(err) {
-					LOG.error(err);
-				} else {
-					if(total > 0) {
-						LOG.warn('共删除个'+total+'文件');
-					}
-					LOG.info('执行清理任务完毕');
-				}
-			});
-		},
-		start: true,
-		timeZone: config.clean.timeZone
-	});
-	cleanJob.start();
-});
+
+	beanstalkd.watch(config.beanstalkd.tube, err => {
+	  if(err) {
+	    LOG.error(err)
+	  } else {
+	    reserve()
+	  }
+	})
+
+	new CronJob({
+	  cronTime: config.clean.cronTime,
+	  onTick: () => {
+	    service.clean(config.clean.dir, config.clean.second, (err, total) =>{
+	      if(err) {
+	        LOG.error(err)
+	      }else if (total > 0) {
+	        LOG.warn('共删除个'+total+'文件');
+	      }
+	    })
+	  },
+	  start: true,
+	  timeZone: config.clean.timeZone
+	}).start()
+
+})
 
 /* shutdown event for pm2 */
 process.on('SIGTERM', function() {

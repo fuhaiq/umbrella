@@ -18,32 +18,36 @@ redis = require("redis"),
 io = module.parent.require('./socket.io'),
 helpers = module.parent.require('./routes/helpers');
 
-var emit = function (post, callback) {
-	posts.getTopicFields(post.pid, ['mainPid', 'cid', 'tid'], function (err, topic) {
+
+
+var emit = (post, next) => {
+	posts.getTopicFields(post.pid, ['mainPid', 'cid', 'tid'], (err, topic) => {
 		if(err) {
-			return callback(err);
+			return next(err)
 		}
-		if(topic.mainPid == post.pid) {
-			var message = {status: post.status, tid: topic.tid};
-			io.in('category_' + topic.cid).emit('kernel:topic', message);
-			io.in('recent_topics').emit('kernel:topic', message);
-			io.in('popular_topics').emit('kernel:topic', message);
-			io.in('unread_topics').emit('kernel:topic', message);
+
+		var rooms = ['category_' + topic.cid, 'recent_topics', 'popular_topics', 'unread_topics']
+		var message = {status: post.status, tid: topic.tid}
+		if(topic.mainPid != post.pid) {
+			return next()
 		}
-		return callback(null, null);
-	});
-};
+
+		async.map(rooms, (room, next) => {
+			io.in(room).emit('kernel:topic', message)
+			next()
+		}, next)
+	})
+}
 
 plugin.http = {};
 
-plugin.http.post = function(req, res, next) {
-	var content = req.body.content;
+plugin.http.post = (req, res, next) => {
+	var content = req.body.content
 	if(!content) {
 		return res.json({success: false, msg: '没有脚本可以运行', type: 'info'})
 	}
-	content = JSON.parse(content);
-	var kernel = JSON.stringify({dir: nconf.get('kernel:imgDir'), scripts:content});
-
+	content = JSON.parse(content)
+	var kernel = JSON.stringify({dir: nconf.get('kernel:imgDir'), scripts:content})
 	var options = {
 		path: '/evaluate',
 		method: 'POST',
@@ -52,310 +56,285 @@ plugin.http.post = function(req, res, next) {
 			'Content-Length': Buffer.byteLength(kernel, 'utf8')
 		},
 		auth: nconf.get('kernel:username') + ':' + nconf.get('kernel:password')
-	};
+	}
 
-	var request = http.request(options, function(response) {
-		response.setEncoding('utf8');
-		response.on('data', function(chunk) {
-			switch(response.statusCode) {
-				case 200 :
-				res.json({success: true, result: chunk});
-				break;
-				case 502 :
-				res.json({success: false, msg: '计算服务目前不可用', type: 'danger'});
-				break;
-				case 500 :
+	async.waterfall([
+		(next) => {
+			var request = http.request(options, (response) => next(null, response))
+			request.write(kernel)
+			request.end()
+		},
+		(response, next) => {
+			response.setEncoding('utf8')
+      response.on('data', (chunk) => next(null, response.statusCode, chunk))
+		},
+		(statusCode, chunk, next) => {
+			var json = {}
+			if(statusCode == 200) {
+				json = {success: true, result: chunk}
+			} else if (statusCode == 502) {
+				json = {success: false, msg: '计算服务目前不可用', type: 'danger'}
+			} else if (statusCode == 500) {
 				var act = JSON.parse(chunk);
 				if(string(act.exception).contains('java.util.NoSuchElementException')) {
-					res.json({success: false, msg: '目前没有空余的计算内核,请稍后再试', type: 'info'});
-					break;
+					json = {success: false, msg: '目前没有空余的计算内核,请稍后再试', type: 'info'}
 				} else if(string(act.exception).contains('java.util.concurrent.TimeoutException')) {
-					res.json({success: false, msg: '这个计算太耗时了,算不出来啊', type: 'info'});
-					break;
+					json = {success: false, msg: '这个计算太耗时了,算不出来啊', type: 'info'}
 				} else {
-					res.json({success: false, msg: '计算服务错误,我们会尽快解决', type: 'danger'});
-					break;
+					json = {success: false, msg: '计算服务错误,我们会尽快解决', type: 'danger'}
 				}
-				default :
-				res.json({success: false, msg: '计算服务未知错误', type: 'danger'});
+			} else {
+				json = {success: false, msg: '计算服务未知错误', type: 'danger'}
 			}
-		});
-	});
-	request.write(kernel);
-	request.end();
+			next(null, json)
+		}
+	], (err, json) => res.json(json)) //Ignore err because http does not produce that.
 };
 
-plugin.init = function(data, callback) {
+plugin.init = (data, next) => {
+	next = next || function(){};
 
-	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], (req, res, next)=>{
-		res.render('kernel', {});
-	});
-
-	helpers.setupPageRoute(data.router, '/app', data.middleware, [], (req, res, next)=>{
-		res.render('app', {});
-	});
-
+	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], (req, res, next) => res.render('kernel', {}));
+	helpers.setupPageRoute(data.router, '/app', data.middleware, [], (req, res, next) => res.render('app', {}));
 	data.router.post('/kernel', data.middleware.applyCSRF, plugin.http.post);
-
-	callback();
+	next();
 };
 
 plugin.topic = {};
 
-var populateStatus = function (status, topicOrPost) {
-	switch(status) {
-		case 1 :
+var populateStatus = (status, topicOrPost) => {
+	if (status == 1) {
 		topicOrPost.waiting = true;
-		break;
-		case 2 :
+	} else if (status == 2) {
 		topicOrPost.evaluate = true;
-		break;
-		case 3 :
+	} else if (status == 3) {
 		topicOrPost.finished = true;
-		break;
-		case -1 :
+	} else if (status == -1) {
 		topicOrPost.error = true;
-		break;
-		case -2 :
+	} else if (status == -2) {
 		topicOrPost.aborted = true;
-		break;
 	}
 	return topicOrPost;
-}
-
-plugin.topic.list = function(data, callback) {
-	var topic_list = data.topics;
-	async.map(topic_list, function(topic, next) {
-		topics.getMainPost(topic.tid, topic.uid, function (err, post){
-			if(err) {
-				return next(err);
-			}
-			topic = populateStatus(post.status, topic);
-			return next(null, topic);
-		});
-	}, function(err) {
-		return callback(err, data);
-	});
 };
 
-plugin.topic.get= function(data, callback) {
-	var topic = data.topic;
-	async.map(topic.posts, function (post, next) {
-		post = populateStatus(post.status, post);
-		if(post.result && post.result.length > 0) {
-			jsdom.env({
-				html: post.content,
-				src: [jquery],
-				done: function (err, window) {
-					if(err) {
-						return callback(err);
-					}
-					var codes = window.$("code[class='language-mma']");
-					for(var i = 0; i < post.result.length; i++) {
-						if (post.result[i].type == 'text') {
-							window.$(codes[post.result[i].index]).parent().append('<samp>'+post.result[i].data+'</samp>');
-						} else if(post.result[i].type == 'error') {
-							window.$(codes[post.result[i].index]).parent().append('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');
-						} else if(post.result[i].type == 'abort') {
-							window.$(codes[post.result[i].index]).parent().append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>');
-						} else if(post.result[i].type == 'image') {
-							window.$(codes[post.result[i].index]).parent().append("<img class='kernel result img-responsive' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");
-						}
-					}
-					var html = window.document.documentElement.outerHTML;
-					window.close();
-					html = string(html).replaceAll('<html><head></head><body>', '').s;
-					html = string(html).replaceAll('<script class="jsdom" src="http://www.wiseker.com/vendor/jquery/js/jquery.js"></script></body></html>', '').s;
-					post.content = html;
-					return next(null);
-				}
-			});
-		} else {
-			return next(null);
+plugin.topic.list = (data, next) => {
+	next = next || function(){};
+
+	var list = data.topics
+	async.map(list, (topic, next) => topics.getMainPost(topic.tid, topic.uid, (err, post) => {
+		if(err) {
+			return next(err)
 		}
-	}, function (err){
-		return callback(err, data);
-	});
+
+		topic = populateStatus(post.status, topic)
+		next(null, topic)
+	}), (err) => next(err, data))
+};
+
+plugin.topic.get = (data, next) => {
+	next = next || function(){};
+
+	async.map(data.topic.posts, (post, next) => {
+		post = populateStatus(post.status, post)
+		if(!post.result || post.result.length <= 0) {
+			return next()
+		}
+
+		async.waterfall([
+			(next) => jsdom.env({html: post.content, src: [jquery], done: next}),
+			(window, next) => {
+				var codes = window.$("code[class='language-mma']")
+				for(var i = 0; i < post.result.length; i++) {
+					if (post.result[i].type == 'text') {
+						window.$(codes[post.result[i].index]).parent().append('<samp>'+post.result[i].data+'</samp>');
+					} else if(post.result[i].type == 'error') {
+						window.$(codes[post.result[i].index]).parent().append('<div class="kernel result alert alert-danger" role="alert">'+post.result[i].data+'</div>');
+					} else if(post.result[i].type == 'abort') {
+						window.$(codes[post.result[i].index]).parent().append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>');
+					} else if(post.result[i].type == 'image') {
+						window.$(codes[post.result[i].index]).parent().append("<img class='kernel result img-responsive' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");
+					}
+				}
+				var html = window.document.documentElement.outerHTML;
+				window.close();
+				html = string(html).replaceAll('<html><head></head><body>', '').s;
+				html = string(html).replaceAll('<script class="jsdom" src="http://www.wiseker.com/vendor/jquery/js/jquery.js"></script></body></html>', '').s;
+				post.content = html;
+				next()
+			}
+		], next)
+	}, (err) => next(err, data))
 };
 
 plugin.post = {};
 
-plugin.post.filterEdit = function(postData, callback) {
-	callback = callback || function() {};
-	var client = redis.createClient(nconf.get('redis:port'), nconf.get('redis:host'));
-	client.exists('post:lock:' + postData.post.pid, function (err, reply) {
-		client.quit();
+plugin.post.filterEdit = (postData, next) => {
+	next = next || function(){};
+
+	var conn = redis.createClient(nconf.get('redis:port'), nconf.get('redis:host'));
+	conn.exists('post:lock:' + postData.post.pid, (err, re) => {
+		conn.quit()
 		if(err) {
-			return callback(err);
+			return next(err)
 		}
-		if(reply == 1) {
-			return callback(new Error('帖子正在计算,暂时不能修改.'));
+
+		if(re == 1) {
+			return next(new Error('帖子正在计算,暂时不能修改.'))
 		}
-		return callback(null, postData);
-	});
+
+		next(null, postData)
+	})
 };
 
-plugin.post.filterPurge = function(postData, callback) {
-	callback = callback || function() {};
-	var client = redis.createClient(nconf.get('redis:port'), nconf.get('redis:host'));
-	client.exists('post:lock:' + postData.pid, function (err, reply) {
-		client.quit();
+plugin.post.purge = (postData, next) => {
+	next = next || function(){};
+
+	var conn = redis.createClient(nconf.get('redis:port'), nconf.get('redis:host'));
+	conn.exists('post:lock:' + postData.pid, (err, re) => {
+		conn.quit()
 		if(err) {
-			return callback(err);
+			return next(err)
 		}
-		if(reply == 1) {
-			return callback(new Error('帖子正在计算,暂时不能清除.'));
+
+		if(re == 1) {
+			return next(new Error('帖子正在计算,暂时不能清除.'))
 		}
-		return callback(null, postData);
-	});
+
+		next(null, postData)
+	})
 };
 
-plugin.post.edit = function(post, callback) {
-	callback = callback || function() {};
-	db.deleteObjectField('post:' + post.pid, 'result', function (err) {
-		if(err) {
-			return callback(err);
-		}
-		async.waterfall([
-			function (callback) {
-				plugins.fireHook('filter:parse.raw', post.content, callback);
-			},
-			function (html, callback) {
-				jsdom.env({
-					html: html,
-					src: [jquery],
-					done: callback
-				});
-			},
-			function (window, callback) {
-				var codes = window.$("code[class='language-mma']");
-				window.close();
-				return callback(null, codes);
-			},
-			function (codes, callback) {
-				posts.setPostField(post.pid, 'status', (codes && codes.length > 0) ? 1 : 0, function (err) {
-					if(err) {
-						return callback(err)
-					}
-					post.status = (codes && codes.length > 0) ? 1 : 0;
-					emit(post, function (err) {
-						if(err) {
-							return callback(err)
-						}
-						var beans = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
-						beans.on('connect', function() {
-							beans.use('kernel', function (err) {
-								if (err) {
-									return callback(err)
-								}
-								beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
-									pid: post.pid,
-									action: 'update'
-								}), function (err, jobid) {
-									beans.end();
-									return callback(err, jobid);
-								});
-							});
-						}).on('error', callback).connect();
-					});
-				});
-			}
-		], callback);//end of waterfall
-	});
-};
-
-plugin.post.save = function(post, callback) {
-	callback = callback || function() {};
+plugin.post.edit = (post, next) => {
+	next = next || function(){};
 
 	async.waterfall([
-		function (callback) {
-			plugins.fireHook('filter:parse.raw', post.content, callback);
-		},
-		function (html, callback) {
-			jsdom.env({
-				html: html,
-				src: [jquery],
-				done: callback
-			});
-		},
-		function (window, callback) {
+		(next) => db.deleteObjectField('post:' + post.pid, 'result', next),
+		(next) => plugins.fireHook('filter:parse.raw', post.content, next),
+		(html, next) => jsdom.env({html: html, src: [jquery], done: next}),
+		(window, next) => {
 			var codes = window.$("code[class='language-mma']");
 			window.close();
-			return callback(null, codes);
+			next(null, (codes && codes.length > 0) ? 1 : 0)
 		},
-		function (codes, callback) {
-			var send = false;
-			if (codes && codes.length > 0) {
-				send = true;
-			}
-			posts.setPostField(post.pid, 'status', (send) ? 1 : 0, function (err) {
-				post.status = (send) ? 1 : 0;
-				return callback(err, send);
-			});
-		}
-	], function (err, send) {
-		if(err) {
-			return callback(err);
-		}
-		if(send) {
-			emit(post, function (err) {
+		(status, next) => {
+			post.status = status;
+			posts.setPostField(post.pid, 'status', status, next)
+		},
+		(next) => emit(post, next),
+		(something, next) => {
+			var conn = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
+			conn.on('connect', () => next(null, conn)).on('error', (err) => next(err)).connect();
+		},
+		(conn, next) => {
+			conn.use('kernel', (err) => {
 				if(err) {
-					return callback(err);
+					return next(err)
 				}
-				var beans = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
-				beans.on('connect', function() {
-					beans.use('kernel', function (err) {
-						if (err) {
-							return callback(err)
-						}
-						beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
-							pid: post.pid,
-							action: 'create'
-						}), function (err, jobid) {
-							beans.end();
-							return callback(err, jobid);
-						});
-					});
-				}).on('error', callback).connect();
+
+				conn.put(Math.pow(2, 32), 0, 120, JSON.stringify({
+					pid: post.pid,
+					action: 'update'
+				}), (err, jobid) => {
+					conn.end();
+					next(err, jobid);
+				});
 			})
-
-		} else {
-			return callback(null, null);
 		}
-	});
+	], next)
 };
 
-plugin.post.purge = function(pid, callback) {
-	callback = callback || function() {};
-	var beans = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
-	beans.on('connect', function() {
-		beans.use('kernel', function (err) {
-			if (err) {
-				return callback(err)
-			}
-			beans.put(Math.pow(2, 32), 0, 120, JSON.stringify({
-				pid: pid,
-				action: 'purge'
-			}), function (err, jobid) {
-				beans.end();
-				return callback(err, jobid);
+plugin.post.save = (post, next) => {
+	next = next || function(){};
+
+	async.waterfall([
+		(next) => plugins.fireHook('filter:parse.raw', post.content, next),
+		(html, next) => jsdom.env({html: html, src: [jquery],done: next}),
+		(window, next) => {
+			var codes = window.$("code[class='language-mma']");
+			window.close();
+			next(null, (codes && codes.length > 0) ? 1 : 0)
+		},
+		(status, next) => {
+			post.status = status;
+			posts.setPostField(post.pid, 'status', status, (err) => {
+				if(err) {
+					return next(err)
+				}
+
+				if(status == 0) {
+					return next('NO_NEED_TO_SEND')
+				}
+
+				next()
 			});
-		});
-	}).on('error', callback).connect();
+		},
+		(next) => emit(post, next),
+		(something, next) => {
+			var conn = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
+			conn.on('connect', () => next(null, conn)).on('error', (err) => next(err)).connect();
+		},
+		(conn, next) => {
+			conn.use('kernel', (err) => {
+				if (err) {
+					return next(err)
+				}
+
+				conn.put(Math.pow(2, 32), 0, 120, JSON.stringify({
+					pid: post.pid,
+					action: 'create'
+				}), (err, jobid) => {
+					conn.end();
+					next(err, jobid);
+				});
+			});
+		}
+	], (err) => {
+		if(err && err != 'NO_NEED_TO_SEND') {
+			return next(err)
+		}
+
+		next()
+	})
 };
 
-plugin.registerFormatting = function (payload, callback) {
+plugin.post.purge = (pid, next) => {
+	next = next || function(){};
+
+	async.waterfall([
+		(next) => {
+			var conn = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
+			conn.on('connect', () => next(null, conn)).on('error', (err) => next(err)).connect();
+		},
+		(conn, next) => {
+			conn.use('kernel', (err) => {
+				if (err) {
+					return next(err)
+				}
+
+				conn.put(Math.pow(2, 32), 0, 120, JSON.stringify({
+					pid: pid,
+					action: 'purge'
+				}), (err, jobid) => {
+					conn.end();
+					next(err, jobid)
+				});
+			});
+		}
+	], next)
+};
+
+plugin.registerFormatting = (payload, next) => {
 	var formatting = ['code'];
 
 	formatting.reverse();
-	formatting.forEach(function (format) {
+	formatting.forEach((format) => {
 		payload.options.unshift({
 			name: format,
 			className: 'fa fa-' + format
 		});
 	});
 
-	callback(null, payload);
+	next(null, payload);
 }
 
 module.exports = plugin;

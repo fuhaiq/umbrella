@@ -18,7 +18,9 @@ plugins = module.parent.require('./plugins'),
 winston = module.parent.require('winston'),
 nconf = module.parent.require('nconf');
 
-var insert = function(type, id, value, cid, uid, callback) {
+var insert = (type, id, value, cid, uid, next) => {
+	next = next || function() {};
+
 	var query = {
 		index: 'umbrella',
 		type: type,
@@ -34,10 +36,12 @@ var insert = function(type, id, value, cid, uid, callback) {
 	} else {
 		query.body.content = value;
 	}
-	return client.create(query, callback);
+	client.create(query, next);
 };
 
-var update = function(type, id, value, callback) {
+var update = (type, id, value, next) => {
+	next = next || function() {};
+
 	var query = {
 		index: 'umbrella',
 		type: type,
@@ -51,55 +55,43 @@ var update = function(type, id, value, callback) {
 	} else {
 		query.body.doc = {content: value};
 	}
-	return client.update(query, callback);
+	client.update(query, next);
 };
 
-var purge = function(type, id, callback) {
-	return client.delete(
-		{
-			index: 'umbrella',
-			type: type,
-			id: id
-		}, callback)
-	};
+var purge = (type, id, next) => {
+	next = next || function() {};
 
-plugin.init = function(data, callback) {
+	client.delete(
+	{
+		index: 'umbrella',
+		type: type,
+		id: id
+	}, next)
+};
+
+plugin.init = (data, next) => {
+	next = next || function() {};
+
 	client = new elasticsearch.Client({
 		host: nconf.get('elasticsearch:host') + ':' + nconf.get('elasticsearch:port'),
 		log: 'error'
 	});
-	callback();
+	next();
 };
 
-plugin.search = function(data, callback) {
-	if (!data || !data.index) {
-		return callback(null, []);
+plugin.search = (data, next) => {
+	next = next || function() {};
+
+	if(!data || !data.index) {
+		return next(null, [])
 	}
+
 	if(!data.content) {
-		return callback(null, []);
+		return next(null, []);
 	}
 
-	var uid = [],
-	cid = [];
-
-	if(data.uid && data.uid.length > 0) {
-		for(var index = 0; index < data.uid.length; index++) {
-			if(string(data.uid[index]).isNumeric()) {
-				uid.push(data.uid[index]);
-			} else {
-				uid.push(-99);
-			}
-		}
-	}
-
-	if(data.cid && data.cid.length > 0) {
-		for(var index = 0; index < data.cid.length; index++) {
-			if(string(data.cid[index]).isNumeric()) {
-				cid.push(data.cid[index]);
-			}
-		}
-	}
-
+	var uid = data.uid.filter(item => parseInt(item, 10))
+	var cid = data.cid.filter(item => parseInt(item, 10))
 	var query = {
 		index: 'umbrella',
 		type: data.index,
@@ -122,8 +114,7 @@ plugin.search = function(data, callback) {
 			},
 			size: 1000
 		}
-	};
-
+	}
 	if(uid.length > 0) {
 		query.body.query.bool.must.push(
 			{
@@ -133,7 +124,6 @@ plugin.search = function(data, callback) {
 			}
 		);
 	}
-
 	if(cid.length > 0) {
 		query.body.query.bool.must.push(
 			{
@@ -143,145 +133,140 @@ plugin.search = function(data, callback) {
 			}
 		);
 	}
-
 	if(data.index == 'topic') {
 		query.body.query.bool.should.match = {
 			title: data.content
-		};
-
+		}
 	} else if(data.index == 'post') {
 		query.body.query.bool.should.match = {
 			content: data.content
-		};
-	} else {
-		var msg = 'no this type of index ['+data.index+'] defined.'
-		return callback(msg);
-	}
-
-	async.waterfall([
-		function (callback) {
-			client.search(query, callback);
-		},
-		function (res, httpCode, callback) {
-			var payload = res.hits.hits.map(function(result) {
-				return parseInt(result._id, 10);
-			});
-			return callback(null, payload);
 		}
-	], callback);
-
+	} else {
+		return next('no this type of index ['+data.index+'] defined.')
+	}
+	async.waterfall([
+		(next) => client.search(query, next),
+		(res, httpCode, next) => next(null, res.hits.hits.map(item => parseInt(item._id, 10)))
+	], next);
 };
 
 plugin.topic = {};
 
-plugin.topic.post = function(topic, callback) {
-	callback = callback || function() {};
-	return insert('topic', topic.tid, topic.title, topic.cid, topic.uid, callback);
+plugin.topic.post = (topic, next) => {
+	next = next || function() {};
+
+	return insert('topic', topic.tid, topic.title, topic.cid, topic.uid, next);
 };
 
-plugin.topic.delete = function(topic, callback) {
-	callback = callback || function() {};
+plugin.topic.delete = (topic, next) => {
+	next = next || function() {};
+
 	var query = {
 		body: [
 			{ update: { _index: 'umbrella', _type: 'topic', _id: topic.tid } },
 			{ doc: { deleted: true } }
 		]
 	};
-	topics.getPids(topic.tid, function (err, pids) {
-		if(err) {
-			return callback(err);
+
+	async.waterfall([
+		(next) => topics.getPids(topic.tid, next),
+		(pids, next) => {
+			pids.forEach((pid) => {
+				query.body.push(
+					{ update: { _index: 'umbrella', _type: 'post', _id: pid } },
+					{ doc: { deleted: true } }
+				)
+			})
+			client.bulk(query, next)
 		}
-		for(var index = 0; index < pids.length; index++) {
-			query.body.push(
-				{ update: { _index: 'umbrella', _type: 'post', _id: pids[index] } },
-				{ doc: { deleted: true } }
-			);
-		}
-		return client.bulk(query, callback);
-	});
+	], next)
 };
 
-plugin.topic.edit = function(topic, callback) {
-	callback = callback || function() {};
-	return update('topic', topic.tid, topic.title, callback);
+plugin.topic.edit = (topic, next) => {
+	next = next || function() {};
+
+	return update('topic', topic.tid, topic.title, next);
 };
 
-plugin.topic.restore = function(topic, callback) {
-	callback = callback || function() {};
+plugin.topic.restore = (topic, next) => {
+	next = next || function() {};
+
 	var query = {
 		body: [
 			{ update: { _index: 'umbrella', _type: 'topic', _id: topic.tid } },
 			{ doc: { deleted: false } }
 		]
 	};
-	topics.getPids(topic.tid, function (err, pids) {
-		if(err) {
-			return callback(err);
+	async.waterfall([
+		(next) => topics.getPids(topic.tid, next),
+		(pids, next) => {
+			pids.forEach(pid => {
+				query.body.push(
+					{ update: { _index: 'umbrella', _type: 'post', _id: pid } },
+					{ doc: { deleted: false } }
+				)
+			})
+			client.bulk(query, next)
 		}
-		for(var index = 0; index < pids.length; index++) {
-			query.body.push(
-				{ update: { _index: 'umbrella', _type: 'post', _id: pids[index] } },
-				{ doc: { deleted: false } }
-			);
-		}
-		return client.bulk(query, callback);
-	});
+	], next)
 };
 
-plugin.topic.purge = function(tid, callback) {
-	callback = callback || function() {};
-	return purge('topic', tid, callback);
+plugin.topic.purge = (tid, next) => {
+	next = next || function() {};
+
+	return purge('topic', tid, next);
 };
 
-plugin.topic.move = function(info, callback) {
-	callback = callback || function() {};
+plugin.topic.move = (info, next) => {
+	next = next || function() {};
+
 	var query = {
 		body: [
 			{ update: { _index: 'umbrella', _type: 'topic', _id: info.tid } },
 			{ doc: { cid: parseInt(info.toCid, 10) } }
 		]
 	};
-	topics.getPids(info.tid, function (err, pids) {
-		if(err) {
-			return callback(err);
+	async.waterfall([
+		(next) => topics.getPids(info.tid, next),
+		(pids, next) => {
+			pids.forEach(pid => {
+				query.body.push(
+					{ update: { _index: 'umbrella', _type: 'post', _id: pid } },
+					{ doc: { cid: parseInt(info.toCid, 10) } }
+				);
+			})
+			client.bulk(query, next)
 		}
-		for(var index = 0; index < pids.length; index++) {
-			query.body.push(
-				{ update: { _index: 'umbrella', _type: 'post', _id: pids[index] } },
-				{ doc: { cid: parseInt(info.toCid, 10) } }
-			);
-		}
-		return client.bulk(query, callback);
-	});
+	], next)
 };
 
 plugin.post= {};
 
-plugin.post.save = function(post, callback) {
-	callback = callback || function() {};
+plugin.post.save = (post, next) => {
+	next = next || function() {};
+
 	async.waterfall([
-		function (callback) {
-			plugins.fireHook('filter:parse.raw', post.content, callback);
-		},
-		function (html, callback) {
+		(next) => plugins.fireHook('filter:parse.raw', post.content, next),
+		(html, next) => {
 			jsdom.env({
 				html: html,
 				src: [jquery],
-				done: function (err, window) {
-					return callback(err, window, html);
+				done: (err, window) => {
+					next(err, window, html)
 				}
-			});
+			})
 		},
-		function (window, html, callback) {
-			var text = window.$(html).text();
-			window.close();
-			return insert('post', post.pid, text, post.cid, post.uid, callback);
+		(window, html, next) => {
+			var text = window.$(html).text()
+			window.close()
+			insert('post', post.pid, text, post.cid, post.uid, next);
 		}
-	], callback);
+	], next);
 };
 
-plugin.post.delete = function(pid, callback) {
-	callback = callback || function() {};
+plugin.post.delete = (pid, next) => {
+	next = next || function() {};
+
 	return client.update(
 		{
 			index: 'umbrella',
@@ -292,34 +277,34 @@ plugin.post.delete = function(pid, callback) {
 					deleted: true
 				}
 			}
-		}, callback);
+		}, next);
 	};
 
-plugin.post.edit = function(post, callback) {
-	callback = callback || function() {};
+plugin.post.edit = (post, next) => {
+	next = next || function() {};
+
 	async.waterfall([
-		function (callback) {
-			plugins.fireHook('filter:parse.raw', post.content, callback);
-		},
-		function (html, callback) {
+		(next) => plugins.fireHook('filter:parse.raw', post.content, next),
+		(html, next) => {
 			jsdom.env({
 				html: html,
 				src: [jquery],
-				done: function (err, window) {
-					return callback(err, window, html);
+				done: (err, window) => {
+					next(err, window, html);
 				}
-			});
+			})
 		},
-		function (window, html, callback) {
+		(window, html, next) => {
 			var text = window.$(html).text();
 			window.close();
-			return update('post', post.pid, text, callback);
+			update('post', post.pid, text, next);
 		}
-	], callback);
+	], next);
 };
 
-plugin.post.restore = function(post, callback) {
-	callback = callback || function() {};
+plugin.post.restore = (post, next) => {
+	next = next || function() {};
+
 	return client.update(
 		{
 			index: 'umbrella',
@@ -330,21 +315,21 @@ plugin.post.restore = function(post, callback) {
 					deleted: false
 				}
 			}
-		}, callback);
+		}, next);
 	};
 
-plugin.post.purge = function(pid, callback) {
-	callback = callback || function() {};
-	return purge('post', pid, callback);
+plugin.post.purge = (pid, next) => {
+	next = next || function() {};
+
+	return purge('post', pid, next);
 };
 
-plugin.post.move = function(info, callback) {
-	callback = callback || function() {};
-	topics.getTopicField(info.tid, 'cid', function (err, cid) {
-		if(err) {
-			return callback(err);
-		}
-		return client.update(
+plugin.post.move = (info, next) => {
+	next = next || function() {};
+
+	async.waterfall([
+		(next) => topics.getTopicField(info.tid, 'cid', next),
+		(cid, next) => client.update(
 			{
 				index: 'umbrella',
 				type: 'post',
@@ -354,98 +339,94 @@ plugin.post.move = function(info, callback) {
 						cid: parseInt(cid, 10)
 					}
 				}
-			}, callback);
-		});
+			}, next)
+	], next)
 };
 
-plugin.morelikethis = function(data, callback) {
-	callback = callback || function() {};
+plugin.morelikethis = (data, next) => {
+	next = next || function() {};
+
 	var query =
 	{
-		index: 'umbrella',
-		type: 'topic',
-		body: {
-			fields: [],
-			query: {
-				bool: {
-					must: [
-						{
-							term: {
-								deleted: false
-							}
-						}
-					],
-					should: {
-						more_like_this: {
-							fields: [
-								"title"
-							],
-							docs: [
-								{
-									_index: "umbrella",
-									_type: "topic",
-									_id: parseInt(data.topicData.tid, 10)
-								}
-							],
-							min_term_freq: 1,
-							max_query_terms: 10,
-							min_doc_freq: 1
-						}
-					},
-					minimum_should_match: 1
-				}
-			},
-			size: 10
-		}
-	};
+	  index: 'umbrella',
+	  type: 'topic',
+	  body: {
+	    fields: [], //use empty fields to minimize I/O
+	    query: {
+	      bool: {
+	        must: [
+	          {
+	            term: {
+	              deleted: false
+	            }
+	          }
+	        ],
+	        should: {
+	          more_like_this: {
+	            fields: [
+	              "title"
+	            ],
+	            docs: [
+	              {
+	                _index: "umbrella",
+	                _type: "topic",
+	                _id: parseInt(data.topicData.tid, 10)
+	              }
+	            ],
+	            min_term_freq: 1,
+	            max_query_terms: 10,
+	            min_doc_freq: 1
+	          }
+	        },
+	        minimum_should_match: 1
+	      }
+	    },
+	    size: 10
+	  }
+	}
 
-	client.search(query, function (err, res) {
-		if(err) {
-			return callback(err);
-		}
-		if(res.hits.hits.length == 0) {
-			return callback(null, data);
-		}
-		var tids = res.hits.hits.map(function(result) {
-			return parseInt(result._id, 10);
-		});
-		topics.getTopicsData(tids, function (err, similar) {
-			function mapFilter(array, field) {
-				return array.map(function(topic) {
-					return topic && topic[field] && topic[field].toString();
-				}).filter(function(value, index, array) {
-					return string(value).isNumeric() && array.indexOf(value) === index;
-				});
-			}
-			if (err) {
-				return callback(err);
-			}
-			var cids = mapFilter(similar, 'cid');
-			var uids = mapFilter(similar, 'uid');
-			async.parallel({
-				users: function(next) {
-					user.getUsersFields(uids, ['uid', 'username', 'userslug', 'picture'], next);
-				},
-				categories: function(next) {
-					categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'bgColor', 'color', 'disabled'], next);
-				}
-			}, function (err, results) {
-				if (err) {
-					return callback(err);
-				}
-				var categories = _.object(cids, results.categories);
-				var users = _.object(uids, results.users);
-				for (var i = 0; i < similar.length; ++i) {
-					if (similar[i]) {
-						similar[i].category = categories[similar[i].cid];
-						similar[i].user = users[similar[i].uid];
-					}
-				}
-				data.topicData.similar = similar;
-				return callback(null, data);
-			});
-		});
-	});
-}
+	async.waterfall([
+	  (next) => client.search(query, next),
+	  (res, httpCode, next) => {
+	    if(res.hits.hits.length == 0) {
+	      return next('NO_SIMILAR_TOPIC')
+	    }
+
+	    topics.getTopicsData(res.hits.hits.map(item => parseInt(item._id, 10)), next)
+	  },
+		(similar, next) => {
+	    var mapFilter = (array, field) => {
+	      return array.map(topic => topic && topic[field] && topic[field].toString())
+	           .filter((value, index, array) => string(value).isNumeric() && array.indexOf(value) === index)
+	    }
+	    next(null, similar, mapFilter(similar, 'cid'), mapFilter(similar, 'uid'))
+	  },
+		(similar, cids, uids, next) => {
+	    async.parallel({
+	      users : (next) => user.getUsersFields(uids, ['uid', 'username', 'userslug', 'picture'], next),
+	      categories : (next) => categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'bgColor', 'color', 'disabled'], next)
+	    }, (err, results) => {
+	      if(err) {
+	        return next(err)
+	      }
+
+	      var categories = _.object(cids, results.categories);
+	      var users = _.object(uids, results.users);
+	      similar.forEach(item => {
+	        item.category = categories[item.cid];
+	        item.user = users[item.uid];
+	      })
+	      data.topicData.similar = similar;
+	      next()
+	    })
+	  }
+	], (err) => {
+	  if(err && err != 'NO_SIMILAR_TOPIC') {
+	    return next(err)
+	  }
+
+	  next(null, data)
+	})
+};
 
 module.exports = plugin;

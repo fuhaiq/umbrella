@@ -24,22 +24,16 @@ $('document').ready(function() {
 				}
 				title = title[0];
 				$(title).find("span:first-child").remove(); //always remove the span first, this will handle status = 0
-				switch (json.status) {
-					case 1:
-						$(title).prepend(statusMapping.waiting);
-						break;
-					case 2:
-						$(title).prepend(statusMapping.evaluate);
-						break;
-					case 3:
-						$(title).prepend(statusMapping.finished);
-						break;
-					case -1:
-						$(title).prepend(statusMapping.error);
-						break;
-					case -2:
-						$(title).prepend(statusMapping.aborted);
-						break;
+				if(json.status == 1) {
+					$(title).prepend(statusMapping.waiting);
+				} else if (json.status == 2) {
+					$(title).prepend(statusMapping.evaluate);
+				} else if (json.status == 3) {
+					$(title).prepend(statusMapping.finished);
+				} else if (json.status == -1) {
+					$(title).prepend(statusMapping.error);
+				} else if (json.status == -2) {
+					$(title).prepend(statusMapping.aborted);
 				}
 			});
 
