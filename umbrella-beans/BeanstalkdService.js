@@ -24,7 +24,10 @@ var BeanstalkdService = function(db, redis) {
 
         next(null, ['category_' + topic.cid, 'recent_topics', 'popular_topics', 'unread_topics'], {status: post.status, tid: topic.tid})
       },
-      (rooms, message, next) => async.map(rooms, (room, next) => next(null, io.to(room).emit('kernel:topic', message)), next)
+      (rooms, message, next) => {
+        rooms.forEach(room => io.to(room).emit('kernel:topic', message))
+        next()
+      }
     ], (err) => {
       if(err && err != 'NO_NEED_TO_EMIT') {
         return next(err)
@@ -167,7 +170,7 @@ var BeanstalkdService = function(db, redis) {
           return next('回复[post:'+post.pid+']状态错误['+post.status+'], 期望值: 1')
         }
 
-        kernel(post, dir, url, username, password, next)
+        kernel(post, job.dir, job.url, job.username, job.password, next)
       }
     ], next)
   };

@@ -26,16 +26,14 @@ var emit = (post, next) => {
 			return next(err)
 		}
 
-		var rooms = ['category_' + topic.cid, 'recent_topics', 'popular_topics', 'unread_topics']
-		var message = {status: post.status, tid: topic.tid}
 		if(topic.mainPid != post.pid) {
 			return next()
 		}
 
-		async.map(rooms, (room, next) => {
-			io.in(room).emit('kernel:topic', message)
-			next()
-		}, next)
+		var rooms = ['category_' + topic.cid, 'recent_topics', 'popular_topics', 'unread_topics']
+		var message = {status: post.status, tid: topic.tid}
+		rooms.forEach(room => io.to(room).emit('kernel:topic', message))
+		next()
 	})
 }
 
@@ -221,7 +219,7 @@ plugin.post.edit = (post, next) => {
 			posts.setPostField(post.pid, 'status', status, next)
 		},
 		(next) => emit(post, next),
-		(something, next) => {
+		(next) => {
 			var conn = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
 			conn.on('connect', () => next(null, conn)).on('error', (err) => next(err)).connect();
 		},
@@ -269,7 +267,7 @@ plugin.post.save = (post, next) => {
 			});
 		},
 		(next) => emit(post, next),
-		(something, next) => {
+		(next) => {
 			var conn = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));
 			conn.on('connect', () => next(null, conn)).on('error', (err) => next(err)).connect();
 		},
