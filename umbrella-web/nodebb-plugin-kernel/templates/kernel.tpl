@@ -1,17 +1,10 @@
-<style type="text/css" media="screen">
-    #kernel {
-        width: 100%;
-        height: 300px;
-    }
-</style>
-
 <div class="panel panel-default">
   <div class="panel-heading">
     <kbd><kbd>alt</kbd> + <kbd>q</kbd></kbd>打开语法提示, <kbd><kbd>ctrl</kbd> + <kbd>f</kbd></kbd>代码搜索.
     <button type="button" class="btn btn-success btn-xs" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><i class="fa fa-fw fa-play"></i> <var>shift</var> + <var>enter</var> = 执行脚本</button>
   </div>
   <div class="panel-body">
-    <div id="kernel"></div>
+    <div id="kernel" style="width:100%; height:300px"></div>
   </div>
 </div>
 

@@ -38,9 +38,5 @@
 	"staticDirs": {
 		"static": "./static"
 	},
-	"less": [
-		"static/label.min.less",
-		"static/list.min.less"
-	],
 	"templates": "templates"
 }

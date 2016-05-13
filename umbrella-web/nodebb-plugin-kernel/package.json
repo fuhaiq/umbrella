@@ -10,14 +10,13 @@
   "license": "BSD-2-Clause",
   "_id": "nodebb-plugin-kernel@0.0.1",
   "nbbpm": {
-    "compatibility": "^0.9.0"
+    "compatibility": "^1.0.3"
   },
   "directories": {},
   "dependencies": {
     "jsdom": ">=7.0.2",
     "fivebeans": ">=1.3.1",
     "string": "^3.0.0",
-    "fs-extra" : ">=0.26.2",
-    "redis" : ">=2.4.2"
+    "fs-extra" : ">=0.26.2"
   }
 }

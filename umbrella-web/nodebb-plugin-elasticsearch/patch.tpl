@@ -1,11 +1,10 @@
-/node_modules/nodebb-theme-persona/templates/topic.tpl
-
 <!-- IF similar.length -->
 <div class="topic col-lg-10">
 <!-- ELSE -->
 <div class="topic col-lg-12">
 <!-- ENDIF similar.length -->
---------------------------------------------------
+---------------------------------
+
 <!-- IF similar.length -->
 <div class="topic col-lg-2">
   <h4>相似话题</h4>

@@ -10,7 +10,7 @@
   "license": "BSD-2-Clause",
   "_id": "nodebb-plugin-search@0.0.1",
   "nbbpm": {
-    "compatibility": "^0.9.0"
+    "compatibility": "^1.0.3"
   },
   "directories": {},
   "dependencies": {

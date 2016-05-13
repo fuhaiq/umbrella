@@ -6,7 +6,7 @@ jsdom = require("jsdom"),
 fivebeans = require('fivebeans'),
 string = require('string'),
 fs = require('fs-extra'),
-jquery = fs.readFileSync("./node_modules/nodebb-plugin-kernel/jquery-2.1.4.min.js", "utf-8"),
+jquery = fs.readFileSync("./node_modules/nodebb-plugin-template/static/jquery-2.1.4.min.js", "utf-8"),
 async = module.parent.require('async'),
 topics = module.parent.require('./topics'),
 plugins = module.parent.require('./plugins'),
@@ -17,8 +17,6 @@ posts = module.parent.require('./posts'),
 redis = require("redis"),
 io = module.parent.require('./socket.io'),
 helpers = module.parent.require('./routes/helpers');
-
-
 
 var emit = (post, next) => {
 	posts.getTopicFields(post.pid, ['mainPid', 'cid', 'tid'], (err, topic) => {
@@ -93,7 +91,6 @@ plugin.init = (data, next) => {
 	next = next || function(){};
 
 	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], (req, res, next) => res.render('kernel', {}));
-	helpers.setupPageRoute(data.router, '/app', data.middleware, [], (req, res, next) => res.render('app', {}));
 	data.router.post('/kernel', data.middleware.applyCSRF, plugin.http.post);
 	next();
 };

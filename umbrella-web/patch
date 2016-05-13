@@ -57,11 +57,9 @@ remove js and google css
   </a>
 </div>
 
-#############nodebb-plugin-katex/plugin.json#########################
-"staticDirs": {
-  "js": "static/js",
-  "fonts": "static/fonts"
-},
+###########################################################
+/node_modules/nodebb-plugin-recent-cards/static/templates/partials/nodebb-plugin-recent-cards/header.tpl
 
-############nodebb-plugin-katex/static/less/fonts.less###############
-@font-folder: "plugins/nodebb-plugin-katex/fonts";
+<ul class="categories">
+	<p>[[kernel:recent_topic]]</p>
+</ul>

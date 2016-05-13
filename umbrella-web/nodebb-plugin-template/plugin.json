@@ -1,0 +1,21 @@
+{
+	"id": "nodebb-plugin-template",
+	"name": "template Plugin for NodeBB",
+	"description": "A nodebb-plugin-template plugin for NodeBB",
+	"library": "./library.js",
+	"hooks": [
+		{
+			"hook": "static:app.load", "method": "init"
+		},
+		{
+			"hook": "filter:categories.build", "method": "getCategories"
+		}
+	],
+	"staticDirs": {
+		"static": "./static"
+	},
+	"less": [
+		"static/label.min.less"
+	],
+	"templates": "templates"
+}

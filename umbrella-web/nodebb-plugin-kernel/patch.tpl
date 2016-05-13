@@ -5,11 +5,6 @@
 <a href="{config.relative_path}{notifications.path}"><img src="{notifications.image}" /></a>
 <!-- ENDIF notifications.from -->
 
-/node_modules/nodebb-plugin-recent-cards/static/templates/partials/nodebb-plugin-recent-cards/header.tpl
-<ul class="categories">
-	<p>[[kernel:recent_topic]]</p>
-</ul>
-
 /node_modules/nodebb-theme-persona/templates/partials/topic/post.tpl
 <!-- IF posts.waiting -->
 <span class="ui blue basic label">
