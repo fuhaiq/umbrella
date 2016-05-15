@@ -30,12 +30,20 @@ var emit = (post, next) => {
 
 		var rooms = ['category_' + topic.cid, 'recent_topics', 'popular_topics', 'unread_topics']
 		var message = {status: post.status, tid: topic.tid}
-		rooms.forEach(room => io.to(room).emit('kernel:topic', message))
+		rooms.forEach(room => io.in(room).emit('kernel:topic', message))
 		next()
 	})
 }
 
 plugin.http = {};
+
+plugin.http.get = (req, res, next) => {
+	var data = {}
+	if(!string(req.query.q).isEmpty()) {
+		data.q = req.query.q;
+	}
+	res.render('kernel', data)
+}
 
 plugin.http.post = (req, res, next) => {
 	var content = req.body.content
@@ -90,7 +98,7 @@ plugin.http.post = (req, res, next) => {
 plugin.init = (data, next) => {
 	next = next || function(){};
 
-	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], (req, res, next) => res.render('kernel', {}));
+	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], plugin.http.get);
 	data.router.post('/kernel', data.middleware.applyCSRF, plugin.http.post);
 	next();
 };

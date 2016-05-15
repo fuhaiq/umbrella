@@ -3,12 +3,12 @@
 <div class="row">
 
   <div class="col-lg-9">
-    <form action="/kernel" method="get">
-      <div class="input-group input-group-sm">
-        <span class="input-group-addon" id="basic-addon1"><i class="fa fa-terminal" aria-hidden="true"></i></span>
-        <input type="text" name="q" class="form-control" placeholder="mathematica..." maxlength="100">
+    <form action="/kernel" method="get" id="kernel-quick-form">
+      <div class="input-group has-success input-group-sm">
+        <span class="input-group-addon" id="basic-addon1"><i class="fa fa-code" aria-hidden="true"></i></span>
+        <input type="text" name="q" class="form-control" placeholder="执行" maxlength="100" id="kernel-quick-input">
         <span class="input-group-btn">
-          <button class="btn btn-success" type="submit"><i class="fa fa-play" aria-hidden="true"></i> 执行</button>
+          <button class="btn btn-success" type="submit"><i class="fa fa-play" aria-hidden="true"></i></button>
         </span>
       </div>
     </form>
@@ -18,20 +18,39 @@
 
   <div class="col-lg-3">
 
-    <div class="alert alert-info" role="alert">
-      一些说明
-    </div>
-
-    <h1 class="categories-title">热门标签</h1>
-    <div class="ui large labels">
-      <!-- BEGIN tags -->
-      <a class="ui label" href="{config.relative_path}/tags/{tags.value}">
-        {tags.value}
-        <div class="detail">{tags.score}</div>
-      </a>
-      <!-- END tags -->
+    <ul class="categories">
+    	<p>热门标签</p>
+    </ul>
+    <div class="popular-tags">
+    <!-- BEGIN tags -->
+    	<span class="inline-block">
+    	<a href="{relative_path}/tags/{tags.value}"><span class="tag-item tag-{tags.value}" style="<!-- IF tags.color -->color: {tags.color};<!-- ENDIF tags.color --><!-- IF tags.bgColor -->background-color: {tags.bgColor};<!-- ENDIF tags.bgColor -->">{tags.value}</span><span class="tag-topic-count">{tags.score}</span></a>
+    	</span>
+    <!-- END tags -->
     </div>
 
   </div>
 
 </div>
+
+
+<script>
+'use strict';
+
+$(document).ready(function(){
+  $("#kernel-quick-form").submit(function(event){
+    var content = $.trim($("#kernel-quick-input").val());
+    if(!content || content == '') {
+        app.alert({
+            title: '消息',
+            message: '没有脚本可以运行',
+            type: 'info',
+            timeout: 2000
+        });
+        event.preventDefault();
+        return;
+    }
+  })
+})
+
+</script>

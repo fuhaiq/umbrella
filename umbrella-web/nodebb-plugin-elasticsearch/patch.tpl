@@ -1,3 +1,5 @@
+#################/node_modules/nodebb-theme-persona/templates/topic.tpl##############
+
 <!-- IF similar.length -->
 <div class="topic col-lg-10">
 <!-- ELSE -->
