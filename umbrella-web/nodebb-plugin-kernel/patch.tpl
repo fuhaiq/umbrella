@@ -7,69 +7,44 @@
 
 /node_modules/nodebb-theme-persona/templates/partials/topic/post.tpl
 <!-- IF posts.waiting -->
-<span class="ui blue basic label">
-  <i class="fa fa-clock-o"></i>
-  等待运算
-</span>
+<span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>
 <!-- ENDIF posts.waiting -->
 <!-- IF posts.evaluate -->
-<span class="ui purple basic label">
-  <i class="fa fa-play"></i>
-  正在计算
-</span>
+<span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>
 <!-- ENDIF posts.evaluate -->
 <!-- IF posts.finished -->
-<span class="ui green basic label">
-  <i class="fa fa-check"></i>
-  计算成功
-</span>
+<span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
+<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
 <!-- ENDIF posts.finished -->
 <!-- IF posts.error -->
-<span class="ui orange basic label">
-  <i class="fa fa-remove"></i>
-  语法错误
-</span>
+<span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
+<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
 <!-- ENDIF posts.error -->
 <!-- IF posts.aborted -->
-<span class="ui yellow basic label">
-  <i class="fa fa-exclamation"></i>
-  计算超时
-</span>
+<span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
+<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
 <!-- ENDIF posts.aborted -->
 
 
 
 /node_modules/nodebb-theme-persona/templates/partials/topics_list.tpl
+<small class="label label-status">
 <!-- IF topics.waiting -->
-<span class="ui blue basic label">
-  <i class="fa fa-clock-o"></i>
-  等待运算
-</span>
+<span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>
 <!-- ENDIF topics.waiting -->
 <!-- IF topics.evaluate -->
-<span class="ui purple basic label">
-  <i class="fa fa-play"></i>
-  正在计算
-</span>
+<span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>
 <!-- ENDIF topics.evaluate -->
 <!-- IF topics.finished -->
-<span class="ui green basic label">
-  <i class="fa fa-check"></i>
-  计算成功
-</span>
+<span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
 <!-- ENDIF topics.finished -->
 <!-- IF topics.error -->
-<span class="ui orange basic label">
-  <i class="fa fa-remove"></i>
-  语法错误
-</span>
+<span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
 <!-- ENDIF topics.error -->
 <!-- IF topics.aborted -->
-<span class="ui yellow basic label">
-  <i class="fa fa-exclamation"></i>
-  计算超时
-</span>
+<span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
 <!-- ENDIF topics.aborted -->
+</small>
 
 
 ######################kernel.js#########################
@@ -167,5 +142,12 @@ $(document).ready(function() {
   if(q) {
     kernel.setValue(q);
     evaluate($('#kernel-evaluate'));
+  }
+
+  var p = ajaxify.data.p;
+  if(p) {
+    p.forEach(function(code){
+      kernel.insert(code);
+    })
   }
 })

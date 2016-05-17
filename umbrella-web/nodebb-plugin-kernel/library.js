@@ -39,10 +39,54 @@ plugin.http = {};
 
 plugin.http.get = (req, res, next) => {
 	var data = {}
-	if(!string(req.query.q).isEmpty()) {
-		data.q = req.query.q;
+
+	var q = req.query.q
+	var p = req.query.p
+
+	if( (!string(q).isEmpty()) && (!string(p).isEmpty()) ) {
+		return res.sendStatus(400)
 	}
-	res.render('kernel', data)
+
+	if(!string(q).isEmpty()) {
+		data.q = q;
+		res.render('kernel', data)
+	} else if(!string(p).isEmpty()){
+		if(!string(p).isNumeric()) {
+			return res.sendStatus(400)
+		}
+		async.waterfall([
+			(next) => posts.exists(p, next),
+			(exists, next) => {
+				if(!exists) {
+					return next('NOT_EXISTS')
+				}
+				posts.getPostField(p, 'content', next)
+			},
+			(content, next) => plugins.fireHook('filter:parse.raw', content, next),
+			(html, next) => jsdom.env({html: html, src: [jquery], done: next}),
+			(window, next) => {
+				var codes = window.$("code[class='language-mma']")
+				if(codes.length >= 1) {
+					var scripts = []
+					for(var i = 0; i < codes.length; i++) {
+	          scripts.push(window.$(codes[i]).text())
+	        }
+					data.p = scripts
+        }
+				window.close();
+				next()
+			}
+		], err => {
+			if(err && err != 'NOT_EXISTS') {
+				return res.sendStatus(500)
+			}
+
+			res.render('kernel', data)
+		})
+	} else {
+		res.render('kernel');
+	}
+
 }
 
 plugin.http.post = (req, res, next) => {

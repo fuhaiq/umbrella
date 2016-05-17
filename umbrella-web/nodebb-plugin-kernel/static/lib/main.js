@@ -1,39 +1,38 @@
 "use strict";
 
 var statusMapping = {
-	waiting: '<span class="ui blue basic label"><i class="fa fa-clock-o"></i> 等待计算</span>',
-	evaluate: '<span class="ui purple basic label"><i class="fa fa-play"></i> 正在计算</span>',
-	finished: '<span class="ui green basic label"><i class="fa fa-check"></i> 计算成功</span>',
-	error: '<span class="ui orange basic label"><i class="fa fa-remove"></i> 语法错误</span>',
-	aborted: '<span class="ui yellow basic label"><i class="fa fa-exclamation"></i> 计算超时</span>'
+	waiting: '<span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>',
+	evaluate: '<span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>',
+	finished: '<span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>',
+	error: '<span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>',
+	aborted: '<span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>'
 };
 
 $('document').ready(function() {
 	$(window).on('action:app.load', function() {
 
 		require(['composer/formatting', 'composer/controls', 'components'], function(formatting, controls, components) {
-
 			socket.on('kernel:topic', function(json) {
 				var topic = components.get('category/topic', 'tid', json.tid);
 				if (!topic || !topic.length) {
 					return;
 				}
-				var title = $('[component="topic/header"] > a', topic);
-				if (!title || !title.length) {
+				var status = $('small[class="label label-status"]', topic)
+				if(!status || !status.length) {
 					return;
 				}
-				title = title[0];
-				$(title).find("span:first-child").remove(); //always remove the span first, this will handle status = 0
+				status = status[0];
+				$(status).empty()
 				if(json.status == 1) {
-					$(title).prepend(statusMapping.waiting);
+					$(status).append(statusMapping.waiting);
 				} else if (json.status == 2) {
-					$(title).prepend(statusMapping.evaluate);
+					$(status).append(statusMapping.evaluate);
 				} else if (json.status == 3) {
-					$(title).prepend(statusMapping.finished);
+					$(status).append(statusMapping.finished);
 				} else if (json.status == -1) {
-					$(title).prepend(statusMapping.error);
+					$(status).append(statusMapping.error);
 				} else if (json.status == -2) {
-					$(title).prepend(statusMapping.aborted);
+					$(status).append(statusMapping.aborted);
 				}
 			});
 
