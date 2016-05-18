@@ -144,7 +144,7 @@ plugin.init = (data, next) => {
 
 	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], plugin.http.get);
 	data.router.post('/kernel', data.middleware.applyCSRF, plugin.http.post);
-	next();
+	next()
 };
 
 plugin.topic = {};
@@ -307,7 +307,6 @@ plugin.post.save = (post, next) => {
 				if(err) {
 					return next(err)
 				}
-
 				if(status == 0) {
 					return next('NO_NEED_TO_SEND')
 				}

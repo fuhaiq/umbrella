@@ -7,6 +7,7 @@ topics = module.parent.require('./topics'),
 winston = module.parent.require('winston'),
 fs = require('fs'),
 path = require('path'),
+db = module.parent.require('./database'),
 nconf = module.parent.require('nconf');
 
 var modifyMainPage = (next) => {
@@ -43,18 +44,41 @@ plugin.init = (data, next) => {
 	modifyMainPage(next)
 };
 
-plugin.getCategories = (data, next) => {
-	var templateData = data.templateData;
-
+var getPopularTags = (next) => {
 	topics.getTags(0, 20, (err, tags) => {
 		if (err) {
 			return next(err);
 		}
 
-		templateData.tags = tags.filter(tag => {
+		tags = tags.filter(tag => {
 			return tag && tag.score > 0;
 		})
-		next(null, data);
+		next(null, tags);
+	})
+}
+
+var getStatusTopics = (status, next) => {
+	db.client.collection('objects').find({_key:/^post:\d+$/, status:status}).sort({timestamp:-1}).limit(10).toArray((err, docs) => {
+		if(err) {
+			return next(err)
+		}
+
+		docs.forEach(doc=>{
+			winston.warn(doc._key)
+		})
+		next()
+	})
+}
+
+plugin.getCategories = (data, next) => {
+	var templateData = data.templateData;
+
+	async.parallel({
+		tags : (next) => getPopularTags(next),
+		status: (next) => getStatusTopics(3, next)
+	}, (err, result) => {
+		data.templateData.tags = result.tags
+		next(err, data)
 	})
 }
 

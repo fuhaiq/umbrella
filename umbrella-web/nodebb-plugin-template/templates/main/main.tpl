@@ -18,6 +18,86 @@
 
   <div class="col-lg-3">
 
+
+    <div>
+      <!-- Nav tabs -->
+      <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#kernel-success" aria-controls="kernel-success" role="tab" data-toggle="tab">成功</a></li>
+        <li role="presentation"><a href="#kernel-aborted" aria-controls="kernel-aborted" role="tab" data-toggle="tab">超时</a></li>
+        <li role="presentation"><a href="#kernel-syntax" aria-controls="kernel-syntax" role="tab" data-toggle="tab">语法错误</a></li>
+      </ul>
+      <!-- Tab panes -->
+      <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active" id="kernel-success">
+          <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
+            <li component="categories/category" data-cid="1" data-numrecentreplies="1" class="row clearfix">
+              <div class="card" style="border-color: #fda34b; margin-top: 0px;height: 45px;">
+          			<div component="category/posts">
+              		<p>
+            			<a href="/user/mike">
+    								<span class="user-icon user-img" title="" style="background-color: #9c27b0;" data-original-title="mike">M</span>
+            			</a>
+            			<a class="permalink" href="/topic/8/欢迎大家来到这个论坛/1">
+            				<small class="timeago" title="Tue May 17 2016 16:43:50 GMT+0800 (CST)">大约18小时之前</small>
+            			</a>
+              		</p>
+                  <div class="post-content">
+                    <a href="/topic/2/大家好-欢迎来到这个论坛" itemprop="url">大家好,欢迎来到这个论坛</a>
+                  </div>
+              	</div>
+              </div>
+            </li>
+
+            <li component="categories/category" data-cid="1" data-numrecentreplies="1" class="row clearfix">
+              <div class="card" style="border-color: #fda34b; margin-top: 0px;height: 45px;">
+          			<div component="category/posts">
+              		<p>
+            			<a href="/user/mike">
+    								<span class="user-icon user-img" title="" style="background-color: #9c27b0;" data-original-title="mike">M</span>
+            			</a>
+            			<a class="permalink" href="/topic/8/欢迎大家来到这个论坛/1">
+            				<small class="timeago" title="Tue May 17 2016 16:43:50 GMT+0800 (CST)">大约18小时之前</small>
+            			</a>
+              		</p>
+                  <div class="post-content">
+                    <a href="/topic/2/大家好-欢迎来到这个论坛" itemprop="url">大家好,欢迎来到这个论坛</a>
+                  </div>
+              	</div>
+              </div>
+            </li>
+
+            <li component="categories/category" data-cid="1" data-numrecentreplies="1" class="row clearfix">
+              <div class="card" style="border-color: #fda34b; margin-top: 0px;height: 45px;">
+          			<div component="category/posts">
+              		<p>
+            			<a href="/user/mike">
+    								<span class="user-icon user-img" title="" style="background-color: #9c27b0;" data-original-title="mike">M</span>
+            			</a>
+            			<a class="permalink" href="/topic/8/欢迎大家来到这个论坛/1">
+            				<small class="timeago" title="Tue May 17 2016 16:43:50 GMT+0800 (CST)">大约18小时之前</small>
+            			</a>
+              		</p>
+                  <div class="post-content">
+                    <a href="/topic/2/大家好-欢迎来到这个论坛" itemprop="url">大家好,欢迎来到这个论坛</a>
+                  </div>
+              	</div>
+              </div>
+            </li>
+
+          </ul>
+        </div>
+        <div role="tabpanel" class="tab-pane" id="kernel-aborted">
+
+
+        </div>
+        <div role="tabpanel" class="tab-pane" id="kernel-syntax">
+
+
+        </div>
+      </div>
+    </div>
+    <p>
+
     <ul class="categories">
     	<p>热门标签</p>
     </ul>
