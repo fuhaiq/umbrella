@@ -17,8 +17,6 @@
   </div>
 
   <div class="col-lg-3">
-
-
     <div>
       <!-- Nav tabs -->
       <ul class="nav nav-tabs" role="tablist">
@@ -29,70 +27,94 @@
       <!-- Tab panes -->
       <div class="tab-content">
         <div role="tabpanel" class="tab-pane active" id="kernel-success">
+          <!-- IF success.length -->
           <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
-            <li component="categories/category" data-cid="1" data-numrecentreplies="1" class="row clearfix">
-              <div class="card" style="border-color: #fda34b; margin-top: 0px;height: 45px;">
-          			<div component="category/posts">
+            <!-- BEGIN success -->
+            <li component="post" data-pid="{success.pid}" class="row clearfix hidden-xs">
+              <div class="card" style="border-color: {success.category.bgColor};">
+          			<div component="post">
               		<p>
-            			<a href="/user/mike">
-    								<span class="user-icon user-img" title="" style="background-color: #9c27b0;" data-original-title="mike">M</span>
-            			</a>
-            			<a class="permalink" href="/topic/8/欢迎大家来到这个论坛/1">
-            				<small class="timeago" title="Tue May 17 2016 16:43:50 GMT+0800 (CST)">大约18小时之前</small>
+                  <a href="{config.relative_path}/user/{success.user.userslug}">
+                    <!-- IF success.user.picture -->
+                    <img class="user-img" title="{success.user.username}" alt="{success.user.username}" src="{success.user.picture}" title="{success.user.username}"/>
+                    <!-- ELSE -->
+                    <span class="user-icon user-img" title="{success.user.username}" style="background-color: {success.user.icon:bgColor};">{success.user.icon:text}</span>
+                    <!-- ENDIF success.user.picture -->
+                  </a>
+                  <a class="permalink" href="{config.relative_path}/topic/{success.topic.slug}<!-- IF success.index -->/{success.index}<!-- ENDIF success.index -->">
+            				<small class="timeago" title="{success.timestampISO}"></small>
             			</a>
               		</p>
                   <div class="post-content">
-                    <a href="/topic/2/大家好-欢迎来到这个论坛" itemprop="url">大家好,欢迎来到这个论坛</a>
+                    {success.content}
                   </div>
               	</div>
               </div>
             </li>
-
-            <li component="categories/category" data-cid="1" data-numrecentreplies="1" class="row clearfix">
-              <div class="card" style="border-color: #fda34b; margin-top: 0px;height: 45px;">
-          			<div component="category/posts">
-              		<p>
-            			<a href="/user/mike">
-    								<span class="user-icon user-img" title="" style="background-color: #9c27b0;" data-original-title="mike">M</span>
-            			</a>
-            			<a class="permalink" href="/topic/8/欢迎大家来到这个论坛/1">
-            				<small class="timeago" title="Tue May 17 2016 16:43:50 GMT+0800 (CST)">大约18小时之前</small>
-            			</a>
-              		</p>
-                  <div class="post-content">
-                    <a href="/topic/2/大家好-欢迎来到这个论坛" itemprop="url">大家好,欢迎来到这个论坛</a>
-                  </div>
-              	</div>
-              </div>
+            <li component="post" data-pid="{success.pid}" class="row clearfix visible-xs">
+              {success.content}
             </li>
-
-            <li component="categories/category" data-cid="1" data-numrecentreplies="1" class="row clearfix">
-              <div class="card" style="border-color: #fda34b; margin-top: 0px;height: 45px;">
-          			<div component="category/posts">
-              		<p>
-            			<a href="/user/mike">
-    								<span class="user-icon user-img" title="" style="background-color: #9c27b0;" data-original-title="mike">M</span>
-            			</a>
-            			<a class="permalink" href="/topic/8/欢迎大家来到这个论坛/1">
-            				<small class="timeago" title="Tue May 17 2016 16:43:50 GMT+0800 (CST)">大约18小时之前</small>
-            			</a>
-              		</p>
-                  <div class="post-content">
-                    <a href="/topic/2/大家好-欢迎来到这个论坛" itemprop="url">大家好,欢迎来到这个论坛</a>
-                  </div>
-              	</div>
-              </div>
-            </li>
-
+            <!-- END success -->
           </ul>
+          <!-- ENDIF success.length -->
         </div>
         <div role="tabpanel" class="tab-pane" id="kernel-aborted">
-
-
+          <!-- IF aborted.length -->
+          <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
+            <!-- BEGIN aborted -->
+            <li component="post" data-pid="{success.pid}" class="row clearfix">
+              <div class="card" style="border-color: {aborted.category.bgColor};">
+                <div component="post">
+                  <p>
+                  <a href="{config.relative_path}/user/{aborted.user.userslug}">
+                    <!-- IF aborted.user.picture -->
+                    <img class="user-img" title="{aborted.user.username}" alt="{aborted.user.username}" src="{aborted.user.picture}" title="{aborted.user.username}"/>
+                    <!-- ELSE -->
+                    <span class="user-icon user-img" title="{aborted.user.username}" style="background-color: {aborted.user.icon:bgColor};">{aborted.user.icon:text}</span>
+                    <!-- ENDIF aborted.user.picture -->
+                  </a>
+                  <a class="permalink" href="{config.relative_path}/topic/{aborted.topic.slug}<!-- IF aborted.index -->/{aborted.index}<!-- ENDIF aborted.index -->">
+                    <small class="timeago" title="{aborted.timestampISO}"></small>
+                  </a>
+                  </p>
+                  <div class="post-content">
+                    {aborted.content}
+                  </div>
+                </div>
+              </div>
+            </li>
+            <!-- END aborted -->
+          </ul>
+          <!-- ENDIF aborted.length -->
         </div>
         <div role="tabpanel" class="tab-pane" id="kernel-syntax">
-
-
+          <!-- IF syntax.length -->
+          <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
+            <!-- BEGIN syntax -->
+            <li component="post" data-pid="{success.pid}" class="row clearfix">
+              <div class="card" style="border-color: {syntax.category.bgColor};">
+                <div component="post">
+                  <p>
+                  <a href="{config.relative_path}/user/{syntax.user.userslug}">
+                    <!-- IF syntax.user.picture -->
+                    <img class="user-img" title="{syntax.user.username}" alt="{syntax.user.username}" src="{syntax.user.picture}" title="{syntax.user.username}"/>
+                    <!-- ELSE -->
+                    <span class="user-icon user-img" title="{syntax.user.username}" style="background-color: {syntax.user.icon:bgColor};">{syntax.user.icon:text}</span>
+                    <!-- ENDIF syntax.user.picture -->
+                  </a>
+                  <a class="permalink" href="{config.relative_path}/topic/{syntax.topic.slug}<!-- IF syntax.index -->/{syntax.index}<!-- ENDIF syntax.index -->">
+                    <small class="timeago" title="{syntax.timestampISO}"></small>
+                  </a>
+                  </p>
+                  <div class="post-content">
+                    {syntax.content}
+                  </div>
+                </div>
+              </div>
+            </li>
+            <!-- END syntax -->
+          </ul>
+          <!-- ENDIF syntax.length -->
         </div>
       </div>
     </div>

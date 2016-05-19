@@ -12,9 +12,9 @@
   <h4>相似话题</h4>
   <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
     <!-- BEGIN similar -->
-    <li component="categories/category" data-cid="1" data-numrecentreplies="1" class="row clearfix">
+    <li component="category/topic" data-tid={similar.tid} class="row clearfix">
       <div class="card" style="border-color: {similar.category.bgColor}">
-        <div component="category/posts">
+        <div component="category/topic">
           <p>
             <a href="{config.relative_path}/user/{similar.user.userslug}">
               <!-- IF similar.user.picture -->

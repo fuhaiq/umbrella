@@ -93,12 +93,7 @@ $(document).ready(function() {
           })
           .done(function(json) {
               if(!json.success) {
-                  app.alert({
-                      title: '消息',
-                      message: json.msg,
-                      type: json.type,
-                      timeout: 2000
-                  });
+                  $('#kernel-preview').append('<div class="kernel result alert alert-"'+json.type+' role="alert">'+json.msg+'</div>')
               } else {
                   var result = JSON.parse(json.result);
                   if(result.length == 0) {

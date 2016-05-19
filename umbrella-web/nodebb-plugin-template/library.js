@@ -4,6 +4,7 @@ var plugin = {},
 async = module.parent.require('async'),
 emitter = module.parent.require('./emitter'),
 topics = module.parent.require('./topics'),
+posts = module.parent.require('./posts'),
 winston = module.parent.require('winston'),
 fs = require('fs'),
 path = require('path'),
@@ -57,16 +58,13 @@ var getPopularTags = (next) => {
 	})
 }
 
-var getStatusTopics = (status, next) => {
-	db.client.collection('objects').find({_key:/^post:\d+$/, status:status}).sort({timestamp:-1}).limit(10).toArray((err, docs) => {
+var getStatusTopics = (status, num, next) => {
+	db.client.collection('objects').find({_key:/^post:\d+$/, status:status},{_id:0,pid:1}).sort({timestamp:-1}).limit(num).toArray((err, docs) => {
 		if(err) {
 			return next(err)
 		}
 
-		docs.forEach(doc=>{
-			winston.warn(doc._key)
-		})
-		next()
+		posts.getPostSummaryByPids(docs.map(doc => doc.pid), 0, {stripTags: true}, next)
 	})
 }
 
@@ -75,12 +73,19 @@ plugin.getCategories = (data, next) => {
 
 	async.parallel({
 		tags : (next) => getPopularTags(next),
-		status: (next) => getStatusTopics(3, next)
+		success: (next) => getStatusTopics(3, 6, next),
+		syntax: (next) => getStatusTopics(-1, 6, next),
+		aborted: (next) => getStatusTopics(-2, 6, next)
 	}, (err, result) => {
+		if(err) {
+			return next(err)
+		}
 		data.templateData.tags = result.tags
-		next(err, data)
+		data.templateData.success = result.success
+		data.templateData.syntax = result.syntax
+		data.templateData.aborted = result.aborted
+		next(null, data)
 	})
 }
-
 
 module.exports = plugin;
