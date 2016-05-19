@@ -15,8 +15,8 @@
     },
     {
       "name"        : "mongodb-console",
-      "cwd" : "/home/umbrella/lx-mms",
-      "script"      : "server.js",
+      "cwd" : "/home/umbrella/adminMongo",
+      "script"      : "app.js",
       "watch" : false
     }
   ]
