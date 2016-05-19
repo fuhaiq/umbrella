@@ -30,7 +30,7 @@
           <!-- IF success.length -->
           <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
             <!-- BEGIN success -->
-            <li component="post" data-pid="{success.pid}" class="row clearfix hidden-xs">
+            <li component="post" data-pid="{success.pid}" class="row clearfix">
               <div class="card" style="border-color: {success.category.bgColor};">
           			<div component="post">
               		<p>
@@ -50,9 +50,6 @@
                   </div>
               	</div>
               </div>
-            </li>
-            <li component="post" data-pid="{success.pid}" class="row clearfix visible-xs">
-              {success.content}
             </li>
             <!-- END success -->
           </ul>

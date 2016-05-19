@@ -8,12 +8,9 @@ jquery = fs.readFileSync("./node_modules/nodebb-plugin-template/static/jquery-2.
 jsdom = require("jsdom"),
 client = null,
 async = module.parent.require('async'),
-_ = module.parent.require('underscore'),
-meta = module.parent.require('./meta'),
 topics = module.parent.require('./topics'),
 posts = module.parent.require('./posts'),
 user = module.parent.require('./user'),
-categories = module.parent.require('./categories'),
 plugins = module.parent.require('./plugins'),
 winston = module.parent.require('winston'),
 nconf = module.parent.require('nconf');
@@ -391,35 +388,12 @@ plugin.morelikethis = (data, next) => {
 	    if(res.hits.hits.length == 0) {
 	      return next('NO_SIMILAR_TOPIC')
 	    }
-
-	    topics.getTopicsData(res.hits.hits.map(item => parseInt(item._id, 10)), next)
+			topics.getTopics(res.hits.hits.map(item => parseInt(item._id, 10)), 0, next)
 	  },
 		(similar, next) => {
-	    var mapFilter = (array, field) => {
-	      return array.map(topic => topic && topic[field] && topic[field].toString())
-	           .filter((value, index, array) => string(value).isNumeric() && array.indexOf(value) === index)
-	    }
-	    next(null, similar, mapFilter(similar, 'cid'), mapFilter(similar, 'uid'))
-	  },
-		(similar, cids, uids, next) => {
-	    async.parallel({
-	      users : (next) => user.getUsersFields(uids, ['uid', 'username', 'userslug', 'picture'], next),
-	      categories : (next) => categories.getCategoriesFields(cids, ['cid', 'name', 'slug', 'icon', 'bgColor', 'color', 'disabled'], next)
-	    }, (err, results) => {
-	      if(err) {
-	        return next(err)
-	      }
-
-	      var categories = _.object(cids, results.categories);
-	      var users = _.object(uids, results.users);
-	      similar.forEach(item => {
-	        item.category = categories[item.cid];
-	        item.user = users[item.uid];
-	      })
-	      data.topicData.similar = similar;
-	      next()
-	    })
-	  }
+			data.topicData.similar = similar
+			next()
+		}
 	], (err) => {
 	  if(err && err != 'NO_SIMILAR_TOPIC') {
 	    return next(err)

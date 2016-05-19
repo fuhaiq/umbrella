@@ -93,7 +93,7 @@ $(document).ready(function() {
           })
           .done(function(json) {
               if(!json.success) {
-                  $('#kernel-preview').append('<div class="kernel result alert alert-"'+json.type+' role="alert">'+json.msg+'</div>')
+                  $('#kernel-preview').append('<div class="kernel result alert alert-'+json.type+'" role="alert">'+json.msg+'</div>')
               } else {
                   var result = JSON.parse(json.result);
                   if(result.length == 0) {
