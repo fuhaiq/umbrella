@@ -385,22 +385,42 @@ plugin.morelikethis = (data, next) => {
 	async.waterfall([
 	  (next) => client.search(query, next),
 	  (res, httpCode, next) => {
-	    if(res.hits.hits.length == 0) {
-	      return next('NO_SIMILAR_TOPIC')
-	    }
-			topics.getTopics(res.hits.hits.map(item => parseInt(item._id, 10)), 0, next)
+			if(res.hits.hits.length > 0){
+				return topics.getTopics(res.hits.hits.map(item => parseInt(item._id, 10)), 0, next)
+			}
+
+			next(null, [])
 	  },
 		(similar, next) => {
-			data.topicData.similar = similar
-			next()
-		}
-	], (err) => {
-	  if(err && err != 'NO_SIMILAR_TOPIC') {
-	    return next(err)
-	  }
+			var union = (x, y) => {
+				var xy = x.concat(y);
+		    for (var i = 0; i < xy.length; i++) {
+		        for (var j = i+1; j < xy.length; j++) {
+		            if (xy[i].tid == xy[j].tid) {
+		                xy.splice(j, 1);
+		                j--;
+		            }
+		        }
+		    }
+		    return xy;
+			}
 
-	  next(null, data)
-	})
+			var need = 10 - similar.length;
+			if(need > 0) {
+				topics.getSuggestedTopics(parseInt(data.topicData.tid, 10), 0, 0, need, (err, docs) => {
+					if(err) {
+						return next(err)
+					}
+
+					data.topicData.similar = union(similar, docs)
+					next()
+				})
+			} else {
+				data.topicData.similar = similar
+				next()
+			}
+		}
+	], (err) => next(err, data))
 };
 
 module.exports = plugin;
