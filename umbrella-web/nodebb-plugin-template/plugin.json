@@ -15,6 +15,7 @@
 		"static": "./static"
 	},
 	"less": [
+		"/static/list.min.less"
 	],
 	"templates": "templates"
 }

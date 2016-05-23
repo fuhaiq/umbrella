@@ -11,9 +11,39 @@ async = module.parent.require('async'),
 topics = module.parent.require('./topics'),
 posts = module.parent.require('./posts'),
 user = module.parent.require('./user'),
+_ = module.parent.require('underscore'),
 plugins = module.parent.require('./plugins'),
 winston = module.parent.require('winston'),
 nconf = module.parent.require('nconf');
+
+var getTidsWithSameTags = (tid, next) => {
+	async.waterfall([
+		function(next) {
+			topics.getTopicTags(tid, next);
+		},
+		function(tags, next) {
+			async.map(tags, function(tag, next) {
+				topics.getTagTids(tag, 0, -1, next);
+			}, next);
+		},
+		function(data, next) {
+			next(null, _.unique(_.flatten(data)));
+		}
+	], next);
+}
+
+var getSuggestedTopics = function(tid, uid, start, stop, next) {
+	getTidsWithSameTags(tid, (err, tids) => {
+		if (err) {
+			return next(err);
+		}
+		tids = tids.filter(function(_tid, index, array) {
+			return parseInt(_tid, 10) !== parseInt(tid, 10) && array.indexOf(_tid) === index;
+		}).slice(start, stop + 1);
+
+		topics.getTopics(tids, uid, next);
+	})
+}
 
 var insert = (type, id, value, cid, uid, next) => {
 	next = next || function() {};
@@ -407,7 +437,7 @@ plugin.morelikethis = (data, next) => {
 
 			var need = 10 - similar.length;
 			if(need > 0) {
-				topics.getSuggestedTopics(parseInt(data.topicData.tid, 10), 0, 0, need, (err, docs) => {
+				getSuggestedTopics(parseInt(data.topicData.tid, 10), 0, 0, need, (err, docs) => {
 					if(err) {
 						return next(err)
 					}
