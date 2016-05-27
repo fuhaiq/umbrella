@@ -12,7 +12,7 @@
 		<div class="col-md-4">
 			<h5><strong>常用链接</strong></h5>
 			<div class="ui link list">
-				<a class="item" href="reference.mmascript.com">文档中心</a>
+				<a class="item" href="http://reference.mmascript.com" target="_blank">文档中心</a>
 			</div>
 		</div>
 	  <div class="col-md-4"></div>
