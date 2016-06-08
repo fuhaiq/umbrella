@@ -1,6 +1,10 @@
 sudo apt-get install libkrb5-dev imagemagick build-essential
 
+centos: yum install krb5-devel
+
 ###################password####################
+centos:yum install httpd-tools
+
 htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
 npm install hiredis connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards nodebb-plugin-katex
