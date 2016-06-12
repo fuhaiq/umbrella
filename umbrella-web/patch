@@ -1,19 +1,13 @@
 sudo apt-get install libkrb5-dev imagemagick build-essential
 
-centos: yum install krb5-devel
+centos: yum install krb5-devel imagemagick
 
 ###################password####################
 centos:yum install httpd-tools
 
 htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
-npm install hiredis connect-redis elasticsearch jsdom fivebeans fs-extra nodebb-plugin-recent-cards nodebb-plugin-katex
-
-mkdir /home/umbrella/git/umbrella-web/public/kernel/temp/
-mkdir /home/umbrella/git/umbrella-web/public/kernel/post/
-
-###################header.tpl##################
-remove js and google css
+npm install hiredis connect-redis nodebb-plugin-recent-cards nodebb-plugin-katex
 
 ###################config.json###############
 "port": ["4567"],
@@ -42,24 +36,6 @@ remove js and google css
 
 <script type="text/javascript" src="/vendor/ace/ace.js"></script>
 <script type="text/javascript" src="/vendor/ace/ext-language_tools.js"></script>
-
-############################footer########################
-
-<hr>
-<div class="ui horizontal link large list">
-  <a class="item" href="/">
-    &copy; 威思客
-  </a>
-  <a class="item" href="http://reference.wolfram.com/language/">
-    参考资料中心
-  </a>
-  <a class="item">
-    关于我们
-  </a>
-  <a class="item" href="/app">
-    App下载
-  </a>
-</div>
 
 ###########################################################
 /node_modules/nodebb-plugin-recent-cards/static/templates/partials/nodebb-plugin-recent-cards/header.tpl

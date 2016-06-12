@@ -14,7 +14,7 @@ Needs["JLink`"]
 
 Needs["MSP`"]
 
-MSP`Utility`SetSecurity["/home/umbrella/SecurityConfiguration.m"]
+MSP`Utility`SetSecurity["c:/Users/Administrator/SecurityConfiguration.m"]
 
 $Pre = Function[expr, 
 	Module[

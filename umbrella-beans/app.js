@@ -25,9 +25,6 @@ redisClient = null,
 beanstalkd = null,
 service = null;
 
-fs.ensureDirSync(config.clean.dir);
-fs.ensureDirSync(config.kernel.imgDir);
-
 var reserve = () => {
 	async.waterfall([
 		(next) => beanstalkd.reserve(next),
