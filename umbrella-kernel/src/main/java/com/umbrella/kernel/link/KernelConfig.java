@@ -16,8 +16,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	
 	private int timeConstrained;
 	
-	private String imgDir;
-	
 	private Set<Integer> badChar;
 	
 	private Set<String> escapes;
@@ -40,14 +38,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 
 	public void setTimeConstrained(int timeConstrained) {
 		this.timeConstrained = timeConstrained;
-	}
-
-	public String getImgDir() {
-		return imgDir;
-	}
-
-	public void setImgDir(String imgDir) {
-		this.imgDir = imgDir;
 	}
 
 	public Set<Integer> getBadChar() {
