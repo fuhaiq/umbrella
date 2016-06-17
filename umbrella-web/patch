@@ -1,6 +1,6 @@
 sudo apt-get install libkrb5-dev imagemagick build-essential
 
-centos: yum install krb5-devel imagemagick
+centos: yum install krb5-devel ImageMagick
 
 ###################password####################
 centos:yum install httpd-tools

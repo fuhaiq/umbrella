@@ -1,16 +1,16 @@
 {
 	"beanstalkd": {
-		"host" : "localhost",
+		"host" : "10.24.24.243",
 		"port" : "11300",
         "tube" : "kernel"
 	},
 	"mongo": {
-	  "url" : "mongodb://10.25.65.55:27017/umbrella",
+	  "url" : "mongodb://127.0.0.1:27017/umbrella",
 	  "username": "",
 	  "password": ""
   },
   "redis": {
-	  "host":"127.0.0.1",
+	  "host":"10.24.24.243",
 	  "port":"6379",
 	  "username":"",
 	  "password":"",
@@ -23,7 +23,11 @@
 		"second": 300
 	},
 	"kernel" : {
-		"url" : "http://localhost/evaluate",
+		"url":{
+			"hostname":"10.24.24.243",
+			"path" : "/evaluate",
+			"port":80
+		},
 		"imgDir": "e:/kernel/post/",
 		"username": "umbrella",
 		"password": "guice4now"

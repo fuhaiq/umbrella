@@ -3,19 +3,13 @@
   [
     {
       "name"        : "umbrella-web",
-      "cwd" : "/home/umbrella/git/umbrella-web",
-      "script"      : "app.js",
-      "watch" : false
-    },
-    {
-      "name"        : "umbrella-beans",
-      "cwd" : "/home/umbrella/git/umbrella/umbrella-beans",
+      "cwd" : "/alidata1/mmascript/www",
       "script"      : "app.js",
       "watch" : false
     },
     {
       "name"        : "mongodb-console",
-      "cwd" : "/home/umbrella/adminMongo",
+      "cwd" : "/alidata1/mmascript/plugins/adminMongo",
       "script"      : "app.js",
       "watch" : false
     }

@@ -1,0 +1,33 @@
+{
+  "url": "http://mmascript.com",
+  "secret": "4496c5c3-269e-43be-a94b-19a523e8dcf5",
+  "database": "mongo",
+  "mongo": {
+      "host": "10.25.65.55",
+      "port": "27017",
+      "username": "",
+      "password": "",
+      "database": "umbrella"
+  },
+	"port": ["4567"],
+	"redis": {
+	  "host":"127.0.0.1",
+	  "port":"6379",
+	  "username":"",
+	  "password":"",
+	  "database":"0"
+	},
+	"beanstalkd": {
+	  "host": "127.0.0.1",
+	  "port": "11300"
+	},
+	"elasticsearch": {
+	  "host": "127.0.0.1",
+	  "port": "9200"
+	},
+	"kernel": {
+	  "username": "umbrella",
+	  "password": "guice4now",
+	  "imgDir": "e:/kernel/temp/"
+	}
+}

@@ -63,7 +63,9 @@ var BeanstalkdService = function(db, redis) {
         fs.mkdirsSync(dir + post.pid);
         var kernel = JSON.stringify({dir: dir + post.pid + '/', scripts:scripts})
         var options = {
-          path: url,
+          hostname: url.hostname,
+          path:url.path,
+          port:url.port,
           method: 'POST',
           headers: {
             'Content-Type': 'application/json;charset=UTF-8',
