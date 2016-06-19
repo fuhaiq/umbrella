@@ -23,5 +23,6 @@
     { "hook": "filter:search.query", "method": "search"},
     { "hook": "filter:controllers.topic.get", "method": "morelikethis"}
 
-	]
+	],
+	"languages": "languages"
 }

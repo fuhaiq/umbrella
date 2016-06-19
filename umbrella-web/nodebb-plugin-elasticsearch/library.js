@@ -4,7 +4,7 @@ var plugin = {},
 string = require('string'),
 elasticsearch = require('elasticsearch'),
 fs = require('fs-extra'),
-jquery = fs.readFileSync("./node_modules/nodebb-plugin-template/static/jquery-2.1.4.min.js", "utf-8"),
+jquery = fs.readFileSync("./node_modules/nodebb-plugin-elasticsearch/static/jquery-2.1.4.min.js", "utf-8"),
 jsdom = require("jsdom"),
 client = null,
 async = module.parent.require('async'),
@@ -15,6 +15,101 @@ _ = module.parent.require('underscore'),
 plugins = module.parent.require('./plugins'),
 winston = module.parent.require('winston'),
 nconf = module.parent.require('nconf');
+
+var modifyTopicPage = (next) => {
+	var topicWithSimilarPage = fs.readFileSync("./node_modules/nodebb-plugin-elasticsearch/templates/topic.tpl", "utf-8")
+	fs.outputFile('./public/templates/topic.tpl', topicWithSimilarPage, next)
+}
+
+var ensureIndex = (next) => {
+	var index = nconf.get('elasticsearch:index');
+	client.indices.exists({index:index}, (err, exists) => {
+		if(err) {
+			return next(err)
+		}
+
+		if(!exists) {
+			winston.warn('elasticsearch index '+ index +' is not exists. creating...')
+			return client.indices.create({index:index}, next)
+		}
+
+		next()
+	})
+}
+
+var ensureTopicMapping = (next) => {
+	var index = nconf.get('elasticsearch:index');
+
+	client.indices.existsType({index:index, type:'topic'}, (err, exists) => {
+		if(err) {
+			return next(err)
+		}
+
+		if(!exists) {
+			winston.warn('topic mapping is not exists. creating...')
+			return client.indices.putMapping({index:index, type:'topic', body:{
+				"properties": {
+					"uid": {
+						"type": "integer",
+						"index": "not_analyzed"
+					},
+					"cid": {
+						"type": "integer",
+						"index": "not_analyzed"
+					},
+					"deleted": {
+						"type": "boolean",
+						"index": "not_analyzed"
+					},
+					"title": {
+	          "type": "string",
+	          "analyzer": "ik_max_word",
+	          "search_analyzer": "ik_max_word"
+	       	}
+	      }
+			}}, next)
+		}
+
+		next()
+	})
+}
+
+var ensurePostMapping = (next) => {
+	var index = nconf.get('elasticsearch:index');
+
+	client.indices.existsType({index:index, type:'post'}, (err, exists) => {
+		if(err) {
+			return next(err)
+		}
+
+		if(!exists) {
+			winston.warn('post mapping is not exists. creating...')
+			return client.indices.putMapping({index:index, type:'post', body:{
+				"properties": {
+					"uid": {
+						"type": "integer",
+						"index": "not_analyzed"
+					},
+					"cid": {
+						"type": "integer",
+						"index": "not_analyzed"
+					},
+					"deleted": {
+						"type": "boolean",
+						"index": "not_analyzed"
+					},
+					"content": {
+						"type": "string",
+						"analyzer": "ik_max_word",
+						"search_analyzer": "ik_max_word"
+					}
+				}
+			}}, next)
+		}
+
+		next()
+	})
+}
 
 var getTidsWithSameTags = (tid, next) => {
 	async.waterfall([
@@ -103,7 +198,21 @@ plugin.init = (data, next) => {
 		host: nconf.get('elasticsearch:host') + ':' + nconf.get('elasticsearch:port'),
 		log: 'error'
 	});
-	next();
+
+	async.parallel([
+		(next) => modifyTopicPage(next),
+		(next) => ensureIndex((err) => {
+			if (err) {
+				return next(err);
+			}
+
+			async.parallel([
+				(next) => ensureTopicMapping(next),
+				(next) => ensurePostMapping(next)
+			], next)
+		})
+	], next)
+
 };
 
 plugin.search = (data, next) => {

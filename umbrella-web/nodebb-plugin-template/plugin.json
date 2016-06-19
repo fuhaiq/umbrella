@@ -15,7 +15,9 @@
 		"static": "./static"
 	},
 	"less": [
-		"/static/list.min.less"
+		"/static/list.min.less",
+		"/static/card.less"
 	],
-	"templates": "templates"
+	"templates": "templates",
+	"languages": "languages"
 }

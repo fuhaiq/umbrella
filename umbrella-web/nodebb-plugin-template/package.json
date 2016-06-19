@@ -14,5 +14,6 @@
   },
   "directories": {},
   "dependencies": {
+    "fs-extra" : ">=0.26.2"
   }
 }

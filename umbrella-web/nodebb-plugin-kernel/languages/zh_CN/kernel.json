@@ -1,5 +1,4 @@
 {
-    "recent_topic": "最新话题",
     "header.kernel" : "执行",
     "notification.post_done" : "您的话题 <strong>%1</strong> 计算完成"
 }

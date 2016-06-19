@@ -7,39 +7,11 @@ centos:yum install httpd-tools
 
 htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
-npm install hiredis connect-redis nodebb-plugin-recent-cards nodebb-plugin-katex
+##################npm install##################
 
-###################config.json###############
-"port": ["4567"],
-"redis": {
-  "host":"127.0.0.1",
-  "port":"6379",
-  "username":"",
-  "password":"",
-  "database":"0"
-},
-"beanstalkd": {
-  "host": "127.0.0.1",
-  "port": "11300"
-},
-"elasticsearch": {
-  "host": "127.0.0.1",
-  "port": "9200"
-},
-"kernel": {
-  "username": "umbrella",
-  "password": "guice4now",
-  "imgDir": "/home/umbrella/git/umbrella-web/public/kernel/temp/"
-}
+npm install hiredis nodebb-plugin-katex
 
 ###################custom header#################
 
 <script type="text/javascript" src="/vendor/ace/ace.js"></script>
 <script type="text/javascript" src="/vendor/ace/ext-language_tools.js"></script>
-
-###########################################################
-/node_modules/nodebb-plugin-recent-cards/static/templates/partials/nodebb-plugin-recent-cards/header.tpl
-
-<ul class="categories">
-	<p>[[kernel:recent_topic]]</p>
-</ul>

@@ -1,5 +1,3 @@
-<!-- Main plugin -->
-
 <div class="row">
 
   <div class="col-lg-9">
@@ -13,7 +11,7 @@
       </div>
     </form>
     <br>
-    <!-- Main Original content -->
+    <!-- Categories Original content -->
   </div>
 
   <div class="col-lg-3">
@@ -117,9 +115,6 @@
     </div>
     <p>
 
-    <ul class="categories">
-    	<p>热门标签</p>
-    </ul>
     <div class="popular-tags">
     <!-- BEGIN tags -->
     	<span class="inline-block">

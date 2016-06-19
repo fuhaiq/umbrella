@@ -1,0 +1,4 @@
+{
+    "header.kernel" : "Exec",
+    "notification.post_done" : "Your post <strong>%1</strong> finished computing"
+}
