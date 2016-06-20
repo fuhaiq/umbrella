@@ -10,28 +10,14 @@ db = module.parent.require('./database'),
 categories = module.parent.require('./categories'),
 nconf = module.parent.require('nconf');
 
-var modifyPages = (next) => {
-	next = next || function() {};
-
-	async.series([
-		(next) => {
-			var originalCategoriesPage = fs.readFileSync("./public/templates/categories.tpl", "utf-8")
-			var modify = fs.readFileSync("./node_modules/nodebb-plugin-template/templates/categories/card.tpl", "utf-8")
-			fs.outputFile('./public/templates/categories.tpl', modify + originalCategoriesPage, next)
-		},
-		(next) => {
-			var originalCategoriesPage = fs.readFileSync("./public/templates/categories.tpl", "utf-8")
-			var modify = fs.readFileSync("./node_modules/nodebb-plugin-template/templates/categories/categories.tpl", "utf-8")
-			modify = modify.replace('<!-- Categories Original content -->', originalCategoriesPage)
-			fs.outputFile('./public/templates/categories.tpl', modify, next)
-		}
-	], next)
-}
-
 plugin.init = (data, next) => {
 	next = next || function(){};
 
-	modifyPages(next)
+	var originalCategoriesPage = fs.readFileSync("./public/templates/categories.tpl", "utf-8")
+	var card = fs.readFileSync("./node_modules/nodebb-plugin-template/templates/categories/card.tpl", "utf-8")
+	var modify = fs.readFileSync("./node_modules/nodebb-plugin-template/templates/categories/categories.tpl", "utf-8")
+	modify = modify.replace('<!-- Categories Original content -->', card + originalCategoriesPage)
+	fs.outputFile('./public/templates/categories.tpl', modify, next)
 };
 
 var getPopularTags = (next) => {
@@ -47,8 +33,8 @@ var getPopularTags = (next) => {
 	})
 }
 
-var getStatusTopics = (status, num, next) => {
-	db.client.collection('objects').find({_key:/^post:\d+$/, status:status},{_id:0,pid:1}).sort({timestamp:-1}).limit(num).toArray((err, docs) => {
+var getKernelPosts = (num, next) => {
+	db.client.collection('objects').find({_key:/^post:\d+$/, status:[-1,-2,3]},{_id:0,pid:1}).sort({timestamp:-1}).limit(num).toArray((err, docs) => {
 		if(err) {
 			return next(err)
 		}
@@ -57,7 +43,7 @@ var getStatusTopics = (status, num, next) => {
 	})
 }
 
-var getCard = (data, next) => {
+var getCards = (data, next) => {
 	var defaultSettings = { opacity: '1.0', textShadow: 'none' };
 
 	topics.getTopicsFromSet('topics:recent', data.req.uid, 0, 19, function(err, topics) {
@@ -80,15 +66,10 @@ var getCard = (data, next) => {
 		async.each(finalTopics, function (topic, next) {
 			categories.getCategoryField(topic.cid, 'image', function (err, image) {
 				topic.category.backgroundImage = image;
-				next();
+				next(err);
 			});
-		}, function () {
-			data.templateData.topics = finalTopics;
-			data.templateData.recentCards = {
-				opacity: defaultSettings.opacity,
-				textShadow: defaultSettings.textShadow
-			};
-			next();
+		}, function (err) {
+			next(err, {topics:finalTopics, recentCards:{opacity: defaultSettings.opacity, textShadow: defaultSettings.textShadow}})
 		});
 	});
 }
@@ -98,18 +79,17 @@ plugin.getCategories = (data, next) => {
 
 	async.parallel({
 		tags : (next) => getPopularTags(next),
-		success: (next) => getStatusTopics(3, 6, next),
-		syntax: (next) => getStatusTopics(-1, 6, next),
-		aborted: (next) => getStatusTopics(-2, 6, next),
-		card: (next) => getCard(data, next)
+		kernelPosts: (next) => getKernelPosts(10, next),
+		cards: (next) => getCards(data, next)
 	}, (err, result) => {
 		if(err) {
 			return next(err)
 		}
+
 		data.templateData.tags = result.tags
-		data.templateData.success = result.success
-		data.templateData.syntax = result.syntax
-		data.templateData.aborted = result.aborted
+		data.templateData.kernelPosts = result.kernelPosts
+		data.templateData.topics = result.cards.topics
+		data.templateData.recentCards = result.cards.recentCards
 		next(null, data)
 	})
 }

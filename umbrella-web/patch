@@ -9,7 +9,7 @@ htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 
 ##################npm install##################
 
-npm install hiredis nodebb-plugin-katex
+npm install hiredis nodebb-plugin-katex nodebb-plugin-email-smtp
 
 ###################custom header#################
 

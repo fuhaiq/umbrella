@@ -15,104 +15,33 @@
   </div>
 
   <div class="col-lg-3">
-    <div>
-      <!-- Nav tabs -->
-      <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#kernel-success" aria-controls="kernel-success" role="tab" data-toggle="tab">成功</a></li>
-        <li role="presentation"><a href="#kernel-aborted" aria-controls="kernel-aborted" role="tab" data-toggle="tab">超时</a></li>
-        <li role="presentation"><a href="#kernel-syntax" aria-controls="kernel-syntax" role="tab" data-toggle="tab">语法错误</a></li>
-      </ul>
-      <!-- Tab panes -->
-      <div class="tab-content">
-        <div role="tabpanel" class="tab-pane active" id="kernel-success">
-          <!-- IF success.length -->
-          <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
-            <!-- BEGIN success -->
-            <li component="post" data-pid="{success.pid}" class="row clearfix">
-              <div class="card" style="border-color: {success.category.bgColor};">
-          			<div component="post">
-              		<p>
-                  <a href="{config.relative_path}/user/{success.user.userslug}">
-                    <!-- IF success.user.picture -->
-                    <img class="user-img" title="{success.user.username}" alt="{success.user.username}" src="{success.user.picture}" title="{success.user.username}"/>
-                    <!-- ELSE -->
-                    <span class="user-icon user-img" title="{success.user.username}" style="background-color: {success.user.icon:bgColor};">{success.user.icon:text}</span>
-                    <!-- ENDIF success.user.picture -->
-                  </a>
-                  <a class="permalink" href="{config.relative_path}/topic/{success.topic.slug}<!-- IF success.index -->/{success.index}<!-- ENDIF success.index -->">
-            				<small class="timeago" title="{success.timestampISO}"></small>
-            			</a>
-              		</p>
-                  <div class="post-content">
-                    {success.content}
-                  </div>
-              	</div>
-              </div>
-            </li>
-            <!-- END success -->
-          </ul>
-          <!-- ENDIF success.length -->
+    <!-- IF kernelPosts.length -->
+    <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
+      <!-- BEGIN kernelPosts -->
+      <li component="post" data-pid="{kernelPosts.pid}" class="row clearfix">
+        <div class="card" style="border-color: {kernelPosts.category.bgColor};">
+          <div component="post">
+            <p>
+            <a href="{config.relative_path}/user/{kernelPosts.user.userslug}">
+              <!-- IF kernelPosts.user.picture -->
+              <img class="user-img" title="{kernelPosts.user.username}" alt="{kernelPosts.user.username}" src="{kernelPosts.user.picture}" title="{kernelPosts.user.username}"/>
+              <!-- ELSE -->
+              <span class="user-icon user-img" title="{kernelPosts.user.username}" style="background-color: {kernelPosts.user.icon:bgColor};">{kernelPosts.user.icon:text}</span>
+              <!-- ENDIF kernelPosts.user.picture -->
+            </a>
+            <a class="permalink" href="{config.relative_path}/topic/{kernelPosts.topic.slug}<!-- IF kernelPosts.index -->/{kernelPosts.index}<!-- ENDIF kernelPosts.index -->">
+              <small class="timeago" title="{kernelPosts.timestampISO}"></small>
+            </a>
+            </p>
+            <div class="post-content">
+              {kernelPosts.content}
+            </div>
+          </div>
         </div>
-        <div role="tabpanel" class="tab-pane" id="kernel-aborted">
-          <!-- IF aborted.length -->
-          <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
-            <!-- BEGIN aborted -->
-            <li component="post" data-pid="{success.pid}" class="row clearfix">
-              <div class="card" style="border-color: {aborted.category.bgColor};">
-                <div component="post">
-                  <p>
-                  <a href="{config.relative_path}/user/{aborted.user.userslug}">
-                    <!-- IF aborted.user.picture -->
-                    <img class="user-img" title="{aborted.user.username}" alt="{aborted.user.username}" src="{aborted.user.picture}" title="{aborted.user.username}"/>
-                    <!-- ELSE -->
-                    <span class="user-icon user-img" title="{aborted.user.username}" style="background-color: {aborted.user.icon:bgColor};">{aborted.user.icon:text}</span>
-                    <!-- ENDIF aborted.user.picture -->
-                  </a>
-                  <a class="permalink" href="{config.relative_path}/topic/{aborted.topic.slug}<!-- IF aborted.index -->/{aborted.index}<!-- ENDIF aborted.index -->">
-                    <small class="timeago" title="{aborted.timestampISO}"></small>
-                  </a>
-                  </p>
-                  <div class="post-content">
-                    {aborted.content}
-                  </div>
-                </div>
-              </div>
-            </li>
-            <!-- END aborted -->
-          </ul>
-          <!-- ENDIF aborted.length -->
-        </div>
-        <div role="tabpanel" class="tab-pane" id="kernel-syntax">
-          <!-- IF syntax.length -->
-          <ul class="categories" itemscope="" itemtype="http://www.schema.org/ItemList">
-            <!-- BEGIN syntax -->
-            <li component="post" data-pid="{success.pid}" class="row clearfix">
-              <div class="card" style="border-color: {syntax.category.bgColor};">
-                <div component="post">
-                  <p>
-                  <a href="{config.relative_path}/user/{syntax.user.userslug}">
-                    <!-- IF syntax.user.picture -->
-                    <img class="user-img" title="{syntax.user.username}" alt="{syntax.user.username}" src="{syntax.user.picture}" title="{syntax.user.username}"/>
-                    <!-- ELSE -->
-                    <span class="user-icon user-img" title="{syntax.user.username}" style="background-color: {syntax.user.icon:bgColor};">{syntax.user.icon:text}</span>
-                    <!-- ENDIF syntax.user.picture -->
-                  </a>
-                  <a class="permalink" href="{config.relative_path}/topic/{syntax.topic.slug}<!-- IF syntax.index -->/{syntax.index}<!-- ENDIF syntax.index -->">
-                    <small class="timeago" title="{syntax.timestampISO}"></small>
-                  </a>
-                  </p>
-                  <div class="post-content">
-                    {syntax.content}
-                  </div>
-                </div>
-              </div>
-            </li>
-            <!-- END syntax -->
-          </ul>
-          <!-- ENDIF syntax.length -->
-        </div>
-      </div>
-    </div>
+      </li>
+      <!-- END kernelPosts -->
+    </ul>
+    <!-- ENDIF kernelPosts.length -->
     <p>
 
     <div class="popular-tags">
