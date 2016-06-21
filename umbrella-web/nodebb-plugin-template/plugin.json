@@ -9,6 +9,9 @@
 		},
 		{
 			"hook": "filter:categories.build", "method": "getCategories"
+		},
+		{
+			"hook": "filter:post.getPostSummaryByPids", "method": "getPostSummaryByPids"
 		}
 	],
 	"staticDirs": {
