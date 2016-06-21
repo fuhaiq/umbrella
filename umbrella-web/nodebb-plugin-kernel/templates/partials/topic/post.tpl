@@ -16,9 +16,7 @@
 			<a href="<!-- IF posts.user.userslug -->{config.relative_path}/user/{posts.user.userslug}<!-- ELSE -->#<!-- ENDIF posts.user.userslug -->" itemprop="author" data-username="{posts.user.username}" data-uid="{posts.user.uid}">{posts.user.username}</a>
 		</strong>
 
-<!-- IF posts.user.selectedGroup.slug -->
-<a href="{config.relative_path}/groups/{posts.user.selectedGroup.slug}"><small class="label group-label inline-block" style="background-color: {posts.user.selectedGroup.labelColor};"><!-- IF posts.user.selectedGroup.icon --><i class="fa {posts.user.selectedGroup.icon}"></i> <!-- ENDIF posts.user.selectedGroup.icon -->{posts.user.selectedGroup.userTitle}</small></a>
-<!-- ENDIF posts.user.selectedGroup.slug -->
+		<!-- IMPORT partials/topic/badge.tpl -->
 
 		<!-- IF posts.user.banned -->
 		<span class="label label-danger">[[user:banned]]</span>
@@ -45,24 +43,26 @@
 			</span>
 		</div>
 		<span class="bookmarked"><i class="fa fa-bookmark-o"></i></span>
-		<!-- IF posts.waiting -->
-		<span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>
-		<!-- ENDIF posts.waiting -->
-		<!-- IF posts.evaluate -->
-		<span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>
-		<!-- ENDIF posts.evaluate -->
-		<!-- IF posts.finished -->
-		<span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
-		<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
-		<!-- ENDIF posts.finished -->
-		<!-- IF posts.error -->
-		<span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
-		<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
-		<!-- ENDIF posts.error -->
-		<!-- IF posts.aborted -->
-		<span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
-		<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
-		<!-- ENDIF posts.aborted -->
+
+    <!-- IF posts.waiting -->
+    <span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>
+    <!-- ENDIF posts.waiting -->
+    <!-- IF posts.evaluate -->
+    <span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>
+    <!-- ENDIF posts.evaluate -->
+    <!-- IF posts.finished -->
+    <span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
+    <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
+    <!-- ENDIF posts.finished -->
+    <!-- IF posts.error -->
+    <span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
+    <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
+    <!-- ENDIF posts.error -->
+    <!-- IF posts.aborted -->
+    <span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
+    <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
+    <!-- ENDIF posts.aborted -->
+    
 	</small>
 </div>
 
@@ -99,11 +99,7 @@
 		</span>
 		<!-- ENDIF !reputation:disabled -->
 
-<span component="post/tools" class="dropdown moderator-tools <!-- IF !posts.display_post_menu -->hidden<!-- ENDIF !posts.display_post_menu -->">
-	<a href="#" data-toggle="dropdown"><i class="fa fa-fw fa-ellipsis-v"></i></a>
-	<ul class="dropdown-menu dropdown-menu-right" role="menu"></ul>
-</span>
-
+		<!-- IMPORT partials/topic/post-menu.tpl -->
 	</small>
 </div>
 
