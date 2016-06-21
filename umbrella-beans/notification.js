@@ -96,7 +96,18 @@ var notification = function(db, io) {
 		if (!Array.isArray(keys) || !keys.length) {
 			return callback();
 		}
-		db.collection('objects').remove({_key: {$in: keys}, score: {$lte: max, $gte: min}}, function(err) {
+
+    var query = {_key: {$in: keys}};
+
+		if (min !== '-inf') {
+			query.score = {$gte: min};
+		}
+		if (max !== '+inf') {
+			query.score = query.score || {};
+			query.score.$lte = max;
+		}
+
+		db.collection('objects').remove(query, function(err) {
 			callback(err);
 		});
 	};
@@ -119,10 +130,10 @@ var notification = function(db, io) {
 				sortedSetsRemove(readKeys, notification.nid, next);
 			},
 			function(next) {
-				sortedSetsRemoveRangeByScore(unreadKeys, 0, oneWeekAgo, next);
+				sortedSetsRemoveRangeByScore(unreadKeys, '-inf', oneWeekAgo, next);
 			},
 			function(next) {
-				sortedSetsRemoveRangeByScore(readKeys, 0, oneWeekAgo, next);
+				sortedSetsRemoveRangeByScore(readKeys, '-inf', oneWeekAgo, next);
 			}
 		], function(err) {
 			if (err) {
@@ -177,8 +188,8 @@ var notification = function(db, io) {
 			uids = [uids];
 		}
 
-		uids = uids.filter(function(uid) {
-			return parseInt(uid, 10);
+    uids = uids.filter(function(uid, index, array) {
+			return parseInt(uid, 10) && array.indexOf(uid) === index;
 		});
 
 		if (!uids.length) {
