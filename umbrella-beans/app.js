@@ -120,6 +120,7 @@ async.parallel({
 	  if(err) {
 	    LOG.error(err)
 	  } else {
+			LOG.info('#############开始监听任务#############')
 	    reserve()
 	  }
 	})
