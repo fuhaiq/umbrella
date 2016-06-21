@@ -24,5 +24,6 @@
     { "hook": "filter:controllers.topic.get", "method": "morelikethis"}
 
 	],
-	"languages": "languages"
+	"languages": "languages",
+	"templates": "templates"
 }

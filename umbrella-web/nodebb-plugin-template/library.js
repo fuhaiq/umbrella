@@ -13,11 +13,7 @@ nconf = module.parent.require('nconf');
 plugin.init = (data, next) => {
 	next = next || function(){};
 
-	var originalCategoriesPage = fs.readFileSync("./public/templates/categories.tpl", "utf-8")
-	var card = fs.readFileSync("./node_modules/nodebb-plugin-template/templates/categories/card.tpl", "utf-8")
-	var modify = fs.readFileSync("./node_modules/nodebb-plugin-template/templates/categories/categories.tpl", "utf-8")
-	modify = modify.replace('<!-- Categories Original content -->', card + originalCategoriesPage)
-	fs.outputFile('./public/templates/categories.tpl', modify, next)
+	next()
 };
 
 var getPopularTags = (next) => {

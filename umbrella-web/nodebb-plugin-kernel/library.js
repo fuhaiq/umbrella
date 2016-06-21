@@ -18,9 +18,31 @@ redis = require("redis"),
 io = module.parent.require('./socket.io'),
 helpers = module.parent.require('./routes/helpers');
 
-var modifyMainPage = (next) => {
-	var topicWithSimilarPage = fs.readFileSync("./node_modules/nodebb-plugin-elasticsearch/templates/topic.tpl", "utf-8")
-	fs.outputFile('./public/templates/topic.tpl', topicWithSimilarPage, next)
+var modifyPages = (next) => {
+	async.parallel([
+		next => {
+			var file = './public/vendor/ace/mode-mathematica.js';
+			fs.ensureFile(file, err => {
+				if(err) {
+					return next(err)
+				}
+
+				var mode = fs.readFileSync('./node_modules/nodebb-plugin-kernel/static/ace/mode-mathematica.js', 'utf-8')
+				fs.outputFile(file, mode, next)
+			})
+		},
+		next => {
+			var file = './node_modules/nodebb-plugin-markdown/public/js/highlight.js'
+			var highlight = fs.readFileSync(file, "utf-8")
+
+			if(string(highlight).contains('hljs.registerLanguage("mathematica"')) {
+				return next()
+			}
+
+			var append = fs.readFileSync('./node_modules/nodebb-plugin-kernel/static/ace/append_to_highlight.js', "utf-8")
+			fs.outputFile(file, highlight + append, next)
+		}
+	], next)
 }
 
 var emit = (post, next) => {
@@ -149,7 +171,7 @@ plugin.init = (data, next) => {
 
 	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], plugin.http.get);
 	data.router.post('/kernel', data.middleware.applyCSRF, plugin.http.post);
-	next()
+	modifyPages(next)
 };
 
 plugin.topic = {};
@@ -238,7 +260,7 @@ plugin.post.filterEdit = (postData, next) => {
 	})
 };
 
-plugin.post.purge = (postData, next) => {
+plugin.post.filterPurge = (postData, next) => {
 	next = next || function(){};
 
 	var conn = redis.createClient(nconf.get('redis:port'), nconf.get('redis:host'));

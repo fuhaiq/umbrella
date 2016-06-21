@@ -16,11 +16,6 @@ plugins = module.parent.require('./plugins'),
 winston = module.parent.require('winston'),
 nconf = module.parent.require('nconf');
 
-var modifyTopicPage = (next) => {
-	var topicWithSimilarPage = fs.readFileSync("./node_modules/nodebb-plugin-elasticsearch/templates/topic.tpl", "utf-8")
-	fs.outputFile('./public/templates/topic.tpl', topicWithSimilarPage, next)
-}
-
 var ensureIndex = (next) => {
 	var index = nconf.get('elasticsearch:index');
 	client.indices.exists({index:index}, (err, exists) => {
@@ -199,20 +194,16 @@ plugin.init = (data, next) => {
 		log: 'error'
 	});
 
-	async.parallel([
-		(next) => modifyTopicPage(next),
-		(next) => ensureIndex((err) => {
-			if (err) {
-				return next(err);
-			}
+	ensureIndex(err => {
+		if (err) {
+			return next(err);
+		}
 
-			async.parallel([
-				(next) => ensureTopicMapping(next),
-				(next) => ensurePostMapping(next)
-			], next)
-		})
-	], next)
-
+		async.parallel([
+			(next) => ensureTopicMapping(next),
+			(next) => ensurePostMapping(next)
+		], next)
+	})
 };
 
 plugin.search = (data, next) => {
