@@ -26,9 +26,11 @@ beanstalkd = null,
 service = null;
 
 var reserve = () => {
+	LOG.info('#############开始监听任务#############')
 	async.waterfall([
 		(next) => beanstalkd.reserve(next),
 		(jobid, payload, next) => {
+			LOG.info('开始处理任务>>>')
 			var job = JSON.parse(payload.toString());
 			job.id = jobid;
 			job.dir = config.kernel.imgDir;
@@ -88,6 +90,7 @@ var reserve = () => {
 		if(err && err != 'POST_LOCKED') {
 			LOG.error(err);
 		}
+		LOG.info('<<<处理任务完毕')
 		reserve()
 	})
 };
@@ -120,7 +123,6 @@ async.parallel({
 	  if(err) {
 	    LOG.error(err)
 	  } else {
-			LOG.info('#############开始监听任务#############')
 	    reserve()
 	  }
 	})

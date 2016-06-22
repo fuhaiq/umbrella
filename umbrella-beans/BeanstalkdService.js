@@ -145,11 +145,14 @@ var BeanstalkdService = function(db, redis) {
         if(post.status == 0) {
           fs.removeSync(job.dir + job.pid)
           emit(post, err => next(err, false))
+        } else if (post.status == 3 || post.status == 2 || post.status == -1 || post.status == -2) {
+          LOG.warn('回复[post:'+post.pid+'] 已经被计算,或者正在被计算.')
+          next(null, false)
         } else if (post.status == 1) {
           fs.removeSync(job.dir + job.pid)
           kernel(post, job.dir, job.url, job.username, job.password, next)
         } else {
-          next('回复[post:'+post.pid+']状态错误['+post.status+'], 期望值: 1或0')
+          next('回复[post:'+post.pid+']状态错误['+post.status+']')
         }
       }
     ], next)
