@@ -374,5 +374,4 @@ public class WrappedKernelLink extends KernelLinkImpl implements KernelLink {
 	public JSONArray result() {
 		return array;
 	}
-
 }

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-//   J/Link source code (c) 1999-2015, Wolfram Research, Inc. All rights reserved.
+//   J/Link source code (c) 1999-2016, Wolfram Research, Inc. All rights reserved.
 //
 //   Use is governed by the terms of the J/Link license agreement, which can be found at
 //   www.wolfram.com/solutions/mathlink/jlink.
@@ -30,6 +30,13 @@ import java.net.URLClassLoader;
  */
 
 public class JLinkClassLoaderHelper extends URLClassLoader {
+    
+    static {
+        /* ensure that getClassLoadingLock() gets used universally
+         * This requires that URLClassLoader has registered
+         * which appears to be the case. */
+        ClassLoader.registerAsParallelCapable();
+    }
 
     private final JLinkClassLoader top;
     private final JLinkClassLoaderHelper prevLoader;
@@ -63,9 +70,18 @@ public class JLinkClassLoaderHelper extends URLClassLoader {
      * @author jmichelson
      */
     private Object lockObject() {
+        /* note: now that getClassLoadingLock(String) has been overridden to return
+         * top, top should always be returned.  This conditional has been kept
+         * merely out of paranoia, per the earlier-than-Jan-4-2016 comments in bug 271621. 
+         */
+        //assert !Thread.holdsLock(this); // comment out of production
         return Thread.holdsLock(this) ? this : top;
     }
     
+    @Override
+    protected Object getClassLoadingLock(String className) {
+        return lockObject();
+    }
     
     // Cannot override findLoadedClass() because it is final, so give it a new name.
     Class findLoadedClassExposed(String name) {

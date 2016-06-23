@@ -34,7 +34,7 @@ public interface KernelLink extends MathLink {
 	/**
 	 * The version string identifying this release.
 	 */
-	String VERSION = "4.9.0";
+	String VERSION = "4.9.1";
 
 	/**
 	 * The major version number identifying this release.
@@ -1038,7 +1038,6 @@ public interface KernelLink extends MathLink {
 	 * @see #beginManual()
 	 */
 	void clearInterrupt();
-	
-	JSONArray result();
 
+	JSONArray result();
 }
