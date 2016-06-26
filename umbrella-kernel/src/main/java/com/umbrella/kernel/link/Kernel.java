@@ -38,8 +38,8 @@ public class Kernel {
 	private KernelConfig config;
 	
 	public JSONArray evaluate(JSONObject in) throws Exception {
-		String dir = checkNotNull(in.getString("dir"), "参数错误: 图片目录不存在");
-		JSONArray scripts = JSON.parseArray(checkNotNull(in.getString("scripts"), "参数错误: 计算脚本不存在"));
+		String dir = checkNotNull(in.getString("dir"), "[Invalid JSON]: image dir does not exsit");
+		JSONArray scripts = JSON.parseArray(checkNotNull(in.getString("scripts"), "[Invalid JSON]: scripts does not exsit"));
 		JSONArray err = check.apply(scripts);
 		if(null != err) return err;
 		KernelLink kernelLink = kernelPool.borrowObject();

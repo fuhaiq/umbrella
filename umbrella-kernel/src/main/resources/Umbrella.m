@@ -4,17 +4,13 @@
 
 (* :Author: fuhaiq@gmail.com*)
 
-BeginPackage["Umbrella`"]
+BeginPackage["Umbrella`", {"JLink`", "MSP`"}]
 
-Umbrella::usage = "Evaluate expression to MathMLForm or GIF";
+Umbrella::usage = "Evaluate expression to GIF";
 
 Begin["`Private`"]
 
-Needs["JLink`"]
-
-Needs["MSP`"]
-
-MSP`Utility`SetSecurity["c:/Users/Administrator/SecurityConfiguration.m"]
+MSP`Utility`SetSecurity["c:/Users/administrator/SecurityConfiguration.m"]
 
 $Pre = Function[expr, 
 	Module[

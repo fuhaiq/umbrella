@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.wolfram.jlink.JLinkClassLoader;
 import com.wolfram.jlink.KernelLink;
 import com.wolfram.jlink.MathLinkFactory;
 import com.wolfram.jlink.PacketListener;
@@ -28,9 +29,11 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 		kernelLink.connect();
 		kernelLink.discardAnswer();
 		kernelLink.addPacketListener(listener);
+		kernelLink.setClassLoader(new JLinkClassLoader(KernelLink.class.getClassLoader()));
+		kernelLink.enableObjectReferences();
 		kernelLink.evaluate("Needs[\"Umbrella`\"]");
 		kernelLink.discardAnswer();
-		LOG.info("创建Mathematica内核 [" + kernelLink.toString() + "] 入池");
+		LOG.info("Create Mathematica kernel [" + kernelLink.toString() + "] into Pool");
 		return kernelLink;
 	}
 
@@ -38,7 +41,7 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 	public void destroyObject(PooledObject<KernelLink> p) throws Exception {
 		KernelLink kernelLink = p.getObject();
 		kernelLink.close();
-		LOG.info("销毁Mathematica内核 [" + kernelLink.toString() + "] 出池");
+		LOG.info("Destroy Mathematica kernel [" + kernelLink.toString() + "] out of Pool");
 		kernelLink = null;
 	}
 
@@ -47,7 +50,7 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 		KernelLink kernelLink = p.getObject();
 		kernelLink.evaluate("Clear[Evaluate[Context[] <> \"*\"]]");
 		kernelLink.discardAnswer();
-		LOG.info("归还Mathematica内核 [" + kernelLink.toString() + "] 回池");
+		LOG.info("Return Mathematica kernel [" + kernelLink.toString() + "] back to Pool");
 	}
 
 	@Override

@@ -14,7 +14,7 @@ import com.wolfram.jlink.PacketListener;
 @Component
 public class KernelListener implements PacketListener{
 	
-	private final String security = "MSP`MSPException[SecurityError]]";
+	private final String security = "MSPException[SecurityError]]";
 	
 	private final String ABORT = "$Aborted";
 	
