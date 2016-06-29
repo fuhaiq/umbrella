@@ -27,8 +27,8 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 	public KernelLink create() throws Exception {
 		KernelLink kernelLink = MathLinkFactory.createKernelLink(config.getUrl());
 		kernelLink.connect();
-		kernelLink.discardAnswer();
 		kernelLink.addPacketListener(listener);
+		kernelLink.discardAnswer();
 		kernelLink.setClassLoader(new JLinkClassLoader(KernelLink.class.getClassLoader()));
 		kernelLink.enableObjectReferences();
 		kernelLink.evaluate("Needs[\"Umbrella`\"]");
