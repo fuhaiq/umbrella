@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import com.wolfram.jlink.KernelLink;
 import com.wolfram.jlink.MathLinkException;
@@ -38,7 +39,8 @@ public class Kernel {
 	private KernelConfig config;
 	
 	public JSONArray evaluate(JSONObject in) throws Exception {
-		String dir = checkNotNull(in.getString("dir"), "[Invalid JSON]: image dir does not exsit");
+		//Add temp solution for chrome plugin. Will introduce 'type' to replace this. 
+		String dir = Strings.isNullOrEmpty(in.getString("dir")) ? config.getDir().getTemp() : in.getString("dir");
 		JSONArray scripts = JSON.parseArray(checkNotNull(in.getString("scripts"), "[Invalid JSON]: scripts does not exsit"));
 		JSONArray err = check.apply(scripts);
 		if(null != err) return err;

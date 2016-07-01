@@ -14,6 +14,8 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	
 	private final Libdir libdir = new Libdir();
 	
+	private final Dir dir = new Dir();
+	
 	private int timeConstrained;
 	
 	private Set<Integer> badChar;
@@ -54,6 +56,27 @@ public class KernelConfig extends GenericObjectPoolConfig{
 
 	public void setEscapes(Set<String> escapes) {
 		this.escapes = escapes;
+	}
+	
+	public Dir getDir() {
+		return dir;
+	}
+
+	public class Dir {
+		private String post;
+		private String temp;
+		public String getPost() {
+			return post;
+		}
+		public void setPost(String post) {
+			this.post = post;
+		}
+		public String getTemp() {
+			return temp;
+		}
+		public void setTemp(String temp) {
+			this.temp = temp;
+		}
 	}
 
 	public class Libdir {
