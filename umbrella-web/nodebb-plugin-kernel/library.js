@@ -122,7 +122,7 @@ plugin.http.post = (req, res, next) => {
 		return res.json({success: false, msg: '没有脚本可以运行', type: 'info'})
 	}
 	content = JSON.parse(content)
-	var kernel = JSON.stringify({dir: nconf.get('kernel:imgDir'), scripts:content})
+	var kernel = JSON.stringify({scripts:content})
 	var options = {
 		path: '/evaluate',
 		method: 'POST',

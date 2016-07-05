@@ -28,7 +28,6 @@
 	},
 	"kernel": {
 	  "username": "umbrella",
-	  "password": "guice4now",
-	  "imgDir": "e:/kernel/temp/"
+	  "password": "guice4now"
 	}
 }

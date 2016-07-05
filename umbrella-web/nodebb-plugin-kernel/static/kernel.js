@@ -6,7 +6,8 @@ $(document).ready(function() {
   kernel.getSession().setMode('ace/mode/mathematica');
   kernel.setOptions({
       enableBasicAutocompletion: true,
-      enableSnippets: false
+      enableSnippets: false,
+      fontSize: "14pt"
   });
   kernel.commands.bindKey("alt-q", "startAutocomplete");
 
