@@ -38,6 +38,10 @@
 	"staticDirs": {
 		"static": "./static"
 	},
+	"less": [
+		"/static/lib/codemirror/lib/codemirror.less",
+		"/static/lib/codemirror/theme/mdn-like.less"
+	],
 	"templates": "templates",
 	"languages": "languages"
 }
