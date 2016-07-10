@@ -23,6 +23,7 @@ $(document).ready(function() {
       lineNumbers: true,
       matchBrackets: true,
       indentWithTabs: true,
+      lineWrapping: true,
       theme:'mdn-like'
     });
 
@@ -100,6 +101,16 @@ $(document).ready(function() {
       }
     });
 
+    var charWidth = kernel.defaultCharWidth(), basePadding = 4;
+
+    kernel.on("renderLine", function(cm, line, elt) {
+      var off = CodeMirror.countColumn(line.text, null, cm.getOption("tabSize")) * charWidth;
+      elt.style.textIndent = "-" + off + "px";
+      elt.style.paddingLeft = (basePadding + off) + "px";
+    });
+
+    kernel.refresh();
+
 
     var q = ajaxify.data.q;
     if(q) {
@@ -109,13 +120,13 @@ $(document).ready(function() {
 
     var p = ajaxify.data.p;
     if(p) {
+      kernel.setValue("");
       p.forEach(function(code){
-        kernel.insert(code);
+        kernel.replaceRange(code, CodeMirror.Pos(kernel.lastLine()))
       })
     }
 
   });
-
 })
 
 </script>

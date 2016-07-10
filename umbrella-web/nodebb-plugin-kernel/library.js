@@ -16,6 +16,7 @@ winston = module.parent.require('winston'),
 posts = module.parent.require('./posts'),
 redis = require("redis"),
 io = module.parent.require('./socket.io'),
+uuid = require('uuid'),
 helpers = module.parent.require('./routes/helpers');
 
 var modifyPages = (next) => {
@@ -105,6 +106,74 @@ plugin.http.get = (req, res, next) => {
 
 }
 
+plugin.http.notebook = (req, res, next) => {
+	var pid = req.query.pid
+	if(!pid) {
+		return res.sendStatus(400)
+	}
+
+	async.waterfall([
+		(next) => posts.exists(pid, next),
+		(exists, next) => {
+			if(!exists) {
+				return next('NOT_EXISTS')
+			}
+
+			posts.getPostField(pid, 'content', next)
+		},
+		(content, next) => plugins.fireHook('filter:parse.raw', content, next),
+		(html, next) => jsdom.env({html: html, src: [jquery], done: next}),
+		(window, next) => {
+			var enunicode = (code) => {
+			  code = code.replace(/[\u00FF-\uFFFF]/g,function($0){
+			  		return '\\:'+$0.charCodeAt().toString(16);
+			  });
+			  return code
+			};
+
+			var cells = []
+			var elements = window.$("body > p:not(:has(katex)),code[class='language-mma']")
+			for(var i = 0; i < elements.length; i++) {
+				var tagName = window.$(elements[i]).prop("tagName")
+				var text = window.$(elements[i]).text()
+				if(string(text).isEmpty()) continue;
+				text = enunicode(text)
+				if(tagName == 'P') {
+					cells.push({type: 'Text', value: text})
+				} else if (tagName == 'CODE') {
+					cells.push({type: 'Code', value: text})
+				}
+			}
+			window.close();
+			next(null, cells)
+		},
+		(cells, next) => {
+			var content = "";
+			cells.forEach((cell) => content += 'Cell["'+cell.value+'", "'+cell.type+'"],')
+			var nb = fs.readFileSync('./node_modules/nodebb-plugin-kernel/static/notebook.nb', "utf-8")
+			next(null, string(nb).replaceAll('(* Auto Generated Content *)', content))
+		},
+		(nb, next) => {
+			var fileName = nconf.get('notebook:dir') + uuid.v1() + '.nb';
+			fs.outputFileSync(fileName, nb)
+			next(null, fileName)
+		}
+	], (err, fileName) => {
+		if(err) {
+			if(err == 'NOT_EXISTS') {
+				return res.sendStatus(404)
+			}
+			next(err)
+		}
+
+		res.set('Content-Type', 'application/vnd.wolfram.mathematica;charset=UTF-8');
+		return res.download(fileName)
+
+	})
+
+
+}
+
 plugin.http.post = (req, res, next) => {
 	var content = req.body.content
 	if(!content) {
@@ -160,6 +229,7 @@ plugin.init = (data, next) => {
 
 	helpers.setupPageRoute(data.router, '/kernel', data.middleware, [], plugin.http.get);
 	data.router.post('/kernel', data.middleware.applyCSRF, plugin.http.post);
+	data.router.get('/notebook', data.middleware.applyCSRF, plugin.http.notebook);
 	modifyPages(next)
 };
 

@@ -29,5 +29,8 @@
 	"kernel": {
 	  "username": "umbrella",
 	  "password": "guice4now"
-	}
+	},
+  "notebook": {
+    "dir": "/home/umbrella/git/www/public/kernel/temp/"
+  }
 }

@@ -53,16 +53,19 @@
     <!-- IF posts.finished -->
     <span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
     <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
+		<a class="btn btn-default btn-xs" href="/notebook?pid={posts.pid}" role="button" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> 下载</a>
     <!-- ENDIF posts.finished -->
     <!-- IF posts.error -->
     <span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
     <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
+		<a class="btn btn-default btn-xs" href="/notebook?pid={posts.pid}" role="button" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> 下载</a>
     <!-- ENDIF posts.error -->
     <!-- IF posts.aborted -->
     <span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
     <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载到执行器</a>
+		<a class="btn btn-default btn-xs" href="/notebook?pid={posts.pid}" role="button" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> 下载</a>
     <!-- ENDIF posts.aborted -->
-    
+
 	</small>
 </div>
 
