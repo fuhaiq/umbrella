@@ -31,6 +31,6 @@
 	  "password": "guice4now"
 	},
   "notebook": {
-    "dir": "/home/umbrella/git/www/public/kernel/temp/"
+    "dir": "/alidata1/mmascript/www/public/notebook/"
   }
 }

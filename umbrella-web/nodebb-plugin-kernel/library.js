@@ -137,6 +137,7 @@ plugin.http.notebook = (req, res, next) => {
 				var tagName = window.$(elements[i]).prop("tagName")
 				var text = window.$(elements[i]).text()
 				if(string(text).isEmpty()) continue;
+				text = string(text).replaceAll('"', '\\"')
 				text = enunicode(text)
 				if(tagName == 'P') {
 					cells.push({type: 'Text', value: text})
