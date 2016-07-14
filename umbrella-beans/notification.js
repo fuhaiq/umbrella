@@ -113,38 +113,42 @@ var notification = function(db, io) {
 	};
 
   var pushToUids = function(uids, notification, callback) {
+		var oneWeekAgo = Date.now() - 604800000;
 		var unreadKeys = [];
 		var readKeys = [];
 
-		uids.forEach(function(uid) {
-			unreadKeys.push('uid:' + uid + ':notifications:unread');
-			readKeys.push('uid:' + uid + ':notifications:read');
-		});
+		async.waterfall([
+			function (next) {
+        next(null, {notification: notification, uids: uids})
+			},
+			function (data, next) {
+				uids = data.uids;
+				notification = data.notification;
 
-		var oneWeekAgo = Date.now() - 604800000;
-		async.series([
-			function(next) {
+				uids.forEach(function(uid) {
+					unreadKeys.push('uid:' + uid + ':notifications:unread');
+					readKeys.push('uid:' + uid + ':notifications:read');
+				});
+
 				sortedSetsAdd(unreadKeys, notification.datetime, notification.nid, next);
 			},
-			function(next) {
+			function (next) {
 				sortedSetsRemove(readKeys, notification.nid, next);
 			},
-			function(next) {
+			function (next) {
 				sortedSetsRemoveRangeByScore(unreadKeys, '-inf', oneWeekAgo, next);
 			},
-			function(next) {
+			function (next) {
 				sortedSetsRemoveRangeByScore(readKeys, '-inf', oneWeekAgo, next);
+			},
+			function (next) {
+        uids.forEach(function(uid) {
+          io.in('uid_' + uid).emit('event:new_notification', notification);
+        });
+				next();
 			}
-		], function(err) {
-			if (err) {
-				return callback(err);
-			}
-			for(var i=0; i<uids.length; ++i) {
-				io.in('uid_' + uids[i]).emit('event:new_notification', notification);
-			}
-			callback();
-		});
-	};
+		], callback);
+	}
 
   var create = function(data, callback) {
 		if (!data.nid) {
@@ -240,7 +244,8 @@ var notification = function(db, io) {
         var notification = {
           bodyShort: '[[kernel:notification.post_done, ' + msg + ']]',
           nid: 'kernel:post:' + post.pid + ':uid:' + post.uid + ":id:" + uuid.v1(),
-          pid:post.pid,
+          path: '/post/' + post.pid,
+          pid : post.pid,
           datetime: Date.now()
         };
         return callback(null, notification);
