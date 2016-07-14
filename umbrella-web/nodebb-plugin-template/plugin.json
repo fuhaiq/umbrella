@@ -8,7 +8,7 @@
 			"hook": "static:app.load", "method": "init"
 		},
 		{
-			"hook": "filter:categories.build", "method": "getCategories"
+			"hook": "filter:recent.build", "method": "getRecent"
 		},
 		{
 			"hook": "filter:post.getPostSummaryByPids", "method": "getPostSummaryByPids"
@@ -18,8 +18,7 @@
 		"static": "./static"
 	},
 	"less": [
-		"/static/list.min.less",
-		"/static/card.less"
+		"/static/list.min.less"
 	],
 	"templates": "templates",
 	"languages": "languages"

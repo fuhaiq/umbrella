@@ -7,7 +7,6 @@ posts = module.parent.require('./posts'),
 winston = module.parent.require('winston'),
 fs = require('fs-extra'),
 db = module.parent.require('./database'),
-categories = module.parent.require('./categories'),
 nconf = module.parent.require('nconf');
 
 plugin.init = (data, next) => {
@@ -63,37 +62,6 @@ var getKernelPosts = (num, next) => {
 	})
 }
 
-var getCards = (data, next) => {
-	var defaultSettings = { opacity: '1.0', textShadow: 'none' };
-
-	topics.getTopicsFromSet('topics:recent', data.req.uid, 0, 19, function(err, topics) {
-		if (err) {
-			return next(err);
-		}
-
-		var i = 0, cids = [], finalTopics = [];
-		while (finalTopics.length < 4 && i < topics.topics.length) {
-			var cid = parseInt(topics.topics[i].cid, 10);
-
-			if (cids.indexOf(cid) === -1) {
-				cids.push(cid);
-				finalTopics.push(topics.topics[i]);
-			}
-
-			i++;
-		}
-
-		async.each(finalTopics, function (topic, next) {
-			categories.getCategoryField(topic.cid, 'image', function (err, image) {
-				topic.category.backgroundImage = image;
-				next(err);
-			});
-		}, function (err) {
-			next(err, {topics:finalTopics, recentCards:{opacity: defaultSettings.opacity, textShadow: defaultSettings.textShadow}})
-		});
-	});
-}
-
 plugin.getPostSummaryByPids = (postData, next) => {
 	async.eachSeries(postData.posts, (post, next) => {
 		posts.getPostField(post.pid, 'status', (err, status) => {
@@ -107,13 +75,12 @@ plugin.getPostSummaryByPids = (postData, next) => {
 	}, err => next(err, postData))
 }
 
-plugin.getCategories = (data, next) => {
+plugin.getRecent = (data, next) => {
 	var templateData = data.templateData;
 
 	async.parallel({
 		tags : (next) => getPopularTags(next),
-		kernelPosts: (next) => getKernelPosts(10, next),
-		cards: (next) => getCards(data, next)
+		kernelPosts: (next) => getKernelPosts(5, next)
 	}, (err, result) => {
 		if(err) {
 			return next(err)
@@ -121,8 +88,6 @@ plugin.getCategories = (data, next) => {
 
 		data.templateData.tags = result.tags
 		data.templateData.kernelPosts = result.kernelPosts
-		data.templateData.topics = result.cards.topics
-		data.templateData.recentCards = result.cards.recentCards
 		next(null, data)
 	})
 }
