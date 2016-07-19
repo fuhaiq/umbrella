@@ -39,7 +39,6 @@ public class Kernel {
 	private KernelConfig config;
 	
 	public JSONArray evaluate(JSONObject in) throws Exception {
-		//Add temp solution for chrome plugin. Will introduce 'type' to replace this. 
 		String dir = Strings.isNullOrEmpty(in.getString("dir")) ? config.getDir().getTemp() : in.getString("dir");
 		JSONArray scripts = JSON.parseArray(checkNotNull(in.getString("scripts"), "[Invalid JSON]: scripts does not exsit"));
 		JSONArray err = check.apply(scripts);
@@ -87,6 +86,12 @@ public class Kernel {
 					String uuid = UUID.randomUUID().toString() + ".gif";
 					Files.write(obj.getBytes("data"), new File(dir + uuid));
 					obj.replace("data", uuid);
+				} else if(obj.getString("type").equals("text")) {
+					String data = obj.getString("data");
+					if(data.startsWith(config.getSecret())) {
+						obj.put("type", "image");
+						obj.put("data", data.replaceAll(config.getSecret(), ""));
+					}
 				}
 			}
 			result.addAll(json);

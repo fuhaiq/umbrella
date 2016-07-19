@@ -31,8 +31,13 @@ public class KernelLinkFactory extends BasePooledObjectFactory<KernelLink> {
 		kernelLink.discardAnswer();
 		kernelLink.setClassLoader(new JLinkClassLoader(KernelLink.class.getClassLoader()));
 		kernelLink.enableObjectReferences();
-		kernelLink.evaluate("Needs[\"Umbrella`\"]");
-		kernelLink.discardAnswer();
+		for(String need : config.getNeeds()){
+			kernelLink.putFunction("EvaluatePacket", 1);
+			kernelLink.putFunction("Needs", 1);
+			kernelLink.put(need);
+			kernelLink.endPacket();
+			kernelLink.discardAnswer();
+		}
 		LOG.info("Create Mathematica kernel [" + kernelLink.toString() + "] into Pool");
 		return kernelLink;
 	}
