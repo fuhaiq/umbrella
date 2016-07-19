@@ -38,6 +38,8 @@ $(document).ready(function() {
           },
           beforeSend: function(xhr, settings) {
             btn.button('loading');
+            btn.hide();
+            $('#kernel-process').show();
             kernel.setOption("readOnly", true)
             $('#kernel-preview').empty();
           }
@@ -70,7 +72,9 @@ $(document).ready(function() {
           }
         })
         .always(function() {
+          $('#kernel-process').hide();
           btn.button('reset');
+          btn.show();
           kernel.setOption("readOnly", false)
         });
       });

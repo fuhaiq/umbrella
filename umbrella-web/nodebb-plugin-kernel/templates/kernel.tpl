@@ -5,6 +5,7 @@
 <div class="panel panel-default">
   <div class="panel-heading">
     <button type="button" class="btn btn-success btn-sm" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><span class="hidden-xs"><var>shift</var> + <var>enter</var> =</span> <i class="fa fa-fw fa-play"></i> 执行脚本</button>
+    <div class="progress" style="display: none;" id="kernel-process"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%;">正在计算</div></div>
   </div>
   <div class="panel-body">
     <textarea id="kernel">(* Mathematica code *)</textarea>
@@ -53,6 +54,8 @@ $(document).ready(function() {
           },
           beforeSend: function(xhr, settings) {
             btn.button('loading');
+            btn.hide();
+            $('#kernel-process').show();
             kernel.setOption("readOnly", true)
             $('#kernel-preview').empty();
           }
@@ -85,7 +88,9 @@ $(document).ready(function() {
           }
         })
         .always(function() {
+          $('#kernel-process').hide();
           btn.button('reset');
+          btn.show();
           kernel.setOption("readOnly", false)
         });
       });
