@@ -22,8 +22,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	
 	private Set<String> escapes;
 	
-	private String secret;
-	
 	private Set<String> needs;
 	
 	public String getUrl() {
@@ -64,14 +62,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	
 	public Dir getDir() {
 		return dir;
-	}
-
-	public String getSecret() {
-		return secret;
-	}
-
-	public void setSecret(String secret) {
-		this.secret = secret;
 	}
 
 	public Set<String> getNeeds() {

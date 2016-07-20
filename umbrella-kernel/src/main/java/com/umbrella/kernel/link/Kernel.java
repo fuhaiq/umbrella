@@ -86,12 +86,6 @@ public class Kernel {
 					String uuid = UUID.randomUUID().toString() + ".gif";
 					Files.write(obj.getBytes("data"), new File(dir + uuid));
 					obj.replace("data", uuid);
-				} else if(obj.getString("type").equals("text")) {
-					String data = obj.getString("data");
-					if(data.startsWith(config.getSecret())) {
-						obj.put("type", "image");
-						obj.put("data", data.replaceAll(config.getSecret(), ""));
-					}
 				}
 			}
 			result.addAll(json);
