@@ -60,58 +60,57 @@ $('document').ready(function() {
 						scripts.push($(codes[index]).text());
 					}
 					if (scripts.length > 0) {
-						require(['csrf'], function(csrf) {
-							$.ajax({
-									method: 'POST',
-									url: "/kernel",
-									data: {
-										content: JSON.stringify(scripts)
-									},
-									headers: {
-										'x-csrf-token': csrf.get()
-									},
-									beforeSend: function(xhr, settings) {
-										editor.attr('disabled', true);
-										btn.button('loading');
-									}
-								})
-								.done(function(json) {
-									if (!json.success) {
+						$.ajax({
+								method: 'POST',
+								url: "/kernel",
+								data: {
+									content: JSON.stringify(scripts)
+								},
+								headers: {
+									'x-csrf-token': config.csrf_token
+								},
+								beforeSend: function(xhr, settings) {
+									editor.attr('disabled', true);
+									btn.button('loading');
+								}
+							})
+							.done(function(json) {
+								if (!json.success) {
+									app.alert({
+										title: '消息',
+										message: json.msg,
+										type: json.type,
+										timeout: 2000
+									});
+								} else {
+									var result = JSON.parse(json.result);
+									if (result.length == 0) {
 										app.alert({
 											title: '消息',
-											message: json.msg,
-											type: json.type,
+											message: '没有显示结果',
+											type: 'info',
 											timeout: 2000
 										});
 									} else {
-										var result = JSON.parse(json.result);
-										if (result.length == 0) {
-											app.alert({
-												title: '消息',
-												message: '没有显示结果',
-												type: 'info',
-												timeout: 2000
-											});
-										} else {
-											result.forEach(function(item) {
-												if(item.type == "text") {
-													$(codes[item.index]).parent().append('<samp>' + item.data + '</samp>')
-												} else if (item.type == "error") {
-													$(codes[item.index]).parent().append('<div class="kernel result alert alert-danger" role="alert">' + item.data + '</div>')
-												} else if (item.type == "abort") {
-													$(codes[item.index]).parent().append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
-												} else if (item.type == "image") {
-													$(codes[item.index]).parent().append("<img class='kernel result img-responsive' src='/kernel/temp/" + item.data + "'></img>")
-												}
-											});
-										}
+										result.forEach(function(item) {
+											if(item.type == "text") {
+												$(codes[item.index]).parent().append('<samp>' + item.data + '</samp>')
+											} else if (item.type == "error") {
+												$(codes[item.index]).parent().append('<div class="kernel result alert alert-danger" role="alert">' + item.data + '</div>')
+											} else if (item.type == "abort") {
+												$(codes[item.index]).parent().append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
+											} else if (item.type == "image") {
+												$(codes[item.index]).parent().append("<img class='kernel result img-responsive' src='/kernel/temp/" + item.data + "'></img>")
+											}
+										});
 									}
-								})
-								.always(function() {
-									editor.attr('disabled', false);
-									btn.button('reset');
-								});
-						});
+								}
+							})
+							.always(function() {
+								editor.attr('disabled', false);
+								btn.button('reset');
+							});
+
 					} else {
 						app.alert({
 							type: 'info',

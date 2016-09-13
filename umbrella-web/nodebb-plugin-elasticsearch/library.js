@@ -106,35 +106,6 @@ var ensurePostMapping = (next) => {
 	})
 }
 
-var getTidsWithSameTags = (tid, next) => {
-	async.waterfall([
-		function(next) {
-			topics.getTopicTags(tid, next);
-		},
-		function(tags, next) {
-			async.map(tags, function(tag, next) {
-				topics.getTagTids(tag, 0, -1, next);
-			}, next);
-		},
-		function(data, next) {
-			next(null, _.unique(_.flatten(data)));
-		}
-	], next);
-}
-
-var getSuggestedTopics = function(tid, uid, start, stop, next) {
-	getTidsWithSameTags(tid, (err, tids) => {
-		if (err) {
-			return next(err);
-		}
-		tids = tids.filter(function(_tid, index, array) {
-			return parseInt(_tid, 10) !== parseInt(tid, 10) && array.indexOf(_tid) === index;
-		}).slice(start, stop + 1);
-
-		topics.getTopics(tids, uid, next);
-	})
-}
-
 var insert = (type, id, value, cid, uid, next) => {
 	next = next || function() {};
 
@@ -514,43 +485,14 @@ plugin.morelikethis = (data, next) => {
 
 	async.waterfall([
 	  (next) => client.search(query, next),
-	  (res, httpCode, next) => {
-			if(res.hits.hits.length > 0){
-				return topics.getTopics(res.hits.hits.map(item => parseInt(item._id, 10)), 0, next)
-			}
-
-			next(null, [])
-	  },
+	  (res, httpCode, next) => topics.getTopics(res.hits.hits.map(item => parseInt(item._id, 10)), 0, next),
 		(similar, next) => {
-			var union = (x, y) => {
-				var xy = x.concat(y);
-		    for (var i = 0; i < xy.length; i++) {
-		        for (var j = i+1; j < xy.length; j++) {
-		            if (xy[i].tid == xy[j].tid) {
-		                xy.splice(j, 1);
-		                j--;
-		            }
-		        }
-		    }
-		    return xy;
-			}
-
-			var need = 10 - similar.length;
-			if(need > 0) {
-				getSuggestedTopics(parseInt(data.topicData.tid, 10), 0, 0, need, (err, docs) => {
-					if(err) {
-						return next(err)
-					}
-
-					data.topicData.similar = union(similar, docs)
-					next()
-				})
-			} else {
-				data.topicData.similar = similar
-				next()
-			}
+			data.topicData.similar = similar;
+			next()
 		}
 	], (err) => next(err, data))
+
+
 };
 
 module.exports = plugin;

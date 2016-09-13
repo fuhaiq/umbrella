@@ -4,7 +4,14 @@
 
 <div class="panel panel-default">
   <div class="panel-heading">
-    <button type="button" class="btn btn-success btn-sm" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><span class="hidden-xs"><var>shift</var> + <var>enter</var> =</span> <i class="fa fa-fw fa-play"></i> 执行脚本</button>
+    <div class="row" id="evaluate-panel">
+      <div class="col-xs-6">
+        <button type="button" class="btn btn-success btn-sm" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><span class="hidden-xs"><var>shift</var> + <var>enter</var> =</span> <i class="fa fa-fw fa-play"></i> 执行脚本</button>
+      </div>
+      <div class="col-xs-6" align='right'>
+        <span><img src="/3d-24.png"></span> <input type="checkbox" name="kernel-evaluate-3d" data-size="small">
+      </div>
+    </div>
     <div class="progress" style="display: none;" id="kernel-process"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%;">正在计算</div></div>
   </div>
   <div class="panel-body">
@@ -18,6 +25,8 @@ $(document).ready(function() {
 
   require(["../../plugins/nodebb-plugin-kernel/static/lib/codemirror/lib/codemirror", "../../plugins/nodebb-plugin-kernel/static/lib/codemirror/mode/mathematica/mathematica", "../../plugins/nodebb-plugin-kernel/static/lib/codemirror/addon/edit/matchbrackets"],
   function (CodeMirror) {
+
+    $("[name='kernel-evaluate-3d']").bootstrapSwitch();
 
     var kernel = CodeMirror.fromTextArea(document.getElementById('kernel'), {
       mode: 'text/x-mathematica',
@@ -42,58 +51,64 @@ $(document).ready(function() {
       }
       content = [content];
 
-      require(['csrf'], function(csrf) {
-        $.ajax({
-          method: 'POST',
-          url: "/kernel",
-          data: {
-            content : JSON.stringify(content)
-          },
-          headers: {
-            'x-csrf-token': csrf.get()
-          },
-          beforeSend: function(xhr, settings) {
-            btn.button('loading');
-            btn.hide();
-            $('#kernel-process').show();
-            kernel.setOption("readOnly", true)
-            $('#kernel-preview').empty();
-          }
-        })
-        .done(function(json) {
-          if(!json.success) {
-            $('#kernel-preview').append('<div class="kernel result alert alert-'+json.type+'" role="alert">'+json.msg+'</div>')
+      var enable3d = $("[name='kernel-evaluate-3d']").bootstrapSwitch('state')
+
+      $.ajax({
+        method: 'POST',
+        url: "/kernel",
+        data: {
+          content : JSON.stringify(content),
+          enable3d : enable3d
+        },
+        headers: {
+          'x-csrf-token': config.csrf_token
+        },
+        beforeSend: function(xhr, settings) {
+          btn.button('loading');
+          $('#evaluate-panel').hide();
+          $('#kernel-process').show();
+          kernel.setOption("readOnly", true)
+          $('#kernel-preview').empty();
+        }
+      })
+      .done(function(json) {
+        if(!json.success) {
+          $('#kernel-preview').append('<div class="kernel result alert alert-'+json.type+'" role="alert">'+json.msg+'</div>')
+        } else {
+          var result = JSON.parse(json.result);
+          if(result.length == 0) {
+            app.alert({
+              title: '消息',
+              message: '没有显示结果',
+              type: 'info',
+              timeout: 2000
+            });
           } else {
-            var result = JSON.parse(json.result);
-            if(result.length == 0) {
-              app.alert({
-                title: '消息',
-                message: '没有显示结果',
-                type: 'info',
-                timeout: 2000
-              });
-            } else {
-              result.forEach(function(item){
-                if (item.type == 'text') {
-                  $('#kernel-preview').append('<samp>' + item.data + '</samp>');
-                }else if(item.type == "error") {
-                  $('#kernel-preview').append('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
-                }else if(item.type == "abort") {
-                  $('#kernel-preview').append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
-                }else if(item.type == "image") {
-                  $('#kernel-preview').append("<img class='kernel result img-responsive' src='/kernel/temp/"+item.data+"'></img>")
-                }
-              });
-            }
+            result.forEach(function(item){
+              if (item.type == 'text') {
+                $('#kernel-preview').append('<samp>' + item.data + '</samp>');
+              }else if(item.type == "error") {
+                $('#kernel-preview').append('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
+              }else if(item.type == "abort") {
+                $('#kernel-preview').append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
+              }else if(item.type == "image") {
+                $('#kernel-preview').append("<img class='kernel result img-responsive' src='/kernel/temp/"+item.data+"'></img>")
+              }else if(item.type == "x3d") {
+                $('#kernel-preview').append("<x3d width='300px' height='300px'><scene><inline url='/kernel/temp/"+item.data+".x3d'></inline></scene></x3d>")
+              }
+            });
+            x3dom.reload();
           }
-        })
-        .always(function() {
-          $('#kernel-process').hide();
-          btn.button('reset');
-          btn.show();
-          kernel.setOption("readOnly", false)
-        });
+        }
+      })
+      .always(function() {
+        $('#kernel-process').hide();
+        btn.button('reset');
+        $('#evaluate-panel').show();
+        kernel.setOption("readOnly", false)
       });
+
+
     }
 
     $('#kernel-evaluate').click(function() {
@@ -116,6 +131,10 @@ $(document).ready(function() {
 
     kernel.refresh();
 
+    var d = ajaxify.data.d;
+    if(d) {
+      $("[name='kernel-evaluate-3d']").bootstrapSwitch('state', true)
+    }
 
     var q = ajaxify.data.q;
     if(q) {

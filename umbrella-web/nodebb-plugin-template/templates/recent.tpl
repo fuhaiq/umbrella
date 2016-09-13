@@ -7,14 +7,17 @@
 					<!-- IMPORT partials/breadcrumbs.tpl -->
 				</div>
 			</div>
-
+			<p>
+				<a type="button" class="btn btn-info btn-xs" href="/morse">摩尔斯电码</a>
+			</p>
 			<form action="/kernel" method="get" id="kernel-quick-form">
 				<div class="input-group has-success input-group-sm">
-					<span class="input-group-addon" id="basic-addon1"><i class="fa fa-code" aria-hidden="true"></i></span>
+					<span class="input-group-addon"><input type="checkbox" name="d"><img src="/3d-16.png"></span>
 					<input type="text" name="q" class="form-control" placeholder="执行" id="kernel-quick-input">
 					<span class="input-group-btn">
 						<button class="btn btn-success" type="submit"><i class="fa fa-play" aria-hidden="true"></i></button>
 					</span>
+
 				</div>
 			</form>
 
@@ -38,6 +41,7 @@
 		</div>
 	</div>
 	<div class="col-lg-3">
+
 		<div class="alert alert-warning" role="alert">
 			分享, 计算你的Mathematica脚本
 			<p>

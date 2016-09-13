@@ -59,6 +59,10 @@ plugin.http.get = (req, res, next) => {
 
 	var q = req.query.q
 	var p = req.query.p
+	var d = req.query.d
+	if(!string(d).isEmpty()) {
+		data.d = d;
+	}
 
 	if( (!string(q).isEmpty()) && (!string(p).isEmpty()) ) {
 		return res.sendStatus(400)
@@ -177,13 +181,15 @@ plugin.http.notebook = (req, res, next) => {
 
 plugin.http.post = (req, res, next) => {
 	var content = req.body.content
+  var enable3d = req.body.enable3d
 	if(!content) {
 		return res.json({success: false, msg: '没有脚本可以运行', type: 'info'})
 	}
 	content = JSON.parse(content)
 	var kernel = JSON.stringify({scripts:content})
+  var path = (enable3d == 'true') ? '/evaluate-3d' : '/evaluate';
 	var options = {
-		path: '/evaluate',
+		path: path,
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json;charset=UTF-8',
