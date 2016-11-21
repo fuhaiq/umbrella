@@ -1,4 +1,4 @@
-<div class="clearfix">
+<div class="clearfix post-header">
 	<div class="icon pull-left">
 		<a href="<!-- IF posts.user.userslug -->{config.relative_path}/user/{posts.user.userslug}<!-- ELSE -->#<!-- ENDIF posts.user.userslug -->">
 			<!-- IF posts.user.picture -->
@@ -23,14 +23,14 @@
 		<!-- ENDIF posts.user.banned -->
 
 		<div class="visible-xs-inline-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block">
-			<a class="permalink" href="{config.relative_path}/topic/{slug}/{function.getBookmarkFromIndex}"><span class="timeago" title="{posts.timestampISO}"></span></a>
+			<a class="permalink" href="{config.relative_path}/post/{posts.pid}"><span class="timeago" title="{posts.timestampISO}"></span></a>
 
 			<i class="fa fa-pencil-square pointer edit-icon <!-- IF !posts.editor.username -->hidden<!-- ENDIF !posts.editor.username -->"></i>
 
 			<small data-editor="{posts.editor.userslug}" component="post/editor" class="hidden">[[global:last_edited_by, {posts.editor.username}]] <span class="timeago" title="{posts.editedISO}"></span></small>
 
 			<!-- IF posts.toPid -->
-			<button component="post/parent" class="btn btn-xs btn-default hidden-xs" data-topid="{posts.toPid}"><i class="fa fa-reply"></i> @<!-- IF posts.parent.username -->{posts.parent.username}<!-- ELSE -->[[global:guest]]<!-- ENDIF posts.parent.username --></button>
+			<a component="post/parent" class="btn btn-xs btn-default hidden-xs" data-topid="{posts.toPid}" href="/post/{posts.toPid}"><i class="fa fa-reply"></i> @<!-- IF posts.parent.username -->{posts.parent.username}<!-- ELSE -->[[global:guest]]<!-- ENDIF posts.parent.username --></a>
 			<!-- ENDIF posts.toPid -->
 
 			<span>
@@ -44,29 +44,29 @@
 		</div>
 		<span class="bookmarked"><i class="fa fa-bookmark-o"></i></span>
 
-    <!-- IF posts.waiting -->
-    <span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>
+		<!-- IF posts.waiting -->
+		<span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>
 		<a class="btn btn-default btn-xs" href="/notebook?pid={posts.pid}" role="button" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> 下载</a>
-    <!-- ENDIF posts.waiting -->
-    <!-- IF posts.evaluate -->
-    <span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>
+		<!-- ENDIF posts.waiting -->
+		<!-- IF posts.evaluate -->
+		<span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>
 		<a class="btn btn-default btn-xs" href="/notebook?pid={posts.pid}" role="button" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> 下载</a>
-    <!-- ENDIF posts.evaluate -->
-    <!-- IF posts.finished -->
-    <span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
-    <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载</a>
+		<!-- ENDIF posts.evaluate -->
+		<!-- IF posts.finished -->
+		<span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
+		<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载</a>
 		<a class="btn btn-default btn-xs" href="/notebook?pid={posts.pid}" role="button" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> 下载</a>
-    <!-- ENDIF posts.finished -->
-    <!-- IF posts.error -->
-    <span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
-    <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载</a>
+		<!-- ENDIF posts.finished -->
+		<!-- IF posts.error -->
+		<span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
+		<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载</a>
 		<a class="btn btn-default btn-xs" href="/notebook?pid={posts.pid}" role="button" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> 下载</a>
-    <!-- ENDIF posts.error -->
-    <!-- IF posts.aborted -->
-    <span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
-    <a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载</a>
+		<!-- ENDIF posts.error -->
+		<!-- IF posts.aborted -->
+		<span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
+		<a class="btn btn-default btn-xs" href="/kernel?p={posts.pid}" role="button"><i class="fa fa-play" aria-hidden="true"></i> 加载</a>
 		<a class="btn btn-default btn-xs" href="/notebook?pid={posts.pid}" role="button" target="_blank"><i class="fa fa-download" aria-hidden="true"></i> 下载</a>
-    <!-- ENDIF posts.aborted -->
+		<!-- ENDIF posts.aborted -->
 
 	</small>
 </div>
@@ -77,7 +77,7 @@
 	{posts.content}
 </div>
 
-<div class="clearfix">
+<div class="clearfix post-footer">
 	<!-- IF posts.user.signature -->
 	<div component="post/signature" data-uid="{posts.user.uid}" class="post-signature">{posts.user.signature}</div>
 	<!-- ENDIF posts.user.signature -->
@@ -106,6 +106,15 @@
 
 		<!-- IMPORT partials/topic/post-menu.tpl -->
 	</small>
+
+	<!-- IF !hideReplies -->
+	<a component="post/reply-count" href="#" class="no-select <!-- IF !posts.replies -->hidden<!-- ENDIF !posts.replies -->">
+		<i class="fa fa-fw fa-chevron-right" component="post/replies/open"></i>
+		<i class="fa fa-fw fa-chevron-down hidden" component="post/replies/close"></i>
+		<i class="fa fa-fw fa-spin fa-spinner hidden" component="post/replies/loading"></i>
+		<span component="post/reply-count/text" data-replies="{posts.replies}">[[topic:replies_to_this_post, {posts.replies}]]</span>
+	</a>
+	<!-- ENDIF !hideReplies -->
 </div>
 
 <hr />

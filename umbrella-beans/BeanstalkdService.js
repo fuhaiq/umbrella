@@ -86,13 +86,15 @@ var BeanstalkdService = function(db, redis) {
         if(statusCode == 200) {
           var act = JSON.parse(chunk);
           pack.set.status = 3;
-          var lastData = act[act.length - 1];
-          if(lastData.type == 'error') {
-            pack.set.status = -1;
-          } else if (lastData.type == 'abort') {
-            pack.set.status = -2;
-          }
-          pack.set.result = act;
+    		  if(act.length > 0) {
+    			  var lastData = act[act.length - 1];
+    			  if(lastData.type == 'error') {
+    				pack.set.status = -1;
+    			  } else if (lastData.type == 'abort') {
+    				pack.set.status = -2;
+    			  }
+    			  pack.set.result = act;
+    		  }
         } else if (statusCode == 500) {
           var act = JSON.parse(chunk);
           if(string(act.exception).contains('java.util.concurrent.TimeoutException')) {
