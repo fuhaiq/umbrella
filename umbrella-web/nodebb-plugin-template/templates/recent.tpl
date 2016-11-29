@@ -41,7 +41,24 @@
 						<!-- END filters -->
 					</ul>
 				</div>
+
+				<div class="btn-group pull-right">
+					<a class="btn btn-danger" href="http://reference.mmascript.com">Wolfram 参考中心</a>
+				</div>
+
 			</div>
+
+			<br>
+
+			<form action="/kernel" method="get" id="kernel-quick-form">
+				<div class="input-group has-success input-group-sm">
+				<span class="input-group-addon"><input type="checkbox" name="d"><img src="/3d-16.png"></span>
+				<input type="text" name="q" class="form-control" placeholder="执行" id="kernel-quick-input">
+				<span class="input-group-btn">
+				<button class="btn btn-success" type="submit"><i class="fa fa-play" aria-hidden="true"></i></button>
+				</span>
+				</div>
+			</form>
 
 			<hr class="hidden-xs"/>
 
@@ -63,11 +80,6 @@
 		</div>
 	</div>
 	<div class="col-lg-3">
-		<p>
-			<a type="button" class="btn btn-info btn-xs" href="/morse">摩尔斯电码</a>
-			<a type="button" class="btn btn-info btn-xs" href="/topic/14">chrome脚本计算插件</a>
-		</p>
-
 		<!-- IF kernelPosts.length -->
 		<ul class="categories">
 			<p>[[template:recent_kernel]]</p>
@@ -109,6 +121,9 @@
 		<!-- ENDIF kernelPosts.length -->
 		<p>
 
+		<ul class="categories">
+			<p>[[template:labels]]</p>
+		</ul>
 		<div class="popular-tags">
 			<!-- BEGIN tags -->
 			<span class="inline-block">
@@ -116,6 +131,12 @@
 			</span>
 			<!-- END tags -->
 		</div>
+
+		<ul class="categories">
+			<p>[[template:interesting]]</p>
+		</ul>
+		<a type="button" class="btn btn-info btn-xs" href="/morse">摩尔斯电码</a>
+		<a type="button" class="btn btn-info btn-xs" href="/topic/14">chrome 脚本计算插件</a>
 
 	</div>
 </div>

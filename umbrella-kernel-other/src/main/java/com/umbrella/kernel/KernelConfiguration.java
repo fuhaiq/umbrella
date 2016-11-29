@@ -14,14 +14,13 @@ import org.springframework.context.annotation.Configuration;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.umbrella.kernel.link.KernelConfig;
-import com.umbrella.kernel.link.KernelLinkFactory;
 import com.wolfram.jlink.KernelLink;
 import com.wolfram.jlink.NativeLink;
 
 @Configuration
 public class KernelConfiguration {
 	
-	private final Logger LOG = LoggerFactory.getLogger(KernelLinkFactory.class);
+	private final Logger LOG = LoggerFactory.getLogger(KernelConfiguration.class);
 	
 	@Autowired
 	@Bean(destroyMethod = "close")
