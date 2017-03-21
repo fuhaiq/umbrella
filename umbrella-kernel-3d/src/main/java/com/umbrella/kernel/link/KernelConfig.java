@@ -22,8 +22,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 	
 	private Set<Integer> badChar;
 	
-	private Set<String> escapes;
-	
 	private Set<String> needs;
 	
 	public String getUrl() {
@@ -52,14 +50,6 @@ public class KernelConfig extends GenericObjectPoolConfig{
 
 	public void setBadChar(Set<Integer> badChar) {
 		this.badChar = badChar;
-	}
-
-	public Set<String> getEscapes() {
-		return escapes;
-	}
-
-	public void setEscapes(Set<String> escapes) {
-		this.escapes = escapes;
 	}
 	
 	public Dir getDir() {

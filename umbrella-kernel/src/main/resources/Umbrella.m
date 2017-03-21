@@ -10,7 +10,7 @@ Umbrella::usage = "Evaluate expression to GIF";
 
 Begin["`Private`"]
 
-MSP`Utility`SetSecurity["c:/Users/administrator/SecurityConfiguration.m"]
+MSP`Utility`SetSecurity["c:/Users/administrator/SecurityConfiguration.11.m"]
 
 $Pre = Function[expr, 
 	Module[
