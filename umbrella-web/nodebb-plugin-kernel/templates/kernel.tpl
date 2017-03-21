@@ -40,7 +40,7 @@
 
       </div>
       <div class="col-xs-6" align='right'>
-        <span><img src="/3d-24.png"></span> <input type="checkbox" name="kernel-evaluate-3d" data-size="small">
+        <span><img src="/assets/3d-24.png"></span> <input type="checkbox" name="kernel-evaluate-3d" data-size="small">
       </div>
     </div>
     <div class="progress" style="display: none;" id="kernel-process"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%;">正在计算</div></div>
@@ -123,9 +123,9 @@ $(document).ready(function() {
                 }else if(item.type == "abort") {
                   $('#kernel-preview').append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
                 }else if(item.type == "image") {
-                  $('#kernel-preview').append("<img class='kernel result img-responsive' src='/kernel/temp/"+item.data+"'></img>")
+                  $('#kernel-preview').append("<img class='kernel result img-responsive' src='/assets/kernel/temp/"+item.data+"'></img>")
                 }else if(item.type == "x3d") {
-                  $('#kernel-preview').append("<x3d width='300px' height='300px'><scene><inline url='/kernel/temp/"+item.data+".x3d'></inline></scene></x3d>")
+                  $('#kernel-preview').append("<x3d width='300px' height='300px'><scene><inline url='/assets/kernel/temp/"+item.data+".x3d'></inline></scene></x3d>")
                 }
               });
               x3dom.reload();

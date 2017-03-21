@@ -19,7 +19,17 @@
 			<span class="topic-title" component="topic/title">{title}</span>
 		</h1>
 
-		<div component="topic/deleted/message" class="alert alert-warning<!-- IF !deleted --> hidden<!-- ENDIF !deleted -->">[[topic:deleted_message]]</div>
+		<div component="topic/deleted/message" class="alert alert-warning<!-- IF !deleted --> hidden<!-- ENDIF !deleted --> clearfix">
+			<span class="pull-left">[[topic:deleted_message]]</span>
+			<span class="pull-right">
+				<!-- IF deleter -->
+				<a href="{config.relative_path}/user/{deleter.userslug}">
+					<strong>{deleter.username}</strong>
+				</a>
+				<small class="timeago" title="{deletedTimestamp}"></small>
+				<!-- ENDIF deleter -->
+			</span>
+		</div>
 
 		<hr class="visible-xs" />
 
@@ -38,6 +48,10 @@
 				</li>
 			<!-- END posts -->
 		</ul>
+
+		<!-- IF config.enableQuickReply -->
+		<!-- IMPORT partials/topic/quickreply.tpl -->
+		<!-- ENDIF config.enableQuickReply -->
 
 		<div class="post-bar">
 			<!-- IMPORT partials/post_bar.tpl -->
@@ -88,7 +102,6 @@
 		</ul>
 	</div>
 	<!-- ENDIF similar.length -->
-
 
 
 	<div widget-area="sidebar" class="col-lg-3 col-sm-12 hidden"></div>

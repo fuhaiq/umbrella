@@ -292,7 +292,7 @@ plugin.topic.get = (data, next) => {
 					} else if(post.result[i].type == 'abort') {
 						window.$(codes[post.result[i].index]).parent().append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>');
 					} else if(post.result[i].type == 'image') {
-						window.$(codes[post.result[i].index]).parent().append("<img class='kernel result img-responsive' src='/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");
+						window.$(codes[post.result[i].index]).parent().append("<img class='kernel result img-responsive' src='/assets/kernel/post/"+post.pid+"/"+post.result[i].data+"'></img>");
 					}
 				}
 				var html = window.document.documentElement.outerHTML;
