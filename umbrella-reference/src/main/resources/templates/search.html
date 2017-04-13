@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"></meta>
+  <link rel="stylesheet" href="/styles/semantic/semantic.min.css"></link>
+</head>
+
+<body>
+  
+  <div class="ui grid container">
+    <div class="column">
+      <div class="ui grey inverted menu">
+        <a class="active item" href="/">
+          <img src="/images/logo.png"></img> 参考资料中心
+        </a>
+        <div class="right menu">
+          <div class="item">
+            <form class="ui search form" method="GET" action="/search">
+              <div class="ui transparent icon input">
+                <input type="text" name="q" placeholder="搜索..."></input>
+                <i class="search link icon"></i>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <div class="ui warning message" th:if="${top} == null">
+        <div class="header">
+          对不起，没有匹配的搜索结果
+        </div>
+        <ul class="list">
+          <li>确保拼写正确</li>
+          <li>试着输入更加准确的关键字</li>
+          <li>尝试下其他关键字？</li>
+        </ul>
+      </div>
+      
+      <div class="ui segments" th:if="${top} != null">
+        
+        <div class="ui secondary segment">
+          <div class="ui items">
+            <div class="item">
+              <div class="ui tiny image">
+                <img src="/images/top-result-icon.png"></img>
+              </div>
+              <div class="content">
+                <a class="header" th:text="${top.title}" th:href="@{'/language/'+${top.uri}}+'.html'"></a>
+                <div class="meta">
+                  <span class="price" th:text="${top.label}"></span>
+                </div>
+                <div class="description" th:text="${top.summary}"></div>
+                <div class="extra">
+                  <small th:text="@{'http://reference.mmascript.com/language/'+${top.uri}}+'.html'"></small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="ui raised brown segment" th:if="${result.size()} > 0">
+          
+          <div class="ui divided items">
+            <div class="item" th:each="r : ${result}">
+              <div class="content">
+                <a class="header" th:text="${r.title}" th:href="@{'/language/'+${r.uri}}+'.html'"></a>
+                <div class="meta">
+                  <span class="price" th:text="${r.label}"></span>
+                </div>
+                <div class="description" th:text="${r.summary}"></div>
+                <div class="extra">
+                  <small th:text="@{'http://reference.mmascript.com/language/'+${r.uri}}+'.html'"></small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+    </div>
+  </div>
+  
+  <script src="/js/jquery-3.1.1.min.js"></script>
+  <script src="/js/semantic/semantic.min.js"></script>
+  <script src="/js/zdocumentation-ref.js"></script>
+  <script src="/js/zdocumentation.js"></script>
+  
+</body>
+</html>
