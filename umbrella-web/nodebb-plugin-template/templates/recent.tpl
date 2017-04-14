@@ -30,11 +30,11 @@
 				</div>
 
 				<div class="btn-group pull-right">
-					<a class="btn btn-info" href="http://reference.wolfram.com/language/guide/SummaryOfNewFeaturesIn111.html">11.1 更新</a>
+					<a target="_blank" class="btn btn-info" href="http://reference.wolfram.com/language/guide/SummaryOfNewFeaturesIn111.html">11.1 更新</a>
 				</div>
 
 				<div class="btn-group pull-right">
-					<a class="btn btn-danger" href="http://reference.mmascript.com">Wolfram 参考中心</a>
+					<a target="_blank" class="btn btn-danger" href="http://reference.mmascript.com">Wolfram 参考中心</a>
 				</div>
 			</div>
 
