@@ -12,7 +12,7 @@
 		<div class="btn-group">
 		  <button type="button" class="btn btn-success btn-sm" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><span class="hidden-xs"><var>shift</var> + <var>enter</var> =</span> <i class="fa fa-fw fa-play"></i> 执行脚本</button>
 
-		  <div class="btn-group">
+		  <div class="btn-group hidden-xs">
 			<button class="btn btn-info btn-sm dropdown-toggle" type="button" id="kernel-theme" data-toggle="dropdown">
 			主题
 			<span class="caret"></span>

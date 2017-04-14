@@ -12,7 +12,7 @@
 					<!-- ENDIF loggedIn -->
 				</div>
 
-				<div class="btn-group pull-right">
+				<div class="btn-group pull-right hidden-xs">
 					<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 						<!-- IF selectedCategory --><!-- IF selectedCategory.icon --><i class="fa fa-fw {selectedCategory.icon}"></i><!-- ENDIF selectedCategory.icon --> {selectedCategory.name}<!-- ELSE -->
 						[[unread:all_categories]]<!-- ENDIF selectedCategory --> <span class="caret"></span>
@@ -30,16 +30,7 @@
 				</div>
 
 				<div class="btn-group pull-right">
-					<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-					{selectedFilter.name} <span class="caret"></span>
-					</button>
-					<ul class="dropdown-menu" role="menu">
-						<!-- BEGIN filters -->
-						<li role="presentation" class="category">
-							<a role="menu-item" href="{config.relative_path}/{filters.url}{querystring}"><i class="fa fa-fw <!-- IF filters.selected -->fa-check<!-- ENDIF filters.selected -->"></i>{filters.name}</a>
-						</li>
-						<!-- END filters -->
-					</ul>
+					<a class="btn btn-info" href="http://reference.wolfram.com/language/guide/SummaryOfNewFeaturesIn111.html">11.1 更新</a>
 				</div>
 
 				<div class="btn-group pull-right">
