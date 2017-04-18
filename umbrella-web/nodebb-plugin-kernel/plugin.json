@@ -33,16 +33,14 @@
 		}
 	],
 	"scripts": [
-		"static/lib/main.js",
-		"static/lib/bootstrap-switch.min.js"
+		"static/lib/main.js"
 	],
 	"staticDirs": {
 		"static": "./static"
 	},
 	"less": [
 		"/static/lib/codemirror/lib/codemirror.less",
-		"/static/lib/codemirror/theme/mdn-like.less",
-		"/static/lib/bootstrap-switch.min.less"
+		"/static/lib/codemirror/theme/zenburn.less"
 	],
 	"templates": "templates",
 	"languages": "languages"

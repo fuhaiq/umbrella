@@ -10,8 +10,3 @@ htpasswd -c /home/umbrella/git/umbrella/umbrella-web/password umbrella
 ##################npm install##################
 
 npm install hiredis nodebb-plugin-katex nodebb-plugin-email-smtp
-
-###################custom header#################
-
-<link rel="stylesheet" type="text/css" href="/vendor/x3d/x3dom.css" />
-<script type="text/javascript" src="/vendor/x3d/x3dom.js"></script>

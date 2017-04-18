@@ -59,10 +59,6 @@ plugin.http.get = (req, res, next) => {
 
 	var q = req.query.q
 	var p = req.query.p
-	var d = req.query.d
-	if(!string(d).isEmpty()) {
-		data.d = d;
-	}
 
 	if( (!string(q).isEmpty()) && (!string(p).isEmpty()) ) {
 		return res.sendStatus(400)

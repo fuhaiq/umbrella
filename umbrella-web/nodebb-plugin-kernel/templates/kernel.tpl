@@ -1,194 +1,244 @@
 <style type=text/css>
-.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;font-family: Times, "Times New Roman", Georgia, serif;}
+.kernel-area {
+  border-right-width:5px;
+  border-right-color:#1b809e;
+  margin-bottom:5px;
+  padding-bottom: 5px;
+}
+.CodeMirror {
+  height: auto;
+  font-family: Times, "Times New Roman", Georgia, serif;
+}
+.CodeMirror-scroll {
+  height: auto;
+  overflow-y: hidden;
+  overflow-x: auto;
+}
 </style>
-
-<div class="panel panel-default">
-  <div class="panel-heading">
-    <div class="row" id="evaluate-panel">
-      <div class="col-xs-6">
-
-
-
-		<div class="btn-group">
-		  <button type="button" class="btn btn-success btn-sm" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><span class="hidden-xs"><var>shift</var> + <var>enter</var> =</span> <i class="fa fa-fw fa-play"></i> 执行脚本</button>
-
-		  <div class="btn-group hidden-xs">
-			<button class="btn btn-info btn-sm dropdown-toggle" type="button" id="kernel-theme" data-toggle="dropdown">
-			主题
-			<span class="caret"></span>
-			</button>
-			<ul class="dropdown-menu" role="menu" aria-labelledby="kernel-theme">
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">default</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">3024-night</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">base16-dark</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">base16-light</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">dracula</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">eclipse</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">elegant</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">erlang-dark</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">midnight</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">monokai</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">the-matrix</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">xq-dark</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">xq-light</a></li>
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">zenburn</a></li>
-			</ul>
-		  </div>
-		</div>
-
-
-
-      </div>
-      <div class="col-xs-6" align='right'>
-        <span><img src="/assets/3d-24.png"></span> <input type="checkbox" name="kernel-evaluate-3d" data-size="small">
-      </div>
-    </div>
-    <div class="progress" style="display: none;" id="kernel-process"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%;">正在计算</div></div>
-  </div>
-  <div class="panel-body">
-    <textarea id="kernel">(* Mathematica code *)</textarea>
-  </div>
+<div class="well well-sm">
+  <button type="button" class="btn btn-success btn-sm btn-block" data-loading-text="正在计算..." autocomplete="off" id='kernel-evaluate'><span class="hidden-xs"><var>shift</var> + <var>enter</var> =</span> <i class="fa fa-fw fa-play"></i> 执行脚本</button>
+  <div class="progress" style="display: none;" id="kernel-process"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%;">正在计算</div></div>
 </div>
+<div id="kernel"></div>
 
-<div id='kernel-preview'></div>
 <script>
 $(document).ready(function() {
-
   require(["../../plugins/nodebb-plugin-kernel/static/lib/codemirror/lib/codemirror", "../../plugins/nodebb-plugin-kernel/static/lib/codemirror/mode/mathematica/mathematica", "../../plugins/nodebb-plugin-kernel/static/lib/codemirror/addon/edit/matchbrackets"],
   function (CodeMirror) {
 
-    $("[name='kernel-evaluate-3d']").bootstrapSwitch();
+    var createArea = function(init) {
+      var area = $('<div></div>', {
+        "class": "kernel-area alert alert-dismissible fade in"
+      })
+      var area_input = $('<div></div>',{
+        "class": "kernel-area-input"
+      })
+      var area_output = $('<div></div>',{
+        "class": "kernel-area-output"
+      })
+      $(area).on('close.bs.alert', function () {
+        if($(area).is(':only-child')) {
+          kernel.setValue('')
+          $(area_output).empty();
+          return false
+        }
+        return true
+      })
+      var textarea = document.createElement('textarea')
+      $(area_input).append(textarea)
+      $(area).append('<a class="close" data-dismiss="alert" aria-label="close">&times;</a>')
+      $(area).append(area_input)
+      $(area).append(area_output)
+      $('#kernel').append(area)
 
-    var kernel = CodeMirror.fromTextArea(document.getElementById('kernel'), {
-      mode: 'text/x-mathematica',
-      lineNumbers: true,
-      matchBrackets: true,
-      indentWithTabs: true,
-      lineWrapping: true,
-      theme:'zenburn'
-    });
+      var kernel = CodeMirror.fromTextArea(textarea, {
+        mode: 'text/x-mathematica',
+        lineNumbers: true,
+        matchBrackets: true,
+        indentWithTabs: true,
+        lineWrapping: true,
+        theme:'zenburn'
+      });
 
-    var evaluate = function (btn) {
-      var content = $.trim(kernel.getValue());
-
-      if(!content || content == '') {
-        app.alert({
-          title: '消息',
-          message: '没有脚本可以运行',
-          type: 'info',
-          timeout: 2000
-        });
-        return;
+      if(init && $.trim(init) != '') {
+        kernel.setValue(init)
       }
-      content = [content];
 
-      var enable3d = $("[name='kernel-evaluate-3d']").bootstrapSwitch('state')
+      kernel.setOption("extraKeys", {
+        'Shift-Enter': function(cm) {
+          evaluate(area)
+        }
+      });
+      var charWidth = kernel.defaultCharWidth(), basePadding = 4;
 
-        $.ajax({
-          method: 'POST',
-          url: "/kernel",
-          data: {
-            content : JSON.stringify(content),
-            enable3d : enable3d
-          },
-          headers: {
-            'x-csrf-token': config.csrf_token
-          },
-          beforeSend: function(xhr, settings) {
-            btn.button('loading');
-            $('#evaluate-panel').hide();
-            $('#kernel-process').show();
-            kernel.setOption("readOnly", true)
-            $('#kernel-preview').empty();
-          }
-        })
-        .done(function(json) {
-          if(!json.success) {
-            $('#kernel-preview').append('<div class="kernel result alert alert-'+json.type+'" role="alert">'+json.msg+'</div>')
+      kernel.on("renderLine", function(cm, line, elt) {
+        var off = CodeMirror.countColumn(line.text, null, cm.getOption("tabSize")) * charWidth;
+        elt.style.textIndent = "-" + off + "px";
+        elt.style.paddingLeft = (basePadding + off) + "px";
+      });
+
+      kernel.refresh();
+      return area;
+    }// end of createArea
+
+    var evaluate = function(area) {
+      var content = getEvaluateValue(area)
+      var empty = true
+      for(var index = 0; index < content.length; index++) {
+        if(content[index] != '') {
+          empty = false
+          break;
+        }
+      }
+      if(empty){
+        app.alert({title: '消息', message: '没有脚本可以运行', type: 'info', timeout: 2000});
+        return
+      }
+
+      var outputs = getEvaluateOutput(area);
+      var allEditor = getAllEditor();
+      var btn = $('#kernel-evaluate');
+
+      $.ajax({
+        method: 'POST',
+        url: "/kernel",
+        data: {
+          content : JSON.stringify(content)
+        },
+        headers: {
+          'x-csrf-token': config.csrf_token
+        },
+        beforeSend: function(xhr, settings) {
+          btn.button('loading');
+          btn.hide();
+          $('#kernel-process').show();
+          outputs.forEach(function(output){
+            $(output).empty();
+          })
+          allEditor.forEach(function(editor){
+            editor.setOption("readOnly", true)
+          })
+        }
+      })
+      .done(function(json) {
+        if(!json.success) {
+          app.alert({title: '消息', message: json.msg, type: json.type, timeout: 2000});
+        } else {
+          var result = JSON.parse(json.result);
+          if(result.length == 0) {
+            app.alert({title: '消息', message: '没有显示结果', type: 'info', timeout: 2000});
           } else {
-            var result = JSON.parse(json.result);
-            if(result.length == 0) {
-              app.alert({
-                title: '消息',
-                message: '没有显示结果',
-                type: 'info',
-                timeout: 2000
-              });
-            } else {
-              result.forEach(function(item){
-                if (item.type == 'text') {
-                  $('#kernel-preview').append('<samp>' + item.data + '</samp>');
-                }else if(item.type == "error") {
-                  $('#kernel-preview').append('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
-                }else if(item.type == "abort") {
-                  $('#kernel-preview').append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
-                }else if(item.type == "image") {
-                  $('#kernel-preview').append("<img class='kernel result img-responsive' src='/assets/kernel/temp/"+item.data+"'></img>")
-                }else if(item.type == "x3d") {
-                  $('#kernel-preview').append("<x3d width='300px' height='300px'><scene><inline url='/assets/kernel/temp/"+item.data+".x3d'></inline></scene></x3d>")
-                }
-              });
-              x3dom.reload();
+            result.forEach(function(item){
+              var output = outputs[item.index]
+              if (item.type == 'text') {
+                $(output).append('<samp>' + item.data + '</samp>');
+              }else if(item.type == "error") {
+                $(output).append('<div class="kernel result alert alert-danger" role="alert">'+item.data+'</div>')
+              }else if(item.type == "abort") {
+                $(output).append('<div class="kernel result alert alert-warning" role="alert">计算超时</div>')
+              }else if(item.type == "image") {
+                $(output).append("<img class='kernel result img-responsive' src='/assets/kernel/temp/"+item.data+"'></img>")
+              }
+            })
+
+            if($(area).is(':last-child')) {
+              var editor = getEditor(area)
+              if(editor && $.trim(editor.getValue()) != ''){
+                createArea();
+              }
             }
           }
+        }
+      })
+      .always(function() {
+        $('#kernel-process').hide();
+        btn.button('reset');
+        btn.show();
+        allEditor.forEach(function(editor){
+          editor.setOption("readOnly", false)
         })
-        .always(function() {
-          $('#kernel-process').hide();
-          btn.button('reset');
-          $('#evaluate-panel').show();
-          kernel.setOption("readOnly", false)
-        });
+      });
+    }// end of evaluate
+
+    var getEvaluateOutput = function(area) {
+      var outputs = [];
+      var prevArea = $(area).prevAll();
+      for(var index = 0; index < prevArea.length; index++) {
+        var output = $(prevArea[index]).find('.kernel-area-output')
+        if(output && output.length && output.length > 0) outputs.push(output[0])
+      }
+      outputs.reverse()
+
+      var output = $(area).find('.kernel-area-output')
+      if(output && output.length && output.length > 0) outputs.push(output[0])
+      return outputs
+    }// end of getEvaluateOutput
 
 
-    }
+    var getEvaluateValue = function(area) {
+      var content = [];
+      var prevArea = $(area).prevAll();
+      for(var index = 0; index < prevArea.length; index++) {
+        var editor = getEditor(prevArea[index])
+        if(editor) {
+          var value = $.trim(editor.getValue())
+          if(value == '') value = '\n'
+          content.push(value)
+        }
+      }
+      content.reverse()
+
+      var editor = getEditor(area)
+      if(editor) content.push($.trim(editor.getValue()))
+      return content;
+    }// end of getEvaluateValue
+
+    var getEditor = function(area){
+      var editor = $(area).find('.CodeMirror')
+      if(editor && editor.length && editor.length > 0) {
+        return editor[0].CodeMirror
+      }
+      return null
+    }// end of getEditor
+
+    var getAllEditor = function(){
+      var editors = [];
+      var selector = $('.CodeMirror')
+      if(selector && selector.length) {
+        for(var index = 0; index < selector.length; index++) {
+          editors.push(selector[index].CodeMirror)
+        }
+      }
+      return editors
+    }// end of getAllEditor
 
     $('#kernel-evaluate').click(function() {
-      evaluate($(this));
-    });
-
-    kernel.setOption("extraKeys", {
-      'Shift-Enter': function(cm) {
-        evaluate($('#kernel-evaluate'));
+      var last = $('.kernel-area:last')
+      if(last && last.length && last.length > 0) {
+        evaluate(last[0]);
       }
     });
 
-    var charWidth = kernel.defaultCharWidth(), basePadding = 4;
+    $('#kernel').empty();
 
-    kernel.on("renderLine", function(cm, line, elt) {
-      var off = CodeMirror.countColumn(line.text, null, cm.getOption("tabSize")) * charWidth;
-      elt.style.textIndent = "-" + off + "px";
-      elt.style.paddingLeft = (basePadding + off) + "px";
-    });
+    var q = null;
+    if(ajaxify && ajaxify.data && ajaxify.data.q) q = ajaxify.data.q;
 
-    kernel.refresh();
+    var p = null;
+    if(ajaxify && ajaxify.data && ajaxify.data.p) p = ajaxify.data.p;
 
-    var d = ajaxify.data.d;
-    if(d) {
-      $("[name='kernel-evaluate-3d']").bootstrapSwitch('state', true)
-    }
-
-    var q = ajaxify.data.q;
     if(q) {
-      kernel.setValue(q);
-      evaluate($('#kernel-evaluate'));
-    }
-
-    var p = ajaxify.data.p;
-    if(p) {
-      kernel.setValue("");
+      createArea(q);
+      $("#kernel-evaluate").trigger( "click" );
+    } else if (p) {
       p.forEach(function(code){
-        kernel.replaceRange(code, CodeMirror.Pos(kernel.lastLine()))
+        createArea(code);
       })
+    } else {
+      var firstEditor = getEditor(createArea())
+      firstEditor.execCommand('newlineAndIndent')
+      firstEditor.execCommand('newlineAndIndent')
     }
-
-	$("ul.dropdown-menu > li a").click(function(){
-		var me = $(this)
-		var theme = me.text()
-		kernel.setOption("theme", theme);
-		$("#kernel-theme").text(theme);
-	})
-
-  });
+  });//end of require
 })
-
 </script>
