@@ -182,7 +182,7 @@ $(document).ready(function() {
         var editor = getEditor(prevArea[index])
         if(editor) {
           var value = $.trim(editor.getValue())
-          if(value == '') value = '\n'
+          // if(value == '') value = '\n'
           content.push(value)
         }
       }
