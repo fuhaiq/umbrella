@@ -74,21 +74,21 @@
 				</small>
 
 				<small class="label label-status">
-				<!-- IF topics.waiting -->
-				<span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>
-				<!-- ENDIF topics.waiting -->
-				<!-- IF topics.evaluate -->
-				<span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>
-				<!-- ENDIF topics.evaluate -->
-				<!-- IF topics.finished -->
-				<span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
-				<!-- ENDIF topics.finished -->
-				<!-- IF topics.error -->
-				<span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
-				<!-- ENDIF topics.error -->
-				<!-- IF topics.aborted -->
-				<span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
-				<!-- ENDIF topics.aborted -->
+					<!-- IF topics.waiting -->
+					<span class="label label-info"><i class="fa fa-clock-o"></i> 等待运算</span>
+					<!-- ENDIF topics.waiting -->
+					<!-- IF topics.evaluate -->
+					<span class="label label-primary"><i class="fa fa-play"></i> 正在计算</span>
+					<!-- ENDIF topics.evaluate -->
+					<!-- IF topics.finished -->
+					<span class="label label-success"><i class="fa fa-check"></i> 计算成功</span>
+					<!-- ENDIF topics.finished -->
+					<!-- IF topics.error -->
+					<span class="label label-danger"><i class="fa fa-remove"></i> 语法错误</span>
+					<!-- ENDIF topics.error -->
+					<!-- IF topics.aborted -->
+					<span class="label label-warning"><i class="fa fa-exclamation"></i> 计算超时</span>
+					<!-- ENDIF topics.aborted -->
 				</small>
 
 			</h2>
