@@ -250,15 +250,17 @@ plugin.search = (data, next) => {
 
 plugin.topic = {};
 
-plugin.topic.post = (topic, next) => {
+plugin.topic.post = (data, next) => {
 	next = next || function() {};
 
+	var topic = data.topic
 	return insert('topic', topic.tid, topic.title, topic.cid, topic.uid, next);
 };
 
-plugin.topic.delete = (topic, next) => {
+plugin.topic.delete = (data, next) => {
 	next = next || function() {};
 
+	var topic = data.topic
 	var query = {
 		body: [
 			{ update: { _index: 'umbrella', _type: 'topic', _id: topic.tid } },
@@ -280,15 +282,17 @@ plugin.topic.delete = (topic, next) => {
 	], next)
 };
 
-plugin.topic.edit = (topic, next) => {
+plugin.topic.edit = (data, next) => {
 	next = next || function() {};
 
+	var topic = data.topic
 	return update('topic', topic.tid, topic.title, next);
 };
 
-plugin.topic.restore = (topic, next) => {
+plugin.topic.restore = (data, next) => {
 	next = next || function() {};
 
+	var topic = data.topic
 	var query = {
 		body: [
 			{ update: { _index: 'umbrella', _type: 'topic', _id: topic.tid } },
@@ -309,9 +313,10 @@ plugin.topic.restore = (topic, next) => {
 	], next)
 };
 
-plugin.topic.purge = (tid, next) => {
+plugin.topic.purge = (data, next) => {
 	next = next || function() {};
 
+	var tid = data.topic.tid
 	return purge('topic', tid, next);
 };
 
@@ -340,9 +345,10 @@ plugin.topic.move = (info, next) => {
 
 plugin.post= {};
 
-plugin.post.save = (post, next) => {
+plugin.post.save = (data, next) => {
 	next = next || function() {};
 
+	var post = data.post
 	async.waterfall([
 		(next) => plugins.fireHook('filter:parse.raw', post.content, next),
 		(html, next) => {
@@ -362,9 +368,10 @@ plugin.post.save = (post, next) => {
 	], next);
 };
 
-plugin.post.delete = (pid, next) => {
+plugin.post.delete = (data, next) => {
 	next = next || function() {};
 
+	var pid = data.post.pid
 	return client.update(
 		{
 			index: 'umbrella',
@@ -378,9 +385,10 @@ plugin.post.delete = (pid, next) => {
 		}, next);
 	};
 
-plugin.post.edit = (post, next) => {
+plugin.post.edit = (data, next) => {
 	next = next || function() {};
 
+	var post = data.post
 	async.waterfall([
 		(next) => plugins.fireHook('filter:parse.raw', post.content, next),
 		(html, next) => {
@@ -400,9 +408,10 @@ plugin.post.edit = (post, next) => {
 	], next);
 };
 
-plugin.post.restore = (post, next) => {
+plugin.post.restore = (data, next) => {
 	next = next || function() {};
 
+	var post = data.post
 	return client.update(
 		{
 			index: 'umbrella',
@@ -416,9 +425,10 @@ plugin.post.restore = (post, next) => {
 		}, next);
 	};
 
-plugin.post.purge = (pid, next) => {
+plugin.post.purge = (data, next) => {
 	next = next || function() {};
 
+	var pid = data.post.pid
 	return purge('post', pid, next);
 };
 

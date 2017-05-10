@@ -2,6 +2,7 @@
 
 var async = require('async'),
   uuid = require('uuid'),
+  batch = require("./batch"),
   string = require('string');
 
 var notification = function(db, io) {
@@ -200,37 +201,16 @@ var notification = function(db, io) {
 			return callback();
 		}
 
-		var done = false;
-		var start = 0;
-		var batchSize = 50;
-
-		setTimeout(function() {
-			async.whilst(
-				function() {
-					return !done;
-				},
-				function(next) {
-					var currentUids = uids.slice(start, start + batchSize);
-					if (!currentUids.length) {
-						done = true;
-						return next();
-					}
-					pushToUids(currentUids, notification, function(err) {
-						if (err) {
-							return next(err);
-						}
-						start = start + batchSize;
-
-						setTimeout(next, 1000);
-					});
-				},
-				function(err) {
-					if (err) {
-						LOG.error(err.stack);
-					}
+    setTimeout(function () {
+			batch.processArray(uids, function (uids, next) {
+				pushToUids(uids, notification, next);
+			}, { interval: 1000 }, function (err) {
+				if (err) {
+					LOG.error(err.stack);
 				}
-			);
+			});
 		}, 1000);
+
 		callback();
 	};
 

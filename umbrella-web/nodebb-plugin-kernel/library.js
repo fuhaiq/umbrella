@@ -340,9 +340,10 @@ plugin.post.filterPurge = (postData, next) => {
 	})
 };
 
-plugin.post.edit = (post, next) => {
+plugin.post.edit = (data, next) => {
 	next = next || function(){};
 
+	var post = data.post
 	async.waterfall([
 		(next) => db.deleteObjectField('post:' + post.pid, 'result', next),
 		(next) => plugins.fireHook('filter:parse.raw', post.content, next),
@@ -379,9 +380,10 @@ plugin.post.edit = (post, next) => {
 	], next)
 };
 
-plugin.post.save = (post, next) => {
+plugin.post.save = (data, next) => {
 	next = next || function(){};
 
+	var post = data.post
 	async.waterfall([
 		(next) => plugins.fireHook('filter:parse.raw', post.content, next),
 		(html, next) => jsdom.env({html: html, src: [jquery],done: next}),
@@ -432,9 +434,10 @@ plugin.post.save = (post, next) => {
 	})
 };
 
-plugin.post.purge = (pid, next) => {
+plugin.post.purge = (data, next) => {
 	next = next || function(){};
 
+	var pid = data.post.pid
 	async.waterfall([
 		(next) => {
 			var conn = new fivebeans.client(nconf.get('beanstalkd:host'), nconf.get('beanstalkd:port'));

@@ -5,8 +5,9 @@ md = new MarkdownIt({
   'langPrefix': 'language-'
 }),
 fs = require('fs-extra'),
+klaw = require('klaw'),
 jquery = fs.readFileSync("./jquery-2.1.4.min.js", "utf-8"),
-jsdom = require("jsdom"),
+jsdom = require("jsdom/lib/old-api.js"),
 async = require('async'),
 http = require('http'),
 string = require('string'),
@@ -132,7 +133,9 @@ var BeanstalkdService = function(db, redis) {
 
   var db = db;
 
-  var io = require('socket.io-emitter')(redis);
+  var io = require('socket.io-emitter')(redis, {
+    key : 'db:0:adapter_key'
+  });
 
   var notify = new notification(db, io);
 
@@ -185,7 +188,7 @@ var BeanstalkdService = function(db, redis) {
   this.clean = (dir, second, next) => {
     var total = 0;
     var current = new Date();
-    fs.walk(dir).on('data', (file) => {
+    klaw(dir).on('data', (file) => {
       if(file.stats.isFile()) {
         var createTime = file.stats.birthtime.getTime();
         var span = ((current.getTime() - createTime) / 1000);
