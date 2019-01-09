@@ -99,3 +99,87 @@ docker run --name cdh-master -h cdh-master --net=cdh --privileged -p 7180:7180 \
 
 到了安装界面的时候，数据根目录修改为/hadoop 如 HDFS配置如下:
 ![图片alt](https://github.com/fuhaiq/umbrella/blob/master/cdh-docker/img/4.png)
+这样数据和容器就可以分离了。
+**当创建好具体组件容器后，需要手动打通SSH无密码登录。**如下
+1. 先进入cdh-master `docker exec -it cdh-master /bin/bash` 执行
+```
+ssh-keygen -t rsa
+（一路回车即可）
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+```
+2.  新开一个窗口进入具体组件容器 `docker exec -it cdh-xxx /bin/bash`
+```
+ssh-keygen -t rsa
+（一路回车即可）
+passwd
+（修改root密码）
+```
+3. 在之前cdh-master窗口里面
+```
+scp ~/.ssh/authorized_keys root@cdh-xxx:~/.ssh/
+（输入步骤2的密码）
+```
+
+具体组件（部分）的启动如下:
+##### cdh-monitor * 1
+```
+docker run --name cdh-monitor -h cdh-monitor --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-monitor/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-monitor/hadoop:/hadoop \
+-d cdh5/agent
+```
+##### cdh-zk * 3
+```
+docker run --name cdh-zk-1 -h cdh-zk-1 --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-zk-1/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-zk-1/hadoop:/hadoop \
+-d cdh5/agent
+
+docker run --name cdh-zk-2 -h cdh-zk-2 --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-zk-2/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-zk-2/hadoop:/hadoop \
+-d cdh5/agent
+
+docker run --name cdh-zk-3 -h cdh-zk-3 --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-zk-3/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-zk-3/hadoop:/hadoop \
+-d cdh5/agent
+```
+
+##### cdh-hdfs * 5
+```
+docker run --name cdh-hdfs-nn -h cdh-hdfs-nn --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-hdfs-nn/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-hdfs-nn/hadoop:/hadoop \
+-d cdh5/agent
+
+docker run --name cdh-hdfs-snn -h cdh-hdfs-snn --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-hdfs-snn/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-hdfs-snn/hadoop:/hadoop \
+-d cdh5/agent
+
+docker run --name cdh-hdfs-dn-1 -h cdh-hdfs-dn-1 --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-hdfs-dn-1/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-hdfs-dn-1/hadoop:/hadoop \
+-d cdh5/agent
+
+docker run --name cdh-hdfs-dn-2 -h cdh-hdfs-dn-2 --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-hdfs-dn-2/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-hdfs-dn-2/hadoop:/hadoop \
+-d cdh5/agent
+
+docker run --name cdh-hdfs-dn-3 -h cdh-hdfs-dn-3 --net=cdh --privileged \
+-v /aliyun/docker-containers/cdh-hdfs-dn-3/cloudera-scm-agent:/opt/cm-5.16.1/log/cloudera-scm-agent \
+-v /aliyun/docker-containers/cdh-hdfs-dn-3/hadoop:/hadoop \
+-d cdh5/agent
+```
+
+陆续补充剩下的组件，其实就是把名字换一下，打开对应端口即可
+
+### 目前遇到的坑
+#### 添加节点的时候遇到这种情况
+![图片alt](https://github.com/fuhaiq/umbrella/blob/master/cdh-docker/img/5.png)
+```
+Src file /opt/cloudera/parcels/.flood/CDH-5.16.1-1.cdh5.16.1.p0.3-el7.parcel/CDH-5.16.1-1.cdh5.16.1.p0.3-el7.parcel does not exist
+```
+不知道什么情况，当一次性加入多个节点时候容易出现，解决方法是一次添加一个节点。如果还出现，直接`docker rm` 掉当前容器，再`docker run`一个新的，反正分分钟的事情。
