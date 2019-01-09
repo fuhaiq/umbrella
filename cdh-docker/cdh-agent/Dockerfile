@@ -7,7 +7,7 @@ COPY CentOS-Base.repo /etc/yum.repos.d
 COPY epel-7.repo /etc/yum.repos.d
 RUN yum clean all
 RUN yum makecache
-RUN yum install -y net-tools openssh-clients openssh-server ntp perl which psmisc cyrus-sasl-plain cyrus-sasl-gssapi gcc python-devel cyrus-sasl*
+RUN yum install -y net-tools openssh-clients openssh-server ntp perl which psmisc cyrus-sasl-plain cyrus-sasl-gssapi gcc python-devel cyrus-sasl* httpd libxml2 libxslt mod_ssl
 
 #######################################生成SSH初始秘钥###########################################
 RUN /usr/bin/ssh-keygen -A
