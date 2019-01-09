@@ -36,4 +36,4 @@ sudo yum install docker-ce
 `docker network create cdh` 创建名为cdh的docker网络
 
 `docker network ls` 查看已有的网络
-![图片alt](/img/1.png)
+![图片alt](https://github.com/fuhaiq/umbrella/blob/master/cdh-docker/img/1.png)
