@@ -42,6 +42,21 @@ ADD 05003_cmf_schema.mysql.ddl /opt/cm-5.16.1/share/cmf/schema/mysql
 ##### 挂载日记及数据目录，方便在容器外面操作
 VOLUME ["/hadoop", "/opt/cm-5.16.1/log/cloudera-scm-server"]
 
+#######################################集成Kerberos##############################################
+RUN yum install krb5-server krb5-libs krb5-auth-dialog krb5-workstation openldap-clients -y
+RUN rm -rf /etc/krb5.conf
+COPY kerberos/krb5.conf /etc
+RUN rm -rf /var/kerberos/krb5kdc/kdc.conf
+COPY kerberos/kdc.conf /var/kerberos/krb5kdc
+RUN rm -rf /var/kerberos/krb5kdc/kadm5.acl
+COPY kerberos/kadm5.acl /var/kerberos/krb5kdc
+COPY kerberos/jce/US_export_policy.jar $JAVA_HOME/jre/lib/security
+COPY kerberos/jce/local_policy.jar $JAVA_HOME/jre/lib/security
+##创建对应database
+RUN kdb5_util create -r TOPFINE.COM -s -P topfine.com
+##创建管理员账号
+RUN kadmin.local -q "addprinc -pw cloudera-scm cloudera-scm/admin"
+
 ######################################设置入口脚本###############################################
 COPY entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["entrypoint.sh"]
