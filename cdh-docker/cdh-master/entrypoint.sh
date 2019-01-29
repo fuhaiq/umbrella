@@ -11,6 +11,10 @@ ntpd
 # 开启SSH服务
 /usr/sbin/sshd -D &
 
+# 开启kerberos服务
+/usr/sbin/krb5kdc -P /var/run/krb5kdc.pid &
+/usr/sbin/_kadmind -P /var/run/kadmind.pid &
+
 # 开启CM
 /opt/cm-5.16.1/etc/init.d/cloudera-scm-server start
 
