@@ -1,12 +1,7 @@
 FROM centos:latest
 LABEL maintainer="fuhaiq@gmail.com"
 
-########################################替换阿里云源，下载相关依赖###############################
-RUN rm -rf /etc/yum.repos.d/CentOS-Base.repo
-COPY CentOS-Base.repo /etc/yum.repos.d
-COPY epel-7.repo /etc/yum.repos.d
-RUN yum clean all
-RUN yum makecache
+########################################下载相关依赖###############################
 RUN yum install -y net-tools openssh-clients openssh-server ntp perl which psmisc cyrus-sasl-plain cyrus-sasl-gssapi gcc python-devel cyrus-sasl* httpd libxml2 libxslt mod_ssl
 
 #######################################生成SSH初始秘钥###########################################
@@ -36,6 +31,13 @@ RUN rm -rf /opt/cm-5.16.1/etc/cloudera-scm-agent/config.ini
 ADD config.ini /opt/cm-5.16.1/etc/cloudera-scm-agent
 ##### 挂载日记及数据目录，方便在容器外面操作
 VOLUME ["/hadoop", "/opt/cm-5.16.1/log/cloudera-scm-agent"]
+
+#######################################集成Kerberos##############################################
+RUN yum -y install krb5-libs krb5-workstation
+RUN rm -rf /etc/krb5.conf
+COPY kerberos/krb5.conf /etc
+COPY kerberos/jce/US_export_policy.jar $JAVA_HOME/jre/lib/security
+COPY kerberos/jce/local_policy.jar $JAVA_HOME/jre/lib/security
 
 ######################################设置入口脚本###############################################
 COPY entrypoint.sh /usr/local/bin/

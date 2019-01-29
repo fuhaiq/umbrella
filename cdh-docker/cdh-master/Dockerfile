@@ -1,12 +1,7 @@
 FROM centos:latest
 LABEL maintainer="fuhaiq@gmail.com"
 
-########################################替换阿里云源，下载相关依赖###############################
-RUN rm -rf /etc/yum.repos.d/CentOS-Base.repo
-COPY CentOS-Base.repo /etc/yum.repos.d
-COPY epel-7.repo /etc/yum.repos.d
-RUN yum clean all
-RUN yum makecache
+########################################下载相关依赖###############################
 RUN yum install -y net-tools openssh-clients openssh-server ntp perl which psmisc cyrus-sasl-plain cyrus-sasl-gssapi gcc python-devel cyrus-sasl*
 
 

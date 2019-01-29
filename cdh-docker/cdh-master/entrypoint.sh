@@ -13,6 +13,7 @@ ntpd
 
 # 开启kerberos服务
 /usr/sbin/krb5kdc -P /var/run/krb5kdc.pid &
+
 /usr/sbin/_kadmind -P /var/run/kadmind.pid &
 
 # 开启CM
