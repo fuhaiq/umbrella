@@ -1,0 +1,4 @@
+fhq:
+  _01:
+    path: classpath:com/fhq/_01/data.txt
+    
