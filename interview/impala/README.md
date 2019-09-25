@@ -270,3 +270,145 @@ Limits on memory usage are enforced by Impala's process memory limit (the MEM_LI
 # Setting Timeout Periods for Daemons, Queries, and Sessions
 
 Depending on how busy your  cluster is, you might increase or decrease various timeout values. Increase timeouts if Impala is cancelling operations prematurely, when the system is responding slower than usual but the operations are still successful if given extra time. Decrease timeouts if operations are idle or hanging for long periods, and the idle or hung operations are consuming resources and reducing concurrency
+
+## Increasing the Statestore Timeout
+
+If you have an extensive Impala schema, for example with hundreds of databases, tens of thousands of tables, and so on, you might encounter timeout errors during startup as the Impala catalog service broadcasts metadata to all the Impala nodes using the statestore service. To avoid such timeout errors on startup, increase the statestore timeout value from its default of 10 seconds. Specify the timeout value using the statestore_subscriber_timeout_seconds option for the statestore service.
+```
+Connection with state-store lost
+Trying to re-register with state-store
+```
+
+## Setting the Idle Query and Idle Session Timeouts for impalad
+
+To keep long-running queries or idle sessions from tying up cluster resources, you can set timeout intervals for both individual queries, and entire sessions
+
+The timeout clock for queries and sessions only starts ticking when the query or session is idle. For queries, this means the query has results ready but is waiting for a client to fetch the data. A query can run for an arbitrary time without triggering a timeout, because the query is computing results rather than sitting idle waiting for the results to be fetched. The timeout period is intended to prevent unclosed queries from consuming resources and taking up slots in the admission count of running queries, potentially preventing other queries from starting
+
+For sessions, this means that no query has been submitted for some period of time
+
+Specify the following startup options for the impalad daemon
+
+- The `--idle_query_timeout` option specifies the time in seconds after which an idle query is cancelled. This could be a query whose results were all fetched but was never closed, or one whose results were partially fetched and then the client program stopped requesting further results. This condition is most likely to occur in a client program using the JDBC or ODBC interfaces, rather than in the interactive `impala-shell` interpreter. Once the query is cancelled, the client program cannot retrieve any further results. You can reduce the idle query timeout by using the `QUERY_TIMEOUT_S` query option. Any non-zero value specified for the `--idle_query_timeout` startup option serves as an upper limit for the `QUERY_TIMEOUT_S` query option. A zero value for `--idle_query_timeout` disables query timeouts
+
+- The `--idle_session_timeout` option specifies the time in seconds after which an idle session is expired. A session is idle when no activity is occurring for any of the queries in that session, and the session has not started any new queries. Once a session is expired, you cannot issue any new query requests to it. The session remains open, but the only operation you can perform is to close it. The default value of 0 means that sessions never expire
+
+## Setting Timeout and Retries for Thrift Connections to the Backend Client
+
+Impala connections to the backend client are subject to failure in cases when the network is momentarily overloaded. To avoid failed queries due to transient network problems, you can configure the number of Thrift connection retries using the following option
+
+- The `--backend_client_connection_num_retries` option specifies the number of times Impala will try connecting to the backend client after the first connection attempt fails. By default, impalad will attempt three re-connections before it returns a failure. You can configure timeouts for sending and receiving data from the backend client. Therefore, if for some reason a query hangs, instead of waiting indefinitely for a response, Impala will terminate the connection after a configurable timeout
+
+- The `--backend_client_rpc_timeout_ms` option can be used to specify the number of milliseconds Impala should wait for a response from the backend client before it terminates the connection and signals a failure. The default value for this property is 300000 milliseconds, or 5 minutes
+
+## Cancelling a Query
+
+Sometimes, an Impala query might run for an unexpectedly long time, tying up resources in the cluster. You can cancel the query explicitly, independent of the timeout period, by going into the web UI for the impalad host (on port 25000 by default), and using the link on the `/queries` tab to cancel the running query. For example, press `^C` in `impala-shell`
+
+# Managing Disk Space for Impala Data
+
+Although Impala typically works with many large files in an HDFS storage system with plenty of capacity, there are times when you might perform some file cleanup to reclaim space, or advise developers on techniques to minimize space consumption and file duplication
+
+- Use compact binary file formats where practical. Numeric and time-based data in particular can be stored in more compact form in binary data files. Depending on the file format, various compression and encoding features can reduce file size even further. You can specify the `STORED AS` clause as part of the `CREATE TABLE` statement, or `ALTER TABLE` with the `SET FILEFORMAT` clause for an existing table or partition within a partitioned table
+
+- Use the `DESCRIBE FORMATTED` statement to check if a particular table is internal (managed by Impala) or external, and to see the physical location of the data files in HDFS
+
+- Clean up temporary files after failed `INSERT` statements. If an `INSERT` statement encounters an error, and you see a directory named `.impala_insert_staging` or `_impala_insert_staging` left behind in the data directory for the table, it might contain temporary data files taking up space in HDFS. You might be able to salvage these data files, for example if they are complete but could not be moved into place due to a permission error. Or, you might delete those files through commands such as hadoop fs or hdfs dfs, to reclaim space before re-trying the `INSERT`. Issue `DESCRIBE FORMATTED table_name` to see the HDFS path where you can check for temporary files
+
+- By default, intermediate files used during large sort, join, aggregation, or analytic function operations are stored in the directory `/tmp/impala-scratch` . These files are removed when the operation finishes. (Multiple concurrent queries can perform operations that use the “spill to disk” technique, without any name conflicts for these temporary files.) You can specify a different location by starting the impalad daemon with the `-scratch_dirs="path_to_directory"` configuration option. You can specify a single directory, or a comma-separated list of directories. The scratch directories must be on the local filesystem, not in HDFS. You might specify different directory paths for different hosts, depending on the capacity and speed of the available storage devices. In Impala 2.3 or higher, Impala successfully starts (with a warning Impala successfully starts (with a warning written to the log) if it cannot create or read and write files in one of the scratch directories. If there is less than 1 GB free on the filesystem where that directory resides, Impala still runs, but writes a warning message to its log. If Impala encounters an error reading or writing files in a scratch directory during a query, Impala logs the error and the query fails
+
+# Auditing Impala Operations
+
+To monitor how Impala data is being used within your organization, ensure that your Impala authorization and authentication policies are effective. To detect attempts at intrusion or unauthorized access to Impala data, you can use the auditing feature in Impala 1.2.1 and higher
+
+-  Enable auditing by including the option `-audit_event_log_dir=directory_path` in your impalad startup options. The log directory must be a local directory on the server, not an HDFS directory
+- Decide how many queries will be represented in each audit event log file. By default, Impala starts a new audit event log file every 5000 queries. To specify a different number, include the option `-max_audit_event_log_file_size=number_of_queries` in the impalad startup options
+- In Impala 2.9 and higher, you can control how many audit event log files are kept on each host. Specify the option `--max_audit_event_log_files=number_of_log_files` in the impalad startup options. Once the limit is reached, older files are rotated out using the same mechanism as for other Impala log files. The default value for this setting is 0, representing an unlimited number of audit event log files
+
+# Impala SQL Language Reference
+
+## SHOW TABLE STATS Statement
+
+The `SHOW TABLE STATS` and `SHOW COLUMN STATS` variants are important for tuning performance and
+diagnosing performance issues, especially with the largest tables and the most complex join queries
+
+Any values that are not available (because the `COMPUTE STATS` statement has not been run yet) are displayed as
+`-1`
+
+```
+Query: show table stats t_dim_business_user
++-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------+
+| #Rows | #Files | Size    | Bytes Cached | Cache Replication | Format  | Incremental stats | Location                                                                               |
++-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------+
+| 872   | 1      | 39.67KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_dim_business_user |
++-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------+
+```
+
+
+`SHOW TABLE STATS` provides some general information about the table, such as the number of files, overall size
+of the data, whether some or all of the data is in the HDFS cache, and the file format, that is useful whether or not
+you have run the `COMPUTE STATS` statement. A -1 in the `#Rows output column` indicates that the` COMPUTE
+STATS` statement has never been run for this table. If the table is partitioned, `SHOW TABLE STATS` provides this
+information for each partition. (It produces the same output as the `SHOW PARTITIONS` statement in this case.)
+
+The output of `SHOW COLUMN STATS` is primarily only useful after the `COMPUTE STATS statement` has been
+run on the table. A `-1` in the #Distinct Values output column indicates that the `COMPUTE STATS` statement
+has never been run for this table. Currently, Impala always leaves the `#Nulls` column as `-1`, even after `COMPUTE
+STATS` has been run
+
+These `SHOW` statements work on actual tables only, not on views
+
+## SHOW COLUMN STATS Statement
+
+The SHOW TABLE STATS and SHOW COLUMN STATS variants are important for tuning performance and
+diagnosing performance issues, especially with the largest tables and the most complex join queries
+```
+Query: show column stats t_dim_org
++---------------+--------+------------------+--------+----------+-------------------+
+| Column        | Type   | #Distinct Values | #Nulls | Max Size | Avg Size          |
++---------------+--------+------------------+--------+----------+-------------------+
+| org_no        | STRING | 19               | -1     | 6        | 5.684199810028076 |
+| org_id_yxgjx  | STRING | 24               | -1     | 8        | 8                 |
+| augrp_yxgjx   | STRING | 23               | -1     | 4        | 4                 |
+| org_nm        | STRING | 25               | -1     | 48       | 43.68000030517578 |
+| short_no      | STRING | 18               | -1     | 2        | 1.894700050354004 |
+| short_nm      | STRING | 25               | -1     | 30       | 27.95999908447266 |
+| org_type      | STRING | 3                | -1     | 1        | 1                 |
+| org_type_desc | STRING | 3                | -1     | 9        | 8.760000228881836 |
+| status        | STRING | 1                | -1     | 1        | 1                 |
+| status_desc   | STRING | 1                | -1     | 6        | 6                 |
+| etl_time      | STRING | 1                | -1     | 10       | 10                |
++---------------+--------+------------------+--------+----------+-------------------+
+```
+
+before the
+`COMPUTE STATS` statement is run. Impala deduces some information, such as maximum and average size for fixedlength columns, and leaves and unknown values as `-1`
+
+## SHOW PARTITIONS Statement
+
+`SHOW PARTITIONS` displays information about each partition for a partitioned table. (The output is the same as the
+`SHOW TABLE STATS` statement, but `SHOW PARTITIONS` only works on a partitioned table.)
+
+## COMPUTE STATS Statement
+
+The `COMPUTE STATS` statement gathers information about volume and distribution of data in a table and all
+associated columns and partitions. The information is stored in the metastore database, and used by Impala to help
+optimize queries. For example, if Impala can determine that a table is large or small, or has many or few distinct
+values it can organize and parallelize the work appropriately for a join query or insert operation
+
+Syntax:
+```
+COMPUTE STATS [db_name.]table_name [ ( column_list ) ] [TABLESAMPLE
+ SYSTEM(percentage) [REPEATABLE(seed)]]
+column_list ::= column_name [ , column_name, ... ]
+COMPUTE INCREMENTAL STATS [db_name.]table_name [PARTITION (partition_spec)]
+partition_spec ::= simple_partition_spec | complex_partition_spec
+simple_partition_spec ::= partition_col=constant_value
+complex_partition_spec ::= comparison_expression_on_partition_col
+```
+
+The `PARTITION` clause is only allowed in combination with the `INCREMENTAL` clause. It is optional for `COMPUTE
+INCREMENTAL STATS`, and required for `DROP INCREMENTAL STATS`. Whenever you specify partitions
+through the `PARTITION (partition_spec)` clause in a` COMPUTE INCREMENTAL STATS` or `DROP
+INCREMENTAL STATS` statement, you must include all the partitioning columns in the specification, and specify
+constant values for all the partition key columns
