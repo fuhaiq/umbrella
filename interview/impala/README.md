@@ -62,13 +62,13 @@ The Impala query optimizer can also make use of **table statistics** and **colum
 
 
  For tables with a large volume of data and/or many partitions, retrieving all the metadata for a table can be timeconsuming, taking minutes in some cases. Thus, **each impala daemon** subscribes to `Statestore` at startup, acts as a subscriber and retrieve metadata through one kind of topic *(heartbeat is another kind of topic).* Caches all of this metadata to reuse for future queries against the same table
- > metadata = hive table metastore +  physical locations of blocks in HDFS
+ > metadata = hive table metastore + `COMPUTE STATS` informations
 
-We could shutdown statestore and catalog services after a daemon has been running for a couple of while, and that daemon is still able to retrieve response against existing tables (cahes works). On the other hand, when we execute sql in a new impala daemon (no Caches) without statestore and catalog services running, we will get following error
+We could shutdown statestore and catalog services after a daemon has been running for a couple of while, and that daemon is still able to retrieve response against existing tables (cahes works). On another hand, when we execute sql in a new impala daemon (no Caches) without statestore and catalog services running, we will get following error
 ```
 This Impala daemon is not ready to accept user requests. Status: Waiting for catalog update from the StateStore.
 ```
-Base on my experiment, impala daemons retrieve metadata and its update only from Statestore service (not catalog service) through broadcast topic message. It only talks to catalog directly when table structure changes happen, like: ALTER, DROP, etc.
+Base on my experiment, impala daemons retrieve metadata and its update-info only from Statestore service (not catalog service) through broadcast topic message. It only talks to catalog directly when table structure changes happen, like: ALTER, DROP, etc.
 ```bash
 # stop catalog server makes this happen
 [iZ11wnf8l7wZ:21000] > ALTER TABLE employee DROP phone_no;
@@ -412,3 +412,218 @@ INCREMENTAL STATS`, and required for `DROP INCREMENTAL STATS`. Whenever you spec
 through the `PARTITION (partition_spec)` clause in a` COMPUTE INCREMENTAL STATS` or `DROP
 INCREMENTAL STATS` statement, you must include all the partitioning columns in the specification, and specify
 constant values for all the partition key columns
+
+Originally, Impala relied on users to run the Hive `ANALYZE TABLE` statement, but that method of gathering
+statistics proved unreliable and difficult to use. The Impala `COMPUTE STATS` statement was built to improve the
+reliability and user-friendliness of this operation. `COMPUTE STATS` does not require any setup steps or special
+configuration. You only run a single Impala `COMPUTE STATS` statement to gather both table and column statistics,
+rather than separate Hive `ANALYZE TABLE` statements for each kind of statistics
+
+For non-incremental `COMPUTE STATS` statement, the columns for which statistics are computed can be specified
+with an optional comma-separate list of columns
+
+If no column list is given, the `COMPUTE STATS` statement computes column-level statistics for all columns of the
+table. This adds potentially unneeded work for columns whose stats are not needed by queries. It can be especially
+costly for very wide tables and unneeded large string fields
+
+`COMPUTE STATS` returns an error when a specified column cannot be analyzed, such as when the column does not
+exist, the column is of an unsupported type for `COMPUTE STATS`, e.g. colums of complex types, or the column is a
+partitioning column
+
+If an empty column list is given, no column is analyzed by `COMPUTE STATS`
+
+In Impala 2.12 and higher, an optional `TABLESAMPLE` clause immediately after a table reference specifies that the
+`COMPUTE STATS` operation only processes a specified percentage of the table data. For tables that are so large that
+a full `COMPUTE STATS` operation is impractical, you can use `COMPUTE STATS` with a `TABLESAMPLE` clause to
+extrapolate statistics from a sample of the table data. See Table and Column Statisticsabout the experimental stats
+extrapolation and sampling features
+
+The `COMPUTE INCREMENTAL STATS` variation is a shortcut for partitioned tables that works on a subset of
+partitions rather than the entire table. The incremental nature makes it suitable for large tables with many partitions,
+where a full `COMPUTE STATS` operation takes too long to be practical each time a partition is added or dropped
+
+**Important:**
+
+For a particular table, use either `COMPUTE STATS` or `COMPUTE INCREMENTAL STATS`, but never combine the
+two or alternate between them. If you switch from `COMPUTE STATS` to `COMPUTE INCREMENTAL STATS` during
+the lifetime of a table, or vice versa, drop all statistics by running `DROP STATS` before making the switch
+
+When you run `COMPUTE INCREMENTAL STATS` on a table for the first time, the statistics are computed again
+from scratch regardless of whether the table already has statistics. Therefore, expect a one-time resource-intensive
+operation for scanning the entire table when running `COMPUTE INCREMENTAL STATS` for the first time on a
+given table
+
+For a table with a huge number of partitions and many columns, the approximately **400 bytes** of metadata **per column
+per partition** can add up to significant memory overhead, as it must be cached on the catalogd host and on every
+impalad host that is eligible to be a coordinator. If this metadata for all tables combined exceeds 2 GB, you might
+experience service downtime
+
+`COMPUTE INCREMENTAL STATS` only applies to partitioned tables. If you use the `INCREMENTAL` clause for an
+unpartitioned table, Impala automatically uses the original `COMPUTE STATS` statement. Such tables display false
+under the Incremental stats column of the `SHOW TABLE STATS` output
+
+**Note:**
+
+Because many of the most performance-critical and resource-intensive operations rely on table and column statistics
+to construct accurate and efficient plans, `COMPUTE STATS` is an important step at the end of your ETL process. Run
+`COMPUTE STATS` on all tables as your first step during performance tuning for slow queries, or troubleshooting for
+out-of-memory conditions
+
+- Accurate statistics help Impala construct an efficient query plan for join queries, improving performance and
+reducing memory usage
+- Accurate statistics help Impala distribute the work effectively for insert operations into Parquet tables, improving
+performance and reducing memory usage
+- Accurate statistics help Impala estimate the memory required for each query, which is important when you use
+resource management features, such as admission control and the YARN resource management framework. The
+statistics help Impala to achieve high concurrency, full utilization of available memory, and avoid contention with
+workloads from other Hadoop components
+- In Impala 2.8 and higher, when you run the `COMPUTE STATS` or `COMPUTE INCREMENTAL STATS` statement
+against a Parquet table, Impala automatically applies the query option setting `MT_DOP=4` to increase the amount
+of intra-node parallelism during this CPU-intensive operation
+
+**Computing stats for groups of partitions**
+
+In Impala 2.8 and higher, you can run `COMPUTE INCREMENTAL STATS` on multiple partitions, instead of the
+entire table or one partition at a time. You include comparison operators other than = in the `PARTITION` clause, and
+the `COMPUTE INCREMENTAL STATS` statement applies to all partitions that match the comparison expression
+```sql
+drop stats t_mz_sale_d;
+[emr-header-1.cluster-100513:21000] > show partitions t_mz_sale_d;
+Query: show partitions t_mz_sale_d
++------------+-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------------------+
+| bill_dat   | #Rows | #Files | Size    | Bytes Cached | Cache Replication | Format  | Incremental stats | Location                                                                                           |
++------------+-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------------------+
+| 2018-10-1  | -1    | 1      | 77.30KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-1  |
+| 2018-10-10 | -1    | 1      | 79.96KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-10 |
+| 2018-10-11 | -1    | 1      | 75.27KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-11 |
+| 2018-10-12 | -1    | 1      | 72.85KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-12 |
+| 2018-10-15 | -1    | 1      | 81.88KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-15 |
+| 2018-10-16 | -1    | 1      | 80.01KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-16 |
+| 2018-10-17 | -1    | 1      | 82.69KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-17 |
+| 2018-10-18 | -1    | 1      | 80.95KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-18 |
+| 2018-10-19 | -1    | 1      | 77.10KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-19 |
+| 2018-10-2  | -1    | 1      | 75.96KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-2  |
+| 2018-10-22 | -1    | 1      | 72.42KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-22 |
+
+[emr-header-1.cluster-100513:21000] > compute incremental stats t_mz_sale_d partition (bill_dat = '2018-10-1');
++------------------------------------------+
+| summary                                  |
++------------------------------------------+
+| Updated 1 partition(s) and 14 column(s). |
++------------------------------------------+
+Fetched 1 row(s) in 1.13s
+[emr-header-1.cluster-100513:21000] > show table stats t_mz_sale_d;
+Query: show table stats t_mz_sale_d
++------------+-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------------------+
+| bill_dat   | #Rows | #Files | Size    | Bytes Cached | Cache Replication | Format  | Incremental stats | Location                                                                                           |
++------------+-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------------------+
+| 2018-10-1  | 3340  | 1      | 77.30KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-1  |
+| 2018-10-10 | -1    | 1      | 79.96KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-10 |
+| 2018-10-11 | -1    | 1      | 75.27KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-11 |
+
+[emr-header-1.cluster-100513:21000] > compute incremental stats t_mz_sale_d partition (bill_dat between '2018-10-10' and '2018-10-18');
+Query: compute incremental stats t_mz_sale_d partition (bill_dat between '2018-10-10' and '2018-10-18')
++------------------------------------------+
+| summary                                  |
++------------------------------------------+
+| Updated 7 partition(s) and 14 column(s). |
++------------------------------------------+
+Fetched 1 row(s) in 0.95s
+[emr-header-1.cluster-100513:21000] > show table stats t_mz_sale_d;
+Query: show table stats t_mz_sale_d
++------------+-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------------------+
+| bill_dat   | #Rows | #Files | Size    | Bytes Cached | Cache Replication | Format  | Incremental stats | Location                                                                                           |
++------------+-------+--------+---------+--------------+-------------------+---------+-------------------+----------------------------------------------------------------------------------------------------+
+| 2018-10-1  | 3340  | 1      | 77.30KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-1  |
+| 2018-10-10 | 3474  | 1      | 79.96KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-10 |
+| 2018-10-11 | 3258  | 1      | 75.27KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-11 |
+| 2018-10-12 | 3144  | 1      | 72.85KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-12 |
+| 2018-10-15 | 3528  | 1      | 81.88KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-15 |
+| 2018-10-16 | 3446  | 1      | 80.01KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-16 |
+| 2018-10-17 | 3563  | 1      | 82.69KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-17 |
+| 2018-10-18 | 3485  | 1      | 80.95KB | NOT CACHED   | NOT CACHED        | PARQUET | true              | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-18 |
+| 2018-10-19 | -1    | 1      | 77.10KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-19 |
+| 2018-10-2  | -1    | 1      | 75.96KB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://emr-header-1.cluster-100513:9000/user/hive/warehouse/dwd.db/t_mz_sale_d/bill_dat=2018-10-2  |
+
+-- scans the whole table with all partitions
+Query: compute incremental stats t_mz_sale_d
++--------------------------------------------+
+| summary                                    |
++--------------------------------------------+
+| Updated 123 partition(s) and 14 column(s). |
++--------------------------------------------+
+```
+
+**Internal details**
+
+Behind the scenes, the `COMPUTE STATS` statement executes two statements: one to count the rows of each
+partition in the table (or the entire table if unpartitioned) through the `COUNT(*)` function, and another to count the
+approximate number of distinct values in each column through the `NDV()` function. You might see these queries in
+your monitoring and diagnostic displays. The same factors that affect the performance, scalability, and execution of
+other queries (such as parallel execution, memory usage, admission control, and timeouts) also apply to the queries
+run by the `COMPUTE STATS` statement
+
+## DROP STATS Statement
+
+Removes the specified statistics from a table or partition. The statistics were originally created by the `COMPUTE
+STATS` or `COMPUTE INCREMENTAL STATS` statement
+
+**Syntax**
+
+```sql
+DROP STATS [database_name.]table_name
+DROP INCREMENTAL STATS [database_name.]table_name PARTITION (partition_spec)
+partition_spec ::= partition_col=constant_value
+```
+
+## EXPLAIN Statement
+
+Returns the execution plan for a statement, showing the low-level mechanisms that Impala will use to read the data,
+divide the work among nodes in the cluster, and transmit intermediate and final results across the network. Use
+explain followed by a complete `SELECT` query
+
+**Syntax**
+
+```
+EXPLAIN { select_query | ctas_stmt | insert_stmt }
+```
+
+**Usage notes**
+
+You can interpret the output to judge whether the query is performing efficiently, and adjust the query and/or the
+schema if not. For example, you might change the tests in the `WHERE` clause, add hints to make join operations more
+efficient, introduce subqueries, change the order of tables in a join, add or change partitioning for a table, collect
+column statistics and/or table statistics in Hive, or any other performance tuning steps
+
+The `EXPLAIN` output reminds you if table or column statistics are missing from any table involved in the query.
+These statistics are important for optimizing queries involving large tables or multi-table joins
+
+Read the `EXPLAIN` plan from bottom to top
+
+- The last part of the plan shows the low-level details such as the expected amount of data that will be read, where
+you can judge the effectiveness of your partitioning strategy and estimate how long it will take to scan a table
+based on total data size and the size of the cluster
+- As you work your way up, next you see the operations that will be parallelized and performed on each Impala
+node
+- At the higher levels, you see how data flows when intermediate result sets are combined and transmitted from one
+node to another
+- `EXPLAIN_LEVEL` lets you customize how much detail to show in the `EXPLAIN` plan depending on whether you are doing high-level
+or low-level tuning, dealing with logical or physical aspects of the query
+
+If you come from a traditional database background and are not familiar with data warehousing, keep in mind that
+Impala is optimized for full table scans across very large tables. The structure and distribution of this data is typically
+**not suitable for** the kind of indexing and single-row lookups that are common in **OLTP environments**. Seeing a query
+scan entirely through a large table is common, not necessarily an indication of an inefficient query. Of course, if you
+can reduce the volume of scanned data by orders of magnitude, for example by using a query that affects only certain
+partitions within a partitioned table, then you might be able to optimize a query so that it executes in seconds rather
+than minutes
+
+**Extended EXPLAIN output**
+
+For performance tuning of complex queries, and capacity planning (such as using the admission control and resource
+management features), you can enable more detailed and informative output for the `EXPLAIN` statement. In the
+impala-shell interpreter, issue the command `SET EXPLAIN_LEVEL=level`, where level is an integer from 0
+to 3 or corresponding mnemonic values `minimal`, `standard`, `extended`, or `verbose`
+
+When extended `EXPLAIN` output is enabled, `EXPLAIN` statements print information about estimated memory
+requirements, minimum number of virtual cores, and so on.
