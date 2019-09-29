@@ -12,6 +12,8 @@ Queries executed using Impala are handled as follows
 -  Services such as HDFS and HBase are accessed by local impalad instances to provide data
 - Each impalad returns data to the coordinating impalad, which sends these results to the client
 
+---
+
 # Impala Concepts and Architecture
 The Impala server is a distributed, massively parallel processing (MPP) database engine. It consists of different daemon processes that run on specific hosts within your  cluster
 
@@ -44,8 +46,10 @@ Use `--load_catalog_in_background` option to control when the metadata of a tabl
 - If set to `true`, the catalog service attempts to load metadata for a table even if no query needed that metadata. So metadata will possibly be already loaded when the first query that would need it is run. However, for the following reasons, we recommend not to set the option to `true`
    - Background load can interfere with query-specific metadata loading. This can happen on startup or after invalidating metadata, with a duration depending on the amount of metadata, and can lead to a seemingly random long running queries that are difficult to diagnose
    - Impala may load metadata for tables that are possibly never used, potentially increasing catalog size and consequently memory usage for both catalog service and Impala Daemon
+
+> Most considerations for load balancing and high availability apply to the impalad daemon. **The statestored and catalogd daemons do not have special requirements for high availability**, because problems with those daemons do not result in data loss. If those daemons become unavailable due to an outage on a particular host, you can stop the Impala service, delete the Impala StateStore and Impala Catalog Server roles, add the roles on a different host, and restart the Impala service
+
 ---
-Most considerations for load balancing and high availability apply to the impalad daemon. **The statestored and catalogd daemons do not have special requirements for high availability**, because problems with those daemons do not result in data loss. If those daemons become unavailable due to an outage on a particular host, you can stop the Impala service, delete the Impala StateStore and Impala Catalog Server roles, add the roles on a different host, and restart the Impala service
 
 # How Impala Fits Into the Hadoop Ecosystem
 
@@ -82,6 +86,8 @@ Impala uses the distributed filesystem HDFS as its primary data storage medium. 
 ## How Impala Uses HBase
 
 HBase is an alternative to HDFS as a storage medium for Impala data. It is a database storage system built on top of HDFS, without built-in SQL support. Many Hadoop users already have it configured and store large (often sparse) data sets in it. By defining tables in Impala and mapping them to equivalent tables in HBase, you can query the contents of the HBase tables through Impala, and even perform join queries including both Impala and HBase tables
+
+---
 
 # Guidelines for Designing Impala Schemas
 
@@ -123,6 +129,8 @@ When doing a join query, Impala consults the statistics for each joined table to
 Before executing a resource-intensive query, use the EXPLAIN statement to get an overview of how Impala intends to parallelize the query and distribute the work. If you see that the query plan is inefficient, you can take tuning steps such as changing file formats, using partitioned tables, running the COMPUTE STATS statement, or adding query hints
 
 After you run a query, you can see performance-related information about how it actually ran by issuing the SUMMARY command in impala-shell. Prior to Impala 1.4, you would use the PROFILE command, but its highly technical output was only useful for the most experienced users. SUMMARY, new in Impala 1.4, summarizes the most useful information for all stages of execution, for all nodes rather than splitting out figures for each node
+
+---
 
 # Admission Control and Query Queuing
 
@@ -259,6 +267,8 @@ select * from huge_table join enormous_table using (id);
 drop table huge_table;
 ```
 
+---
+
 # Resource Management for Impala
 
 The use of the Llama component for integrated resource management within YARN is no longer supported with Impala 2.3 and higher. The Llama support code is removed entirely in Impala 2.8 and higher
@@ -266,6 +276,8 @@ The use of the Llama component for integrated resource management within YARN is
 ## How Resource Limits Are Enforced
 
 Limits on memory usage are enforced by Impala's process memory limit (the MEM_LIMIT query option setting). The admission control feature checks this setting to decide how many queries can be safely run at the same time. Then the Impala daemon enforces the limit by activating the spill-to-disk mechanism when necessary, or cancelling a query altogether if the limit is exceeded at runtime
+
+---
 
 # Setting Timeout Periods for Daemons, Queries, and Sessions
 
@@ -305,6 +317,8 @@ Impala connections to the backend client are subject to failure in cases when th
 
 Sometimes, an Impala query might run for an unexpectedly long time, tying up resources in the cluster. You can cancel the query explicitly, independent of the timeout period, by going into the web UI for the impalad host (on port 25000 by default), and using the link on the `/queries` tab to cancel the running query. For example, press `^C` in `impala-shell`
 
+---
+
 # Managing Disk Space for Impala Data
 
 Although Impala typically works with many large files in an HDFS storage system with plenty of capacity, there are times when you might perform some file cleanup to reclaim space, or advise developers on techniques to minimize space consumption and file duplication
@@ -317,6 +331,8 @@ Although Impala typically works with many large files in an HDFS storage system 
 
 - By default, intermediate files used during large sort, join, aggregation, or analytic function operations are stored in the directory `/tmp/impala-scratch` . These files are removed when the operation finishes. (Multiple concurrent queries can perform operations that use the “spill to disk” technique, without any name conflicts for these temporary files.) You can specify a different location by starting the impalad daemon with the `-scratch_dirs="path_to_directory"` configuration option. You can specify a single directory, or a comma-separated list of directories. The scratch directories must be on the local filesystem, not in HDFS. You might specify different directory paths for different hosts, depending on the capacity and speed of the available storage devices. In Impala 2.3 or higher, Impala successfully starts (with a warning Impala successfully starts (with a warning written to the log) if it cannot create or read and write files in one of the scratch directories. If there is less than 1 GB free on the filesystem where that directory resides, Impala still runs, but writes a warning message to its log. If Impala encounters an error reading or writing files in a scratch directory during a query, Impala logs the error and the query fails
 
+---
+
 # Auditing Impala Operations
 
 To monitor how Impala data is being used within your organization, ensure that your Impala authorization and authentication policies are effective. To detect attempts at intrusion or unauthorized access to Impala data, you can use the auditing feature in Impala 1.2.1 and higher
@@ -324,6 +340,8 @@ To monitor how Impala data is being used within your organization, ensure that y
 -  Enable auditing by including the option `-audit_event_log_dir=directory_path` in your impalad startup options. The log directory must be a local directory on the server, not an HDFS directory
 - Decide how many queries will be represented in each audit event log file. By default, Impala starts a new audit event log file every 5000 queries. To specify a different number, include the option `-max_audit_event_log_file_size=number_of_queries` in the impalad startup options
 - In Impala 2.9 and higher, you can control how many audit event log files are kept on each host. Specify the option `--max_audit_event_log_files=number_of_log_files` in the impalad startup options. Once the limit is reached, older files are rotated out using the same mechanism as for other Impala log files. The default value for this setting is 0, representing an unlimited number of audit event log files
+
+---
 
 # Impala SQL Language Reference
 
@@ -627,3 +645,1037 @@ to 3 or corresponding mnemonic values `minimal`, `standard`, `extended`, or `ver
 
 When extended `EXPLAIN` output is enabled, `EXPLAIN` statements print information about estimated memory
 requirements, minimum number of virtual cores, and so on.
+
+```sql
+[emr-header-1.cluster-100513:21000] > explain select ord_id from t_mz_sale_d where bill_dat = '2018-9-24' group by ord_id;
+Query: explain select ord_id from t_mz_sale_d where bill_dat = '2018-9-24' group by ord_id
++--------------------------------------------------+
+| Explain String                                   |
++--------------------------------------------------+
+| Max Per-Host Resource Reservation: Memory=3.94MB |
+| Per-Host Resource Estimates: Memory=36.00MB      |
+| Codegen disabled by planner                      |
+|                                                  |
+| PLAN-ROOT SINK                                   |
+| |                                                |
+| 04:EXCHANGE [UNPARTITIONED]                      |
+| |                                                |
+| 03:AGGREGATE [FINALIZE]                          |
+| |  group by: ord_id                              |
+| |                                                |
+| 02:EXCHANGE [HASH(ord_id)]                       |
+| |                                                |
+| 01:AGGREGATE [STREAMING]                         |
+| |  group by: ord_id                              |
+| |                                                |
+| 00:SCAN HDFS [dwd.t_mz_sale_d]                   |
+|    partitions=1/123 files=1 size=75.18KB         |
++--------------------------------------------------+
+
+[emr-header-1.cluster-100513:21000] > set explain_level=extended;
+EXPLAIN_LEVEL set to extended
+[emr-header-1.cluster-100513:21000] > explain select ord_id from t_mz_sale_d where bill_dat = '2018-9-24' group by ord_id;
+Query: explain select ord_id from t_mz_sale_d where bill_dat = '2018-9-24' group by ord_id
++---------------------------------------------------------------------+
+| Explain String                                                      |
++---------------------------------------------------------------------+
+| Max Per-Host Resource Reservation: Memory=3.94MB                    |
+| Per-Host Resource Estimates: Memory=36.00MB                         |
+| Codegen disabled by planner                                         |
+|                                                                     |
+| F02:PLAN FRAGMENT [UNPARTITIONED] hosts=1 instances=1               |
+| |  Per-Host Resources: mem-estimate=0B mem-reservation=0B           |
+| PLAN-ROOT SINK                                                      |
+| |  mem-estimate=0B mem-reservation=0B                               |
+| |                                                                   |
+| 04:EXCHANGE [UNPARTITIONED]                                         |
+| |  mem-estimate=0B mem-reservation=0B                               |
+| |  tuple-ids=1 row-size=24B cardinality=3215                        |
+| |                                                                   |
+| F01:PLAN FRAGMENT [HASH(ord_id)] hosts=1 instances=1                |
+| Per-Host Resources: mem-estimate=10.00MB mem-reservation=1.94MB     |
+| 03:AGGREGATE [FINALIZE]                                             |
+| |  group by: ord_id                                                 |
+| |  mem-estimate=10.00MB mem-reservation=1.94MB spill-buffer=64.00KB |
+| |  tuple-ids=1 row-size=24B cardinality=3215                        |
+| |                                                                   |
+| 02:EXCHANGE [HASH(ord_id)]                                          |
+| |  mem-estimate=0B mem-reservation=0B                               |
+| |  tuple-ids=1 row-size=24B cardinality=3215                        |
+| |                                                                   |
+| F00:PLAN FRAGMENT [RANDOM] hosts=1 instances=1                      |
+| Per-Host Resources: mem-estimate=26.00MB mem-reservation=2.00MB     |
+| 01:AGGREGATE [STREAMING]                                            |
+| |  group by: ord_id                                                 |
+| |  mem-estimate=10.00MB mem-reservation=2.00MB spill-buffer=64.00KB |
+| |  tuple-ids=1 row-size=24B cardinality=3215                        |
+| |                                                                   |
+| 00:SCAN HDFS [dwd.t_mz_sale_d, RANDOM]                              |
+|    partitions=1/123 files=1 size=75.18KB                            |
+|    stored statistics:                                               |
+|      table: rows=386521 size=8.80MB                                 |
+|      partitions: 1/1 rows=3215                                      |
+|      columns: all                                                   |
+|    extrapolated-rows=disabled                                       |
+|    mem-estimate=16.00MB mem-reservation=0B                          |
+|    tuple-ids=0 row-size=24B cardinality=3215                        |
++---------------------------------------------------------------------+
+```
+
+## UPSERT Statement (Impala 2.8 or higher only)
+
+> Warning: This statement **only works** for Impala tables that use the **Kudu** storage engine
+
+Acts as a combination of the `INSERT` and `UPDATE` statements. For each row processed by the `UPSERT` statement
+
+- If another row already exists with the same set of primary key values, the other columns are updated to match the
+values from the row being "UPSERTed"
+
+- If there is not any row with the same set of primary key values, the row is created, the same as if the `INSERT`
+statement was used
+
+**Syntax**
+
+```sql
+UPSERT [hint_clause] INTO [TABLE] [db_name.]table_name
+ [(column_list)]
+{
+ [hint_clause] select_statement
+ | VALUES (value [, value ...]) [, (value [, value ...]) ...]
+}
+```
+
+## Optimizer Hints
+
+The Impala SQL supports query hints, for fine-tuning the inner workings of queries. Specify hints as a temporary
+workaround for expensive queries, where missing statistics or other factors cause inefficient performance.
+
+Hints are most often used for the resource-intensive Impala queries, such as
+
+- Join queries involving large tables, where intermediate result sets are transmitted across the network to evaluate
+the join conditions
+
+- Inserting into partitioned Parquet tables, where many memory buffers could be allocated on each host to hold
+intermediate results for each partition
+
+**Syntax**
+
+```sql
+SELECT STRAIGHT_JOIN select_list FROM
+join_left_hand_table
+ JOIN /* +BROADCAST|SHUFFLE */
+join_right_hand_table
+remainder_of_query;
+
+SELECT select_list FROM
+join_left_hand_table
+ JOIN -- +BROADCAST|SHUFFLE
+join_right_hand_table
+remainder_of_query;
+
+INSERT insert_clauses
+ /* +SHUFFLE|NOSHUFFLE */
+ SELECT remainder_of_query;
+...
+```
+With both forms of hint syntax, include the `STRAIGHT_JOIN` keyword immediately after the `SELECT` and any
+`DISTINCT` or `ALL` keywords to prevent Impala from reordering the tables in a way that makes the join-related hints
+ineffective
+
+The `STRAIGHT_JOIN` hint affects the join order of table references in the query block containing the hint. It does
+not affect the join order of nested queries, such as views, inline views, or `WHERE`-clause subqueries. To use this hint
+for performance tuning of complex queries, apply the hint to all query blocks that need a fixed join order
+
+To reduce the need to use hints, run the `COMPUTE STATS` statement against all tables involved in joins, or used as
+the source tables for `INSERT ... SELECT` operations where the destination is a partitioned Parquet table. Do this
+operation after loading data or making substantial changes to the data within each table. Having up-to-date statistics
+helps Impala choose more efficient query plans without the need for hinting
+
+In particular, the `/* +BROADCAST */` and `/* +SHUFFLE */` hints **are expected to be needed much less
+frequently** in Impala 1.2.2 and higher, because the join order optimization feature in combination with the `COMPUTE
+STATS` statement now automatically choose join order and join mechanism without the need to rewrite the query and
+add hints
+
+---
+
+# Tuning Impala for Performance
+
+The following sections explain the factors affecting the performance of Impala features, and procedures for tuning,
+monitoring, and benchmarking Impala queries and other SQL operations
+
+This section also describes techniques for maximizing Impala scalability. Scalability is tied to performance: it means
+that performance remains high as the system workload increases. For example, reducing the disk I/O performed
+by a query can speed up an individual query, and at the same time improve scalability by making it practical to run
+more queries simultaneously. Sometimes, an optimization technique improves scalability more than performance.
+For example, reducing memory usage for a query might not change the query performance much, but might improve
+scalability by allowing more Impala queries or other kinds of jobs to run at the same time without running out of
+memory.
+
+**Subjects**
+
+- Partitioning for Impala Tables. This technique physically divides the data based on the different
+values in frequently queried columns, allowing queries to skip reading a large percentage of the data in a table
+
+- Performance Considerations for Join Queries. Joins are the main class of queries that you can tune
+at the SQL level, as opposed to changing physical factors such as the file format or the hardware configuration.
+The related topics Overview of Column Statistics and Overview of Table Statistics
+are also important primarily for join performance
+
+- Overview of Table Statistics and Overview of Column Statistics. Gathering
+table and column statistics, using the COMPUTE STATS statement, helps Impala automatically optimize the
+performance for join queries, without requiring changes to SQL query statements. (This process is greatly
+simplified in Impala 1.2.2 and higher, because the `COMPUTE STATS` statement gathers both kinds of statistics
+in one operation, and does not require any setup and configuration as was previously necessary for the `ANALYZE
+TABLE` statement in Hive.)
+
+- Testing Impala Performance. Do some post-setup testing to ensure Impala is using optimal
+settings for performance, before conducting any benchmark tests
+
+- Benchmarking Impala Queries. The configuration and sample data that you use for initial
+experiments with Impala is often not appropriate for doing performance tests
+
+- Controlling Impala Resource Usage. The more memory Impala can utilize, the better query
+performance you can expect. In a cluster running other kinds of workloads as well, you must make tradeoffs to
+make sure all Hadoop components have enough memory to perform well, so you might cap the memory that
+Impala can use
+
+## Impala Performance Guidelines and Best Practices
+
+Here are performance guidelines and best practices that you can use during planning, experimentation, and
+performance tuning for an Impala-enabled cluster. All of this information is also available in more detail elsewhere
+in the Impala documentation; it is gathered together here to serve as a cookbook and emphasize which performance
+techniques typically provide the highest return on investment
+
+### Choose the appropriate file format for the data
+
+Typically, for large volumes of data (multiple gigabytes per table or partition), the Parquet file format performs
+best because of its combination of columnar storage layout, large I/O request size, and compression and encoding
+
+### Avoid data ingestion processes that produce many small files
+
+When producing data files outside of Impala, prefer either text format or Avro, where you can build up the files row
+by row. Once the data is in Impala, you can convert it to the more efficient Parquet format and split into multiple data
+files using a single `INSERT ... SELECT` statement. Or, if you have the infrastructure to produce multi-megabyte
+Parquet files as part of your data preparation process, do that and skip the conversion step inside Impala
+
+Always use `INSERT ... SELECT` to copy significant volumes of data from table to table within Impala.
+Avoid `INSERT ... VALUES` for any substantial volume of data or performance-critical tables, because each
+such statement produces a separate tiny data file
+
+For example, if you have thousands of partitions in a Parquet table, each with less than 256 MB of data, consider
+partitioning in a less granular way, such as by year / month rather than year / month / day. If an inefficient data
+ingestion process produces thousands of data files in the same table or partition, consider compacting the data by
+performing an `INSERT ... SELECT` to copy all the data to a different table; the data will be reorganized into a
+smaller number of larger files by this process
+
+### Choose partitioning granularity based on actual data volume
+
+Partitioning is a technique that physically divides the data based on values of one or more columns, such as by year,
+month, day, region, city, section of a web site, and so on. When you issue queries that request a specific value or
+range of values for the partition key columns, Impala can avoid reading the irrelevant data, potentially yielding a huge
+savings in disk I/O
+
+When deciding which column(s) to use for partitioning, choose the right level of granularity. For example, should you
+partition by year, month, and day, or only by year and month? Choose a partitioning strategy that puts at least 256 MB
+of data in each partition, to take advantage of HDFS bulk I/O and Impala distributed queries
+
+Over-partitioning can also cause query planning to take longer than necessary, as Impala prunes the unnecessary
+partitions. Ideally, keep the number of partitions in the table under 30 thousand
+
+When preparing data files to go in a partition directory, create several large files rather than many small ones. If
+you receive data in the form of many small files and have no control over the input format, consider using the
+`INSERT ... SELECT` syntax to copy data from one table or partition to another, which compacts the files into a
+relatively small number (based on the number of nodes in the cluster)
+
+If you need to reduce the overall number of partitions and increase the amount of data in each partition, first look for
+partition key columns that are rarely referenced or are referenced in non-critical queries (not subject to an SLA). For
+example, your web site log data might be partitioned by year, month, day, and hour, but if most queries roll up the
+results by day, perhaps you only need to partition by year, month, and day
+
+If you need to reduce the granularity even more, consider creating "buckets", computed values corresponding to
+different sets of partition key values. For example, you can use the `TRUNC()` function with a `TIMESTAMP` column to
+group date and time values based on intervals such as week or quarter
+
+### Use smallest appropriate integer types for partition key columns
+
+Although it is tempting to use strings for partition key columns, since those values are turned into HDFS directory
+names anyway, you can minimize memory usage by using numeric values for common partition key fields such as
+YEAR, MONTH, and DAY. Use the smallest integer type that holds the appropriate range of values, typically `TINYINT`
+for MONTH and DAY, and `SMALLINT` for YEAR. Use the `EXTRACT()` function to pull out individual date and time
+fields from a `TIMESTAMP` value, and `CAST()` the return value to the appropriate integer type
+
+### Choose an appropriate Parquet block size
+
+By default, the Impala `INSERT ... SELECT` statement creates Parquet files with a 256 MB block size. (This
+default was changed in Impala 2.0. Formerly, the limit was 1 GB, but Impala made conservative estimates about
+compression, resulting in files that were smaller than 1 GB.)
+
+Each Parquet file written by Impala is a single block, allowing the whole file to be processed as a unit by a single
+host. As you copy Parquet files into HDFS or between HDFS filesystems, use `hdfs dfs -pb` to preserve the
+original block size
+
+If there is only one or a few data block in your Parquet table, or in a partition that is the only one accessed by a query,
+then you might experience a slowdown for a different reason: not enough data to take advantage of Impala's parallel
+distributed queries. Each data block is processed by a single core on one of the DataNodes. In a 100-node cluster of
+16-core machines, you could potentially process thousands of data files simultaneously. You want to find a sweet
+spot between "many tiny files" and "single giant file" that balances bulk I/O and parallel processing. You can set the
+`PARQUET_FILE_SIZE` query option before doing an `INSERT ... SELECT` statement to reduce the size of each
+generated Parquet file. (Specify the file size as an absolute number of bytes, or in Impala 2.0 and later, in units ending
+with m for megabytes or g for gigabytes.) Run benchmarks with different file sizes to find the right balance point for
+your particular data volume
+
+### Gather statistics for all tables used in performance-critical or high-volume join queries
+
+Gather the statistics with the `COMPUTE STATS` statement
+
+### Minimize the overhead of transmitting results back to the client
+
+- Aggregation
+- Filtering
+- `LIMIT` clause
+
+### Verify that your queries are planned in an efficient logical manner
+
+Examine the `EXPLAIN` plan for a query before actually running it
+
+## Performance Considerations for Join Queries
+
+Queries involving join operations often require more tuning than queries that refer to only one table. The maximum
+size of the result set from a join query is the product of the number of rows in all the joined tables. When joining
+several tables with millions or billions of rows, any missed opportunity to filter the result set, or other inefficiency in
+the query, could lead to an operation that does not finish in a practical time and has to be cancelled
+
+The simplest technique for tuning an Impala join query is to collect statistics on each table involved in the join
+using the `COMPUTE STATS` statement, and then let Impala automatically optimize the query based on the size of
+each table, number of distinct values of each column, and so on. The `COMPUTE STATS` statement and the join
+optimization are new features introduced in Impala 1.2.2. For accurate statistics about each table, issue the `COMPUTE
+STATS` statement after loading the data into that table, and again if the amount of data changes substantially due to an
+`INSERT`, `LOAD DATA`, adding a partition, and so on
+
+If statistics are not available for all the tables in the join query, or if Impala chooses a join order that is not the most
+efficient, you can override the automatic join order optimization by specifying the `STRAIGHT_JOIN` keyword immediately after the `SELECT` and any `DISTINCT` or `ALL` keywords. In this case, Impala uses the order the tables
+appear in the query to guide how the joins are processed
+
+When you use the `STRAIGHT_JOIN` technique, you must order the tables in the join query manually instead of
+relying on the Impala optimizer. The optimizer uses sophisticated techniques to estimate the size of the result set at
+each stage of the join. For manual ordering, use this heuristic approach to start with, and then experiment to fine-tune
+the order
+
+- Specify the largest table first. This table is read from disk by each Impala node and so its size is not significant in
+terms of memory usage during the query
+- Next, specify the smallest table. The contents of the second, third, and so on tables are all transmitted across the
+network. You want to minimize the size of the result set from each subsequent stage of the join query. The most
+likely approach involves joining a small table first, so that the result set remains small even as subsequent larger
+tables are processed
+- Join the next smallest table, then the next smallest, and so on
+- For example, if you had tables BIG, MEDIUM, SMALL, and TINY, the logical join order to try would be BIG,
+TINY, SMALL, MEDIUM
+
+The terms "largest" and "smallest" refers to the size of the intermediate result set based on the number of rows and
+columns from each table that are part of the result set. For example, if you join one table sales with another table
+customers, a query might find results from 100 different customers who made a total of 5000 purchases. In that
+case, you would specify `SELECT ... FROM sales JOIN customers ...,` putting customers on the
+right side because it is smaller in the context of this query
+
+The Impala query planner chooses between different techniques for performing join queries, depending on the
+absolute and relative sizes of the tables. **Broadcast joins** are the default, where the right-hand table is considered
+to be smaller than the left-hand table, and its contents are sent to all the other nodes involved in the query. The
+alternative technique is known as a **Partitioned join** (not related to a partitioned table), which is more suitable for
+large tables of roughly equal size. With this technique, portions of each table are sent to appropriate other nodes
+where those subsets of rows can be processed in parallel. The choice of broadcast or partitioned join also depends on
+statistics being available for all tables in the join, gathered by the `COMPUTE STATS` statement
+
+To see which join strategy is used for a particular query, issue an `EXPLAIN` statement for the query. If you find that a
+query uses a broadcast join when you know through benchmarking that a partitioned join would be more efficient, or
+vice versa, add a hint to the query to specify the precise join mechanism to use
+
+> add query hint mannually in join query is less used, consider to use `COMPUTE STATS`, impala would optimize join query efficiently and automatically
+
+### How Joins Are Processed when Statistics Are Unavailable
+
+If table or column statistics are not available for some tables in a join, Impala still reorders the tables using the
+information that is available. Tables with statistics are placed on the left side of the join order, in descending order
+of cost based on overall size and cardinality. Tables without statistics are treated as zero-size, that is, they are always
+placed on the right side of the join order
+
+### Overriding Join Reordering with `STRAIGHT_JOIN`
+
+If an Impala join query is inefficient because of outdated statistics or unexpected data distribution, you can keep
+Impala from reordering the joined tables by using the `STRAIGHT_JOIN` keyword immediately after the `SELECT`
+and any `DISTINCT` or `ALL` keywords. The `STRAIGHT_JOIN` keyword turns off the reordering of join clauses that
+Impala does internally, and produces a plan that relies on the join clauses being ordered optimally in the query text.
+In this case, rewrite the query so that the largest table is on the left, followed by the next largest, and so on until the
+smallest table is on the right
+
+**Note**
+
+The STRAIGHT_JOIN hint affects the join order of table references in the query block containing the hint. It does
+not affect the join order of nested queries, such as views, inline views, or WHERE-clause subqueries. To use this hint
+for performance tuning of complex queries, apply the hint to all query blocks that need a fixed join order
+
+In this example, the subselect from the BIG table produces a very small result set, but the table might still be treated
+as if it were the biggest and placed first in the join order. Using `STRAIGHT_JOIN` for the last join clause prevents
+the final table from being reordered, keeping it as the rightmost table in the join order
+
+```sql
+select straight_join x from medium join small join (select * from big where c1 < 10) as big
+where medium.id = small.id and small.id = big.id;
+
+ -- If the query contains [DISTINCT | ALL], the hint goes after those keywords.
+select distinct straight_join x from medium join small join (select * from big where c1 < 10) as big
+where medium.id = small.id and small.id = big.id;
+```
+
+### Examples of Join Order Optimization
+
+Here are examples showing joins between tables with 1 billion, 200 million, and 1 million rows. (In this case, the
+tables are unpartitioned and using Parquet format.) The smaller tables contain subsets of data from the largest one,
+for convenience of joining on the unique ID column. The smallest table only contains a subset of columns from the
+others
+
+```sql
+[localhost:21000] > create table big stored as parquet as select * from raw_data;
++----------------------------+
+| summary                    |
++----------------------------+
+| Inserted 1000000000 row(s) |
++----------------------------+
+Returned 1 row(s) in 671.56s
+[localhost:21000] > desc big;
++-----------+---------+---------+
+| name      | type    | comment |
++-----------+---------+---------+
+| id        | int     |         |
+| val       | int     |         |
+| zfill     | string  |         |
+| name      | string  |         |
+| assertion | boolean |         |
++-----------+---------+---------+
+Returned 5 row(s) in 0.01s
+[localhost:21000] > create table medium stored as parquet as select * from big limit 200 * floor(1e6);
++---------------------------+
+| summary                   |
++---------------------------+
+| Inserted 200000000 row(s) |
++---------------------------+
+Returned 1 row(s) in 138.31s
+[localhost:21000] > create table small stored as parquet as select id,val,name from big where assertion = true limit 1 * floor(1e6);
++-------------------------+
+| summary                 |
++-------------------------+
+| Inserted 1000000 row(s) |
++-------------------------+
+Returned 1 row(s) in 6.32s
+
+
+```
+
+For any kind of performance experimentation, use the EXPLAIN statement to see how any expensive query will be
+performed without actually running it, and enable verbose EXPLAIN plans containing more performance-oriented
+detail: The most interesting plan lines are highlighted in bold, showing that without statistics for the joined tables, Impala cannot make a good estimate of the number of rows involved at each stage of processing, and is likely to stick
+with the `BROADCAST` join mechanism that sends a complete copy of one of the tables to each node
+
+```sql
+[localhost:21000] > set explain_level=verbose;
+EXPLAIN_LEVEL set to verbose
+[localhost:21000] > explain select count(*) from big join medium where big.id = medium.id;
++----------------------------------------------------------+
+| Explain String                                           |
++----------------------------------------------------------+
+| Estimated Per-Host Requirements: Memory=2.10GB VCores=2  |
+|                                                          |
+| PLAN FRAGMENT 0                                          |
+|   PARTITION: UNPARTITIONED                               |
+|                                                          |
+|   6:AGGREGATE (merge finalize)                           |
+|   |  output: SUM(COUNT(*))                               |
+|   |  cardinality: 1                                      |
+|   |  per-host memory: unavailable                        |
+|   |  tuple ids: 2                                        |
+|   |                                                      |
+|   5:EXCHANGE                                             |
+|      cardinality: 1                                      |
+|      per-host memory: unavailable                        |
+|      tuple ids: 2                                        |
+|                                                          |
+| PLAN FRAGMENT 1                                          |
+|   PARTITION: RANDOM                                      |
+|                                                          |
+|   STREAM DATA SINK                                       |
+|     EXCHANGE ID: 5                                       |
+|     UNPARTITIONED                                        |
+|                                                          |
+|   3:AGGREGATE                                            |
+|   |  output: COUNT(*)                                    |
+|   |  cardinality: 1                                      |
+|   |  per-host memory: 10.00MB                            |
+|   |  tuple ids: 2                                        |
+|   |                                                      |
+|   2:HASH JOIN                                            |
+|   |  join op: INNER JOIN (BROADCAST)                     |
+|   |  hash predicates:                                    |
+|   |    big.id = medium.id                                |
+|   |  cardinality: unavailable                            |
+|   |  per-host memory: 2.00GB                             |
+|   |  tuple ids: 0 1                                      |
+|   |                                                      |
+|   |----4:EXCHANGE                                        |
+|   |       cardinality: unavailable                       |
+|   |       per-host memory: 0B                            |
+|   |       tuple ids: 1                                   |
+|   |                                                      |
+|   0:SCAN HDFS                                            |
+|      table=join_order.big #partitions=1/1 size=23.12GB   |
+|      table stats: unavailable                            |
+|      column stats: unavailable                           |
+|      cardinality: unavailable                            |
+|      per-host memory: 88.00MB                            |
+|      tuple ids: 0                                        |
+|                                                          |
+| PLAN FRAGMENT 2                                          |
+|   PARTITION: RANDOM                                      |
+|                                                          |
+|   STREAM DATA SINK                                       |
+|     EXCHANGE ID: 4                                       |
+|     UNPARTITIONED                                        |
+|                                                          |
+|   1:SCAN HDFS                                            |
+|      table=join_order.medium #partitions=1/1 size=4.62GB |
+|      table stats: unavailable                            |
+|      column stats: unavailable                           |
+|      cardinality: unavailable                            |
+|      per-host memory: 88.00MB                            |
+|      tuple ids: 1                                        |
++----------------------------------------------------------+
+Returned 64 row(s) in 0.04s
+```
+
+Gathering statistics for all the tables is straightforward, one `COMPUTE STATS` statement per table
+
+```sql
+[localhost:21000] > compute stats small;
++-----------------------------------------+
+| summary                                 |
++-----------------------------------------+
+| Updated 1 partition(s) and 3 column(s). |
++-----------------------------------------+
+Returned 1 row(s) in 4.26s
+[localhost:21000] > compute stats medium;
++-----------------------------------------+
+| summary                                 |
++-----------------------------------------+
+| Updated 1 partition(s) and 5 column(s). |
++-----------------------------------------+
+Returned 1 row(s) in 42.11s
+[localhost:21000] > compute stats big;
++-----------------------------------------+
+| summary                                 |
++-----------------------------------------+
+| Updated 1 partition(s) and 5 column(s). |
++-----------------------------------------+
+Returned 1 row(s) in 165.44s
+```
+
+With statistics in place, Impala can choose a more effective join order rather than following the left-to-right sequence
+of tables in the query, and can choose `BROADCAST` or `PARTITIONED` join strategies based on the overall sizes and
+number of rows in the table
+
+```sql
+[localhost:21000] > explain select count(*) from medium join big where big.id = medium.id;
+Query: explain select count(*) from medium join big where big.id = medium.id
++-----------------------------------------------------------+
+| Explain String                                            |
++-----------------------------------------------------------+
+| Estimated Per-Host Requirements: Memory=937.23MB VCores=2 |
+|                                                           |
+| PLAN FRAGMENT 0                                           |
+|   PARTITION: UNPARTITIONED                                |
+|                                                           |
+|   6:AGGREGATE (merge finalize)                            |
+|   |  output: SUM(COUNT(*))                                |
+|   |  cardinality: 1                                       |
+|   |  per-host memory: unavailable                         |
+|   |  tuple ids: 2                                         |
+|   |                                                       |
+|   5:EXCHANGE                                              |
+|      cardinality: 1                                       |
+|      per-host memory: unavailable                         |
+|      tuple ids: 2                                         |
+|                                                           |
+| PLAN FRAGMENT 1                                           |
+|   PARTITION: RANDOM                                       |
+|                                                           |
+|   STREAM DATA SINK                                        |
+|     EXCHANGE ID: 5                                        |
+|     UNPARTITIONED                                         |
+|                                                           |
+|   3:AGGREGATE                                             |
+|   |  output: COUNT(*)                                     |
+|   |  cardinality: 1                                       |
+|   |  per-host memory: 10.00MB                             |
+|   |  tuple ids: 2                                         |
+|   |                                                       |
+|   2:HASH JOIN                                             |
+|   |  join op: INNER JOIN (BROADCAST)                      |
+|   |  hash predicates:                                     |
+|   |    big.id = medium.id                                 |
+|   |  cardinality: 1443004441                              |
+|   |  per-host memory: 839.23MB                            |
+|   |  tuple ids: 1 0                                       |
+|   |                                                       |
+|   |----4:EXCHANGE                                         |
+|   |       cardinality: 200000000                          |
+|   |       per-host memory: 0B                             |
+|   |       tuple ids: 0                                    |
+|   |                                                       |
+|   1:SCAN HDFS                                             |
+|      table=join_order.big #partitions=1/1 size=23.12GB    |
+|      table stats: 1000000000 rows total                   |
+|      column stats: all                                    |
+|      cardinality: 1000000000                              |
+|      per-host memory: 88.00MB                             |
+|      tuple ids: 1                                         |
+|                                                           |
+| PLAN FRAGMENT 2                                           |
+|   PARTITION: RANDOM                                       |
+|                                                           |
+|   STREAM DATA SINK                                        |
+|     EXCHANGE ID: 4                                        |
+|     UNPARTITIONED                                         |
+|                                                           |
+|   0:SCAN HDFS                                             |
+|      table=join_order.medium #partitions=1/1 size=4.62GB  |
+|      table stats: 200000000 rows total                    |
+|      column stats: all                                    |
+|      cardinality: 200000000                               |
+|      per-host memory: 88.00MB                             |
+|      tuple ids: 0                                         |
++-----------------------------------------------------------+
+Returned 64 row(s) in 0.04s
+
+[localhost:21000] > explain select count(*) from small join big where big.id = small.id;
+Query: explain select count(*) from small join big where big.id = small.id
++-----------------------------------------------------------+
+| Explain String                                            |
++-----------------------------------------------------------+
+| Estimated Per-Host Requirements: Memory=101.15MB VCores=2 |
+|                                                           |
+| PLAN FRAGMENT 0                                           |
+|   PARTITION: UNPARTITIONED                                |
+|                                                           |
+|   6:AGGREGATE (merge finalize)                            |
+|   |  output: SUM(COUNT(*))                                |
+|   |  cardinality: 1                                       |
+|   |  per-host memory: unavailable                         |
+|   |  tuple ids: 2                                         |
+|   |                                                       |
+|   5:EXCHANGE                                              |
+|      cardinality: 1                                       |
+|      per-host memory: unavailable                         |
+|      tuple ids: 2                                         |
+|                                                           |
+| PLAN FRAGMENT 1                                           |
+|   PARTITION: RANDOM                                       |
+|                                                           |
+|   STREAM DATA SINK                                        |
+|     EXCHANGE ID: 5                                        |
+|     UNPARTITIONED                                         |
+|                                                           |
+|   3:AGGREGATE                                             |
+|   |  output: COUNT(*)                                     |
+|   |  cardinality: 1                                       |
+|   |  per-host memory: 10.00MB                             |
+|   |  tuple ids: 2                                         |
+|   |                                                       |
+|   2:HASH JOIN                                             |
+|   |  join op: INNER JOIN (BROADCAST)                      |
+|   |  hash predicates:                                     |
+|   |    big.id = small.id                                  |
+|   |  cardinality: 1000000000                              |
+|   |  per-host memory: 3.15MB                              |
+|   |  tuple ids: 1 0                                       |
+|   |                                                       |
+|   |----4:EXCHANGE                                         |
+|   |       cardinality: 1000000                            |
+|   |       per-host memory: 0B                             |
+|   |       tuple ids: 0                                    |
+|   |                                                       |
+|   1:SCAN HDFS                                             |
+|      table=join_order.big #partitions=1/1 size=23.12GB    |
+|      table stats: 1000000000 rows total                   |
+|      column stats: all                                    |
+|      cardinality: 1000000000                              |
+|      per-host memory: 88.00MB                             |
+|      tuple ids: 1                                         |
+|                                                           |
+| PLAN FRAGMENT 2                                           |
+|   PARTITION: RANDOM                                       |
+|                                                           |
+|   STREAM DATA SINK                                        |
+|     EXCHANGE ID: 4                                        |
+|     UNPARTITIONED                                         |
+|                                                           |
+|   0:SCAN HDFS                                             |
+|      table=join_order.small #partitions=1/1 size=17.93MB  |
+|      table stats: 1000000 rows total                      |
+|      column stats: all                                    |
+|      cardinality: 1000000                                 |
+|      per-host memory: 32.00MB                             |
+|      tuple ids: 0                                         |
++-----------------------------------------------------------+
+Returned 64 row(s) in 0.03s
+```
+
+When queries like these are actually run, the execution times are relatively consistent regardless of the table order in
+the query text.
+
+```sql
+[localhost:21000] > select count(*) from big join small on (big.id = small.id);
+Query: select count(*) from big join small on (big.id = small.id)
++----------+
+| count(*) |
++----------+
+| 1000000  |
++----------+
+Returned 1 row(s) in 21.68s
+[localhost:21000] > select count(*) from small join big on (big.id = small.id);
+Query: select count(*) from small join big on (big.id = small.id)
++----------+
+| count(*) |
++----------+
+| 1000000  |
++----------+
+Returned 1 row(s) in 20.45s
+```
+
+## Table and Column Statistics
+
+Impala can do better optimization for complex or multi-table queries when it has access to statistics about the volume
+of data and how the values are distributed. Impala uses this information to help parallelize and distribute the work
+for a query. For example, optimizing join queries requires a way of determining if one table is "bigger" than another,
+which is a function of the number of rows and the average row size for each table. The following sections describe the
+categories of statistics Impala can work with, and how to produce them and keep them up to date
+
+### Overview of Table Statistics
+
+The Impala query planner can make use of statistics about entire tables and partitions. This information includes
+physical characteristics such as the number of rows, number of data files, the total size of the data files, and the
+file format. For partitioned tables, the numbers are calculated per partition, and as totals for the whole table. This
+metadata is stored in the metastore database, and can be updated by either Impala or Hive. If a number is not available, the value -1 is used as a placeholder. Some numbers, such as number and total sizes of data files, are always
+kept up to date because they can be calculated cheaply, as part of gathering HDFS block metadata
+
+The following example shows table stats for an unpartitioned Parquet table. The values for the number and sizes of
+files are always available. Initially, the number of rows is not known, because it requires a potentially expensive scan
+through the entire table, and so that value is displayed as -1. The `COMPUTE STATS` statement fills in any unknown table stats values
+
+```sql
+[iZ11syxr6afZ:21000] > show table stats big;   
+Query: show table stats big
++-------+--------+--------+--------------+-------------------+---------+-------------------+-------------------------------------------------------------------+
+| #Rows | #Files | Size   | Bytes Cached | Cache Replication | Format  | Incremental stats | Location                                                          |
++-------+--------+--------+--------------+-------------------+---------+-------------------+-------------------------------------------------------------------+
+| -1    | 1      | 2.41MB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://iZ1151z4vvnZ:8020/aliyun/user/hive/warehouse/testdb.db/big |
++-------+--------+--------+--------------+-------------------+---------+-------------------+-------------------------------------------------------------------+
+Fetched 1 row(s) in 0.01s
+[iZ11syxr6afZ:21000] > compute stats big;
+Query: compute stats big
++-----------------------------------------+
+| summary                                 |
++-----------------------------------------+
+| Updated 1 partition(s) and 5 column(s). |
++-----------------------------------------+
+Fetched 1 row(s) in 0.51s
+[iZ11syxr6afZ:21000] > show table stats big;
+Query: show table stats big
++--------+--------+--------+--------------+-------------------+---------+-------------------+-------------------------------------------------------------------+
+| #Rows  | #Files | Size   | Bytes Cached | Cache Replication | Format  | Incremental stats | Location                                                          |
++--------+--------+--------+--------------+-------------------+---------+-------------------+-------------------------------------------------------------------+
+| 100000 | 1      | 2.41MB | NOT CACHED   | NOT CACHED        | PARQUET | false             | hdfs://iZ1151z4vvnZ:8020/aliyun/user/hive/warehouse/testdb.db/big |
++--------+--------+--------+--------------+-------------------+---------+-------------------+-------------------------------------------------------------------+
+Fetched 1 row(s) in 0.01s
+```
+
+Impala performs some optimizations using this metadata on its own, and other optimizations by using a combination
+of table and column statistics
+
+To check that table statistics are available for a table, and see the details of those statistics, use the statement `SHOW TABLE STATS table_name`
+
+### Overview of Column Statistics
+
+The Impala query planner can make use of statistics about individual columns when that metadata is available in
+the metastore database. This technique is most valuable for columns compared across tables in join queries, to help
+estimate how many rows the query will retrieve from each table. These statistics are also important for correlated subqueries using the `EXISTS()` or `IN()` operators, which are processed internally the same way as join queries
+
+The following example shows column stats for an unpartitioned Parquet table. The values for the maximum and
+average sizes of some types are always available, because those figures are constant for numeric and other fixed-size
+types. Initially, the number of distinct values is not known, because it requires a potentially expensive scan through
+the entire table, and so that value is displayed as `-1`. The same applies to maximum and average sizes of variable-sized
+types, such as `STRING`. The `COMPUTE STATS` statement fills in most unknown column stats values. (It does not
+record the number of NULL values, because currently Impala does not use that figure for query optimization.)
+
+```sql
+[iZ11syxr6afZ:21000] > show column stats big;
+Query: show column stats big
++------------+--------+------------------+--------+----------+----------+
+| Column     | Type   | #Distinct Values | #Nulls | Max Size | Avg Size |
++------------+--------+------------------+--------+----------+----------+
+| id         | INT    | -1               | -1     | 4        | 4        |
+| name       | STRING | -1               | -1     | -1       | -1       |
+| address    | STRING | -1               | -1     | -1       | -1       |
+| company    | STRING | -1               | -1     | -1       | -1       |
+| department | STRING | -1               | -1     | -1       | -1       |
++------------+--------+------------------+--------+----------+----------+
+Fetched 5 row(s) in 0.01s
+[iZ11syxr6afZ:21000] > compute stats big;
+Query: compute stats big
++-----------------------------------------+
+| summary                                 |
++-----------------------------------------+
+| Updated 1 partition(s) and 5 column(s). |
++-----------------------------------------+
+Fetched 1 row(s) in 0.51s
+[iZ11syxr6afZ:21000] > show column stats big;
+Query: show column stats big
++------------+--------+------------------+--------+----------+-------------------+
+| Column     | Type   | #Distinct Values | #Nulls | Max Size | Avg Size          |
++------------+--------+------------------+--------+----------+-------------------+
+| id         | INT    | 100762           | -1     | 4        | 4                 |
+| name       | STRING | 102144           | -1     | 7        | 5.888999938964844 |
+| address    | STRING | 98166            | -1     | 7        | 5.888999938964844 |
+| company    | STRING | 96413            | -1     | 7        | 5.888999938964844 |
+| department | STRING | 103224           | -1     | 7        | 5.888999938964844 |
++------------+--------+------------------+--------+----------+-------------------+
+Fetched 5 row(s) in 0.01s
+```
+
+To check that column statistics are available for a table, and see the details of those statistics, use the statement `SHOW COLUMN STATS table_name`
+
+### How Table and Column Statistics Work for Partitioned Tables
+
+When you use Impala for "big data", you are highly likely to use partitioning for your biggest tables, the ones
+representing data that can be logically divided based on dates, geographic regions, or similar criteria. The table and
+column statistics are especially useful for optimizing queries on such tables. For example, a query involving one year
+might involve substantially more or less data than a query involving a different year, or a range of several years. Each
+query might be optimized differently as a result
+
+### Generating Table and Column Statistics
+
+Use the `COMPUTE STATS` family of commands to collect table and column statistics. The `COMPUTE STATS`
+variants offer different tradeoffs between computation cost, staleness, and maintenance workflows which are
+explained below
+
+> For a particular table, use either `COMPUTE STATS` or `COMPUTE INCREMENTAL STATS`, but never combine the
+two or alternate between them. If you switch from `COMPUTE STATS` to `COMPUTE INCREMENTAL STATS` during
+the lifetime of a table, or vice versa, drop all statistics by running `DROP STATS` before making the switch
+
+**COMPUTE STATS**
+
+The `COMPUTE STATS` command collects and sets the table-level and partition-level row counts as well as all column
+statistics for a given table. The collection process is CPU-intensive and can take a long time to complete for very large
+tables
+
+To speed up `COMPUTE STATS` consider the following options which can be combined
+
+- Limit the number of columns for which statistics are collected to increase the efficiency of `COMPUTE STATS`.
+Queries benefit from statistics for those columns involved in filters, join conditions, group by or partition by
+clauses. Other columns are good candidates to exclude from `COMPUTE STATS`. This feature is available since Impala 2.12
+- Set the `MT_DOP` query option to use more threads within each participating impalad to compute the statistics
+faster - but not more efficiently. Note that computing stats on a large table with a high `MT_DOP` value can
+negatively affect other queries running at the same time if the `COMPUTE STATS` claims most CPU cycles. This feature is available since Impala 2.8
+- Consider the experimental extrapolation and sampling features (see below) to further increase the efficiency of computing stats
+
+`COMPUTE STATS` is intended to be run periodically, e.g. weekly, or on-demand when the contents of a table have
+changed significantly. Due to the high resource utilization and long repsonse time of to `COMPUTE STATS`, it is
+most practical to run it in a scheduled maintnance window where the Impala cluster is idle enough to accommodate
+the expensive operation. The degree of change that qualifies as “significant” depends on the query workload, but
+typically, if 30% of the rows have changed then it is recommended to recompute statistics
+
+> If you reload a complete new set of data for a table, but the number of rows and number of distinct values for each
+column is relatively unchanged from before, you do not need to recompute stats for the table
+
+**COMPUTE INCREMENTAL STATS**
+
+In Impala 2.1.0 and higher, you can use the `COMPUTE INCREMENTAL STATS` and `DROP INCREMENTAL
+STATS` commands. The INCREMENTAL clauses work with incremental statistics, a specialized feature for partitioned tables
+
+When you compute incremental statistics for a partitioned table, by default Impala only processes those partitions that
+do not yet have incremental statistics. By processing only newly added partitions, you can keep statistics up to date
+without incurring the overhead of reprocessing the entire table each time
+
+You can also compute or drop statistics for a specified subset of partitions by including a `PARTITION` clause in the
+`COMPUTE INCREMENTAL STATS` or `DROP INCREMENTAL STATS` statement
+
+> For a table with a huge number of partitions and many columns, the approximately 400 bytes of metadata per column
+per partition can add up to significant memory overhead, as it must be cached on the catalogd host and on every
+impalad host that is eligible to be a coordinator. If this metadata for all tables combined exceeds 2 GB, you might
+experience service downtime
+
+When you run `COMPUTE INCREMENTAL STATS` on a table for the first time, the statistics are computed again
+from scratch regardless of whether the table already has statistics. Therefore, expect a one-time resource-intensive
+operation for scanning the entire table when running `COMPUTE INCREMENTAL STATS` for the first time on a given table
+
+- Issuing a `COMPUTE INCREMENTAL STATS` without a partition clause causes Impala to compute incremental
+stats for all partitions that do not already have incremental stats. This might be the entire table when running
+the command for the first time, but subsequent runs should only update new partitions. You can force updating
+a partition that already has incremental stats by issuing a `DROP INCREMENTAL STATS` before running `COMPUTE INCREMENTAL STATS`
+
+- The `SHOW TABLE STATS` and `SHOW PARTITIONS` statements now include an additional column showing
+whether incremental statistics are available for each column. A partition could already be covered by the original
+type of statistics based on a prior `COMPUTE STATS` statement, as indicated by a value other than -1 under the
+`#Rows` column. Impala query planning uses either kind of statistics when available
+
+- `COMPUTE INCREMENTAL STATS` takes more time than `COMPUTE STATS` for the same volume of data.
+Therefore it is most suitable for tables with large data volume where new partitions are added frequently, making
+it impractical to run a full `COMPUTE STATS` operation for each new partition. For unpartitioned tables, or
+partitioned tables that are loaded once and not updated with new partitions, use the original `COMPUTE STATS` syntax
+
+- `COMPUTE INCREMENTAL STATS` uses some memory in the catalogd process, proportional to the number
+of partitions and number of columns in the applicable table. The memory overhead is approximately 400 bytes for
+each column in each partition. This memory is reserved in the catalogd daemon, the statestored daemon,
+and in each instance of the impalad daemon
+
+- In cases where new files are added to an existing partition, issue a `REFRESH` statement for the table, followed by a
+`DROP INCREMENTAL STATS` and `COMPUTE INCREMENTAL STATS` sequence for the changed partition
+
+- The `DROP INCREMENTAL STATS` statement operates only on a single partition at a time. To remove statistics (whether incremental or not) from all partitions of a table, issue a` DROP STATS` statement with no
+`INCREMENTAL` or `PARTITION` clauses
+
+### Manually Setting Table and Column Statistics with ALTER TABLE
+
+> In practice, the `COMPUTE STATS` statement, or `COMPUTE INCREMENTAL STATS` for a partitioned table, should
+be fast and convenient enough that this technique is only useful for the very largest partitioned tables. Because the
+column statistics might be left in a stale state, do not use this technique as a replacement for `COMPUTE STATS`. Only
+use this technique if all other means of collecting statistics are impractical, or as a low-overhead operation that you
+run in between periodic `COMPUTE STATS` or `COMPUTE INCREMENTAL STATS` operations
+
+##### Setting Table Statistics
+
+The most crucial piece of data in all the statistics is the number of rows in the table (for an unpartitioned or partitioned
+table) and for each partition (for a partitioned table). The `COMPUTE STATS` statement always gathers statistics
+about all columns, as well as overall table statistics. If it is not practical to do a full `COMPUTE STATS` or `COMPUTE
+INCREMENTAL STATS` operation after adding a partition or inserting data, or if you can see that Impala would
+produce a more efficient plan if the number of rows was different, you can manually set the number of rows through
+an `ALTER TABLE` statement
+
+```sql
+-- Set total number of rows. Applies to both unpartitioned and partitioned tables.
+alter table table_name set tblproperties('numRows'='new_value', 'STATS_GENERATED_VIA_STATS_TASK'='true');
+-- Set total number of rows for a specific partition. Applies to partitioned tables only.
+-- You must specify all the partition key columns in the PARTITION clause.
+alter table table_name partition (keycol1=val1,keycol2=val2...) set
+ tblproperties('numRows'='new_value', 'STATS_GENERATED_VIA_STATS_TASK'='true');
+```
+
+This statement avoids re-scanning any data files.
+
+```SQL
+create table analysis_data stored as parquet as select * from raw_data;
+compute stats analysis_data;
+insert into analysis_data select * from smaller_table_we_forgot_before;
+-- Now there are 1001000000 rows. We can update this single data point in the stats.
+alter table analysis_data set tblproperties('numRows'='1001000000', 'STATS_GENERATED_VIA_STATS_TASK'='true');
+```
+
+For a partitioned table, update both the per-partition number of rows and the number of rows for the whole table
+
+```SQL
+-- If the table originally contained 1 million rows, and we add another partition with 30 thousand rows,
+-- change the numRows property for the partition and the overall table.
+alter table partitioned_data partition(year=2009, month=4) set tblproperties ('numRows'='30000', 'STATS_GENERATED_VIA_STATS_TASK'='true');
+alter table partitioned_data set tblproperties ('numRows'='1030000', 'STATS_GENERATED_VIA_STATS_TASK'='true');
+```
+
+#### Setting Column Statistics
+
+You specify a case-insensitive symbolic name for the kind of statistics: numDVs, numNulls, avgSize, maxSize.
+The key names and values are both quoted. This operation applies to an entire table, not a specific partition. For
+example
+
+```SQL
+create table t1 (x int, s string);
+insert into t1 values (1, 'one'), (2, 'two'), (2, 'deux');
+show column stats t1;
++--------+--------+------------------+--------+----------+----------+
+| Column | Type   | #Distinct Values | #Nulls | Max Size | Avg Size |
++--------+--------+------------------+--------+----------+----------+
+| x      | INT    | -1               | -1     | 4        | 4        |
+| s      | STRING | -1               | -1     | -1       | -1       |
++--------+--------+------------------+--------+----------+----------+
+alter table t1 set column stats x ('numDVs'='2','numNulls'='0');
+alter table t1 set column stats s ('numdvs'='3','maxsize'='4');
+show column stats t1;
++--------+--------+------------------+--------+----------+----------+
+| Column | Type   | #Distinct Values | #Nulls | Max Size | Avg Size |
++--------+--------+------------------+--------+----------+----------+
+| x      | INT    | 2                | 0      | 4        | 4        |
+| s      | STRING | 3                | -1     | 4        | -1       |
++--------+--------+------------------+--------+----------+----------+
+```
+
+---
+
+# Runtime Filtering for Impala Queries (Impala 2.5 or higher only)
+
+Runtime filtering is a wide-ranging optimization feature available in Impala 2.5 and higher. When only a fraction of
+the data in a table is needed for a query against a partitioned table or to evaluate a join condition, Impala determines
+the appropriate conditions while the query is running, and broadcasts that information to all the impalad nodes that
+are reading the table so that they can avoid unnecessary I/O to read partition data, and avoid unnecessary network
+transmission by sending only the subset of rows that match the join keys across the network
+
+This feature is primarily used to optimize queries against large partitioned tables (under the name dynamic partition
+pruning) and joins of large tables. The information in this section includes concepts, internals, and troubleshooting
+information for the entire runtime filtering feature
+
+## Background Information for Runtime Filtering
+
+To understand how runtime filtering works at a detailed level, you must be familiar with some terminology from the
+field of distributed database technology
+
+- What a ***plan fragment*** is. Impala decomposes each query into smaller units of work that are distributed across the cluster. Wherever possible, a data block is read, filtered, and aggregated by plan fragments executing on the
+same host. For some operations, such as joins and combining intermediate results into a final result set, data is transmitted across the network from one DataNode to another
+
+- What `SCAN` and `HASH JOIN` plan nodes are, and their role in computing query results:
+
+  - In the Impala query plan, a scan node performs the I/O to read from the underlying data files. Although this is an
+  expensive operation from the traditional database perspective, Hadoop clusters and Impala are optimized to do this
+  kind of I/O in a highly parallel fashion. The major potential cost savings come from using the columnar Parquet
+  format (where Impala can avoid reading data for unneeded columns) and partitioned tables (where Impala can
+  avoid reading data for unneeded partitions)
+
+  - Most Impala joins use the hash join mechanism. (It is only fairly recently that Impala started using the nested-loop
+  join technique, for certain kinds of non-equijoin queries.) In a hash join, when evaluating join conditions from two
+  tables, Impala constructs a hash table in memory with all the different column values from the table on one side of
+  the join. Then, for each row from the table on the other side of the join, Impala tests whether the relevant column
+  values are in this hash table or not
+
+  - A hash join node constructs such an in-memory hash table, then performs the comparisons to identify which rows
+  match the relevant join conditions and should be included in the result set (or at least sent on to the subsequent
+  intermediate stage of query processing). Because some of the input for a hash join might be transmitted across the
+  network from another host, it is especially important from a performance perspective to prune out ahead of time
+  any data that is known to be irrelevant
+
+  - The more distinct values are in the columns used as join keys, the larger the in-memory hash table and thus the
+  more memory required to process the query
+
+- The difference between a broadcast join and a shuffle join. (The Hadoop notion of a shuffle join is sometimes
+referred to in Impala as a partitioned join.) In a broadcast join, the table from one side of the join (typically the
+smaller table) is sent in its entirety to all the hosts involved in the query. Then each host can compare its portion
+of the data from the other (larger) table against the full set of possible join keys. In a shuffle join, there is no
+obvious “smaller” table, and so the contents of both tables are divided up, and corresponding portions of the data
+are transmitted to each host involved in the query
+
+- The notion of the build phase and probe phase when Impala processes a join query. The build phase is where
+the rows containing the join key columns, typically for the smaller table, are transmitted across the network and
+built into an in-memory hash table data structure on one or more destination nodes. The probe phase is where
+data is read locally (typically from the larger table) and the join key columns are compared to the values in the inmemory hash table. The corresponding input sources (tables, subqueries, and so on) for these phases are referred
+to as the build side and the probe side
+
+## Runtime Filtering Internals
+
+The filter that is transmitted between plan fragments is essentially a list of values for join key columns. When this list
+is values is transmitted in time to a scan node, Impala can filter out non-matching values immediately after reading
+them, rather than transmitting the raw data to another host to compare against the in-memory hash table on that host.
+
+For HDFS-based tables, this data structure is implemented as a Bloom filter, which uses a probability-based algorithm
+to determine all possible matching values. (The probability-based aspects means that the filter might include some
+non-matching values, but if so, that does not cause any inaccuracy in the final results.)
