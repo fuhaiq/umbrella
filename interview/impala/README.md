@@ -1676,6 +1676,611 @@ The filter that is transmitted between plan fragments is essentially a list of v
 is values is transmitted in time to a scan node, Impala can filter out non-matching values immediately after reading
 them, rather than transmitting the raw data to another host to compare against the in-memory hash table on that host.
 
-For HDFS-based tables, this data structure is implemented as a Bloom filter, which uses a probability-based algorithm
+For HDFS-based tables, this data structure is implemented as a ***Bloom filter***, which uses a probability-based algorithm
 to determine all possible matching values. (The probability-based aspects means that the filter might include some
 non-matching values, but if so, that does not cause any inaccuracy in the final results.)
+
+Another kind of filter is the “min-max” filter. It currently **only applies to Kudu tables**. The filter is a data structure
+representing a minimum and maximum value. These filters are passed to Kudu to reduce the number of rows returned
+to Impala when scanning the probe side of the join
+
+There are different kinds of filters to match the different kinds of joins (partitioned and broadcast). A broadcast filter
+reflects the complete list of relevant values and can be immediately evaluated by a scan node. A partitioned filter
+reflects only the values processed by one host in the cluster; all the partitioned filters must be combined into one (by
+the coordinator node) before the scan nodes can use the results to accurately filter the data as it is read from storage
+
+Broadcast filters are also classified as local or global. With a local broadcast filter, the information in the filter is used
+by a subsequent query fragment that is running on the same host that produced the filter. A non-local broadcast filter
+must be transmitted across the network to a query fragment that is running on a different host. Impala designates 3 hosts to each produce non-local broadcast filters, to guard against the possibility of a single slow host taking too long.
+Depending on the setting of the `RUNTIME_FILTER_MODE` query option (`LOCAL` or `GLOBAL`), Impala either uses
+a conservative optimization strategy where filters are only consumed on the same host that produced them, or a more
+aggressive strategy where filters are eligible to be transmitted across the network
+
+## File Format Considerations for Runtime Filtering
+
+Parquet tables get the most benefit from the runtime filtering optimizations. Runtime filtering can speed up join
+queries against partitioned or unpartitioned Parquet tables, and single-table queries against partitioned Parquet tables
+
+For other file formats (text, Avro, RCFile, and SequenceFile), runtime filtering speeds up queries against partitioned
+tables only. Because partitioned tables can use a mixture of formats, Impala produces the filters in all cases, even if
+they are not ultimately used to optimize the query
+
+## Wait Intervals for Runtime Filters
+
+Because it takes time to produce runtime filters, especially for partitioned filters that must be combined by the
+coordinator node, there is a time interval above which it is more efficient for the scan nodes to go ahead and construct
+their intermediate result sets, even if that intermediate data is larger than optimal. If it only takes a few seconds to
+produce the filters, it is worth the extra time if pruning the unnecessary data can save minutes in the overall query
+time. You can specify the maximum wait time in milliseconds using the `RUNTIME_FILTER_WAIT_TIME_MS` query option
+
+By default, each scan node waits for up to 1 second (1000 milliseconds) for filters to arrive. If all filters have not
+arrived within the specified interval, the scan node proceeds, using whatever filters did arrive to help avoid reading
+unnecessary data. If a filter arrives after the scan node begins reading data, the scan node applies that filter to the data
+that is read after the filter arrives, but not to the data that was already read
+
+If the cluster is relatively busy and your workload contains many resource-intensive or long-running queries, consider
+increasing the wait time so that complicated queries do not miss opportunities for optimization. If the cluster is lightly
+loaded and your workload contains many small queries taking only a few seconds, consider decreasing the wait time
+to avoid the 1 second delay for each query
+
+## Runtime Filtering and Query Plans
+
+In the same way the query plan displayed by the EXPLAIN statement includes information about predicates
+used by each plan fragment, it also includes annotations showing whether a plan fragment produces or consumes
+a runtime filter. A plan fragment that produces a filter includes an annotation such as `runtime filters: filter_id <- table.column`, while a plan fragment that consumes a filter includes an annotation such as
+`runtime filters: filter_id -> table.column`. Setting the query option `EXPLAIN_LEVEL=2`
+adds additional annotations showing the type of the filter, either `filter_id[bloom]` (for HDFS-based tables) or
+`filter_id[min_max]` (for Kudu tables).
+
+```SQL
+[iZ11syxr6afZ:21000] > set EXPLAIN_LEVEL=2;
+EXPLAIN_LEVEL set to 2
+[iZ11syxr6afZ:21000] > explain select * from big where id in (select id from small where id between 2000 and 3000);
+Query: explain select * from big where id in (select id from small where id between 2000 and 3000)
++-------------------------------------------------------------+
+| Explain String                                              |
++-------------------------------------------------------------+
+| Estimated Per-Host Requirements: Memory=80.00MB VCores=2    |
+|                                                             |
+| PLAN-ROOT SINK                                              |
+| |                                                           |
+| 04:EXCHANGE [UNPARTITIONED]                                 |
+| |  hosts=1 per-host-mem=unavailable                         |
+| |  tuple-ids=0 row-size=92B cardinality=100                 |
+| |                                                           |
+| 02:HASH JOIN [LEFT SEMI JOIN, BROADCAST]                    |
+| |  hash predicates: id = id                                 |
+| |  runtime filters: RF000 <- id                             |
+| |  hosts=1 per-host-mem=441B                                |
+| |  tuple-ids=0 row-size=92B cardinality=100                 |
+| |                                                           |
+| |--03:EXCHANGE [BROADCAST]                                  |
+| |  |  hosts=1 per-host-mem=0B                               |
+| |  |  tuple-ids=1 row-size=4B cardinality=100               |
+| |  |                                                        |
+| |  01:SCAN HDFS [testdb.small, RANDOM]                      |
+| |     partitions=1/1 files=1 size=26.56KB                   |
+| |     predicates: id <= 3000, id >= 2000                    |
+| |     table stats: 1000 rows total                          |
+| |     column stats: all                                     |
+| |     hosts=1 per-host-mem=16.00MB                          |
+| |     tuple-ids=1 row-size=4B cardinality=100               |
+| |                                                           |
+| 00:SCAN HDFS [testdb.big, RANDOM]                           |
+|    partitions=1/1 files=1 size=2.41MB                       |
+|    predicates: testdb.big.id <= 3000, testdb.big.id >= 2000 |
+|    runtime filters: RF000 -> id                             |
+|    table stats: 100000 rows total                           |
+|    column stats: all                                        |
+|    hosts=1 per-host-mem=80.00MB                             |
+|    tuple-ids=0 row-size=92B cardinality=10000               |
++-------------------------------------------------------------+
+```
+
+## Limitations and Restrictions for Runtime Filtering
+
+The runtime filtering feature is most effective for the Parquet file formats. For other file formats, filtering only applies
+for partitioned tables.
+
+When the `spill-to-disk` mechanism is activated on a particular host during a query, that host does not produce any
+filters while processing that query. This limitation does not affect the correctness of results; it only reduces the
+amount of optimization that can be applied to the query.
+
+---
+# Using HDFS Caching with Impala (Impala 2.1 or higher only)
+
+HDFS caching provides performance and scalability benefits in production environments where Impala queries and
+other Hadoop jobs operate on quantities of data much larger than the physical RAM on the DataNodes, making it
+impractical to rely on the Linux OS cache, which only keeps the most recently used data in memory. Data read from
+the HDFS cache avoids the overhead of checksumming and memory-to-memory copying involved when using data
+from the Linux OS cache
+
+**Note**
+
+On a small or lightly loaded cluster, HDFS caching might not produce any speedup. It might even lead to slower
+queries, if I/O read operations that were performed in parallel across the entire cluster are replaced by in-memory
+operations operating on a smaller number of hosts. The hosts where the HDFS blocks are cached can become
+bottlenecks because they experience high CPU load while processing the cached data blocks, while other hosts remain
+idle. Therefore, always compare performance with and without this feature enabled, using a realistic workload
+
+In Impala 2.2 and higher, you can spread the CPU load more evenly by specifying the `WITH REPLICATION` clause
+of the `CREATE TABLE` and `ALTER TABLE` statements. This clause lets you control the replication factor for HDFS
+caching for a specific table or partition. By default, each cached block is only present on a single host, which can
+lead to CPU contention if the same host processes each cached block. Increasing the replication factor lets Impala
+choose different hosts to process different cached blocks, to better distribute the CPU load. Always use a `WITH
+REPLICATION` setting of at least 3, and adjust upward if necessary to match the replication factor for the underlying
+HDFS data files
+
+## Overview of HDFS Caching for Impala
+
+Impala can use the HDFS caching feature to make more effective use of RAM, so that
+repeated queries can take advantage of data “pinned” in memory regardless of how much data is processed overall.
+The HDFS caching feature lets you designate a subset of frequently accessed data to be pinned permanently in
+memory, remaining in the cache across multiple queries and never being evicted. This technique ***is suitable for tables
+or partitions that are frequently accessed and are small enough to fit entirely within the HDFS memory cache***. For example, you might designate several dimension tables to be pinned in the cache, to speed up many different join
+queries that reference them. Or in a partitioned table, you might pin a partition holding data from the most recent
+time period because that data will be queried intensively; then when the next set of data arrives, you could unpin the
+previous partition and pin the partition holding the new data.
+
+## Setting Up HDFS Caching for Impala
+
+To use HDFS caching with Impala, first set up that feature for your cluster
+
+- Decide how much memory to devote to the HDFS cache on each host. Remember that the total memory available
+for cached data is the sum of the cache sizes on all the hosts. By default, any data block is only cached on one
+host, although you can cache a block across multiple hosts by increasing the replication factor
+
+- Issue `hdfs cacheadmin` commands to set up one or more cache pools, owned by the same user as the
+impalad daemon (typically impala). For example
+
+```shell
+hdfs cacheadmin -addPool four_gig_pool -owner impala -limit 4000000000
+```
+
+[Refer to this](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/CentralizedCacheManagement.html) for more hdfs cache usage
+
+## Enabling HDFS Caching for Impala Tables and Partitions
+
+//TODO
+
+---
+
+# Understanding Impala Query Performance - EXPLAIN Plans and Query Profiles
+
+To understand the high-level performance considerations for Impala queries, read the output of the EXPLAIN
+statement for the query. You can get the `EXPLAIN` plan without actually running the query itself
+
+For an overview of the physical performance characteristics for a query, issue the `SUMMARY` statement in impalashell immediately after executing a query. This condensed information shows which phases of execution took the
+most time, and how the estimates for memory usage and number of rows at each phase compare to the actual values
+
+To understand the detailed performance characteristics for a query, issue the `PROFILE` statement in impalashell immediately after executing a query. This low-level information includes physical details about memory,
+CPU, I/O, and network usage, and thus is only available after the query is actually run
+
+## Using the EXPLAIN Plan for Performance Tuning
+
+The `EXPLAIN` statement gives you an outline of the logical steps that a query will perform, such as how the work
+will be distributed among the nodes and how intermediate results will be combined to produce the final result set. You
+can see these details before actually running the query. You can use this information to check that the query will not
+operate in some very unexpected or inefficient way
+
+```sql
+[iZ11syxr6afZ:21000] > explain select count(*) from big;
+Query: explain select count(*) from big
++----------------------------------------------------------+
+| Explain String                                           |
++----------------------------------------------------------+
+| Estimated Per-Host Requirements: Memory=10.00MB VCores=1 |
+|                                                          |
+| PLAN-ROOT SINK                                           |
+| |                                                        |
+| 03:AGGREGATE [FINALIZE]                                  |
+| |  output: count:merge(*)                                |
+| |  hosts=1 per-host-mem=unavailable                      |
+| |  tuple-ids=1 row-size=8B cardinality=1                 |
+| |                                                        |
+| 02:EXCHANGE [UNPARTITIONED]                              |
+| |  hosts=1 per-host-mem=unavailable                      |
+| |  tuple-ids=1 row-size=8B cardinality=1                 |
+| |                                                        |
+| 01:AGGREGATE                                             |
+| |  output: count(*)                                      |
+| |  hosts=1 per-host-mem=10.00MB                          |
+| |  tuple-ids=1 row-size=8B cardinality=1                 |
+| |                                                        |
+| 00:SCAN HDFS [testdb.big, RANDOM]                        |
+|    partitions=1/1 files=1 size=2.41MB                    |
+|    table stats: 100000 rows total                        |
+|    column stats: all                                     |
+|    hosts=1 per-host-mem=0B                               |
+|    tuple-ids=0 row-size=0B cardinality=100000            |
++----------------------------------------------------------+
+```
+
+Read the `EXPLAIN` plan from bottom to top
+
+- The last part of the plan shows the low-level details such as the expected amount of data that will be read, where
+you can judge the effectiveness of your partitioning strategy and estimate how long it will take to scan a table
+based on total data size and the size of the cluster
+
+- As you work your way up, next you see the operations that will be parallelized and performed on each Impala
+node
+
+- At the higher levels, you see how data flows when intermediate result sets are combined and transmitted from one
+node to another
+
+## Using the SUMMARY Report for Performance Tuning
+
+The `SUMMARY` command within the impala-shell interpreter gives you an easy-to-digest overview of the timings
+for the different phases of execution for a query. Like the `EXPLAIN` plan, it is easy to see potential performance
+bottlenecks. Like the `PROFILE` output, it is available after the query is run and so displays actual timing numbers
+
+For example, here is a query involving an aggregate function, on a single-node VM. The different stages of the
+query and their timings are shown (rolled up for all nodes), along with estimated and actual values used in planning
+the query. In this case, the `AVG()` function is computed for a subset of data on each node (stage 01) and then the
+aggregated results from all nodes are combined at the end (stage 03). You can see which stages took the most time,
+and whether any estimates were substantially different than the actual data distribution. (When examining the time
+values, be sure to consider the suffixes such as us for microseconds and ms for milliseconds, rather than just looking
+for the largest numbers.)
+
+```sql
+[iZ11syxr6afZ:21000] > select avg(id) from big;
+Query: select avg(id) from big
+Query submitted at: 2019-10-09 11:27:13 (Coordinator: http://iZ11syxr6afZ:25000)
+Query progress can be monitored at: http://iZ11syxr6afZ:25000/query_plan?query_id=894e002cdff865e7:a724a5a100000000
++---------+
+| avg(id) |
++---------+
+| 50000.5 |
++---------+
+Fetched 1 row(s) in 0.13s
+[iZ11syxr6afZ:21000] > summary;
++--------------+--------+----------+----------+---------+------------+-----------+---------------+---------------+
+| Operator     | #Hosts | Avg Time | Max Time | #Rows   | Est. #Rows | Peak Mem  | Est. Peak Mem | Detail        |
++--------------+--------+----------+----------+---------+------------+-----------+---------------+---------------+
+| 03:AGGREGATE | 1      | 0ns      | 0ns      | 1       | 1          | 20.00 KB  | -1 B          | FINALIZE      |
+| 02:EXCHANGE  | 1      | 0ns      | 0ns      | 1       | 1          | 0 B       | -1 B          | UNPARTITIONED |
+| 01:AGGREGATE | 1      | 0ns      | 0ns      | 1       | 1          | 172.25 KB | 10.00 MB      |               |
+| 00:SCAN HDFS | 1      | 11.00ms  | 11.00ms  | 100.00K | 100.00K    | 849.34 KB | 16.00 MB      | testdb.big    |
++--------------+--------+----------+----------+---------+------------+-----------+---------------+---------------+
+```
+
+---
+# Scalability Considerations for Impala
+
+This section explains how the size of your cluster and the volume of data influences SQL performance and schema
+design for Impala tables. Typically, adding more cluster capacity reduces problems due to memory limits or disk
+throughput. On the other hand, larger clusters are more likely to have other kinds of scalability issues, such as a single
+slow node that causes performance problems for queries
+
+## Impact of Many Tables or Partitions on Impala Catalog Performance and Memory Usage
+
+Because Hadoop I/O is optimized for reading and writing large files, Impala is optimized for tables containing
+relatively few, large data files. Schemas containing thousands of tables, or tables containing thousands of partitions,
+can encounter performance issues during startup or during DDL operations such as ALTER TABLE statements
+
+**Important**
+
+Because of a change in the default heap size for the catalogd daemon in Impala 2.5 and higher, the following
+procedure to increase the catalogd memory limit might be required following an upgrade to Impala 2.5 even if not
+needed previously
+
+For schemas with large numbers of tables, partitions, and data files, the catalogd daemon might encounter an outof-memory error. To increase the memory limit for the catalogd daemon
+
+1. Check current memory usage for the catalogd daemon by running the following commands on the host where
+that daemon runs on your cluster
+```Shell
+jcmd catalogd_pid VM.flags
+jmap -heap catalogd_pid
+```
+
+2. Decide on a large enough value for the catalogd heap. You express it as an environment variable value as
+follows
+```
+JAVA_TOOL_OPTIONS="-Xmx8g"
+```
+
+3. On systems not using cluster management software, put this environment variable setting into the startup script for
+the catalogd daemon, then restart the catalogd daemon
+
+4. Use the same jcmd and jmap commands as earlier to verify that the new settings are in effect
+
+## Controlling which Hosts are Coordinators and Executors
+
+By default, each host in the cluster that runs the impalad daemon can act as the coordinator for an Impala query,
+execute the fragments of the execution plan for the query, or both. During highly concurrent workloads for large-scale
+queries, especially on large clusters, the dual roles can cause scalability issues
+
+- The extra work required for a host to act as the coordinator could interfere with its capacity to perform other work
+for the earlier phases of the query. For example, the coordinator can experience significant network and CPU
+overhead during queries containing a large number of query fragments. Each coordinator caches metadata for
+all table partitions and data files, which can be substantial and contend with memory needed to process joins,
+aggregations, and other operations performed by query executors
+
+- Having a large number of hosts act as coordinators can cause unnecessary network overhead, or even timeout
+errors, as each of those hosts communicates with the statestored daemon for metadata updates
+
+- The “soft limits” imposed by the admission control feature are more likely to be exceeded when there are a large
+number of heavily loaded hosts acting as coordinators
+
+If such scalability bottlenecks occur, you can explicitly specify that certain hosts act as query coordinators, but not
+executors for query fragments. These hosts do not participate in I/O-intensive operations such as scans, and CPUintensive operations such as aggregations
+
+Then, you specify that the other hosts act as executors but not coordinators. These hosts ***do not*** communicate with
+the statestored daemon or process the final result sets from queries. You cannot connect to these hosts through
+clients such as impala-shell or business intelligence tools
+
+This feature is available in Impala 2.9 and higher. To use this feature, you specify one of the following startup flags for the impalad daemon on each host
+
+- `is_executor=false` for each host that does not act as an executor for Impala queries. These hosts act
+exclusively as query coordinators. This setting typically applies to a relatively small number of hosts, because the
+most common topology is to have nearly all DataNodes doing work for query execution
+
+- `is_coordinator=false` for each host that does not act as a coordinator for Impala queries. These hosts act
+exclusively as executors. The number of hosts with this setting typically increases as the cluster grows larger and
+handles more table partitions, data files, and concurrent queries. As the overhead for query coordination increases,
+it becomes more important to centralize that work on dedicated hosts
+
+By default, both of these settings are enabled for each impalad instance, allowing all such hosts to act as both
+executors and coordinators
+
+For example, on a 100-node cluster, you might specify is_executor=false for 10 hosts, to dedicate those hosts
+as query coordinators. Then specify is_coordinator=false for the remaining 90 hosts. All explicit or loadbalanced connections must go to the 10 hosts acting as coordinators. These hosts perform the network communication
+to keep metadata up-to-date and route query results to the appropriate clients. The remaining 90 hosts perform the
+intensive I/O, CPU, and memory operations that make up the bulk of the work for each query. If a bottleneck or
+other performance issue arises on a specific host, you can narrow down the cause more easily because each host is
+dedicated to specific operations within the overall Impala workload
+
+## Effect of Buffer Pool on Memory Usage (Impala 2.10 and higher)
+
+The buffer pool feature, available in Impala 2.10 and higher, changes the way Impala allocates memory during a
+query. Most of the memory needed is reserved at the beginning of the query, avoiding cases where a query might
+run for a long time before failing with an out-of-memory error. The actual memory estimates and memory buffers are typically smaller than before, so that more queries can run concurrently or process larger volumes of data than
+previously
+
+Most of the effects of the buffer pool are transparent to you as an Impala user. Memory use during spilling is now
+steadier and more predictable, instead of increasing rapidly as more data is spilled to disk. The main change from a
+user perspective is the need to increase the MAX_ROW_SIZE query option setting when querying tables with columns
+containing long strings, many columns, or other combinations of factors that produce very large rows. If Impala
+encounters rows that are too large to process with the default query option settings, the query fails with an error
+message suggesting to increase the MAX_ROW_SIZE setting
+
+#### BUFFER_POOL_LIMIT Query Option
+
+Defines a limit on the amount of memory that a query can allocate from the internal buffer pool. The value for this
+limit applies to the memory on each host, not the aggregate memory across the cluster. Typically not changed by
+users, except during diagnosis of out-of-memory errors during queries
+
+**Type**: `integer`
+
+**Default**: The default setting for this option is the lower of 80% of the `MEM_LIMIT` setting, or the `MEM_LIMIT` setting minus
+100 MB
+
+**Usage notes**: If queries encounter out-of-memory errors, consider decreasing the `BUFFER_POOL_LIMIT` setting to less than 80%
+of the `MEM_LIMIT` setting
+
+```shell
+-- Set an absolute value.
+set buffer_pool_limit=8GB;
+-- Set a relative value based on the MEM_LIMIT setting.
+set buffer_pool_limit=80%;
+```
+
+#### MAX_ROW_SIZE Query Option
+
+Ensures that Impala can process rows of at least the specified size. (Larger rows might be successfully processed, but
+that is not guaranteed.) Applies when constructing intermediate or final rows in the result set. This setting prevents
+out-of-control memory use when accessing columns containing huge strings
+
+**Type**: `integer`
+
+**Default**: 524288 (512 KB)
+
+**Units**: A numeric argument represents a size in bytes; you can also use a suffix of m or mb for megabytes, or g or gb
+for gigabytes. If you specify a value with unrecognized formats, subsequent queries fail with an error
+
+**Usage notes**:
+
+If a query fails because it involves rows with long strings and/or many columns, causing the total row size to exceed
+`MAX_ROW_SIZE` bytes, increase the `MAX_ROW_SIZE` setting to accommodate the total bytes stored in the largest
+row. Examine the error messages for any failed queries to see the size of the row that caused the problem
+
+Impala attempts to handle rows that exceed the `MAX_ROW_SIZE` value where practical, so in many cases, queries
+succeed despite having rows that are larger than this setting
+
+Specifying a value that is substantially higher than actually needed can cause Impala to reserve more memory than is
+necessary to execute the query
+
+In a Hadoop cluster with highly concurrent workloads and queries that process high volumes of data, traditional SQL
+tuning advice about minimizing wasted memory is worth remembering. For example, if a table has STRING columns
+where a single value might be multiple megabytes, make sure that the `SELECT` lists in queries only refer to columns
+that are actually needed in the result set, instead of using the `SELECT *` shorthand
+
+```sql
+create table big_strings (s1 string, s2 string, s3 string) stored as parquet;
+
+select max(length(s1) + length(s2) + length(s3)) / 1e6 as megabytes from big_strings;
+```
+
+## SQL Operations that Spill to Disk
+
+Certain memory-intensive operations write temporary data to disk (known as spilling to disk) when Impala is close to
+exceeding its memory limit on a particular host
+
+The result is a query that completes successfully, rather than failing with an out-of-memory error. The tradeoff is
+decreased performance due to the extra disk I/O to write the temporary data and read it back in. The slowdown could
+be potentially be significant. Thus, while this feature improves reliability, you should optimize your queries, system
+parameters, and hardware configuration to make this spilling a rare occurrence
+
+**What kinds of queries might spill to disk:**
+
+Several SQL clauses and constructs require memory allocations that could activat the spilling mechanism
+
+- when a query uses a `GROUP BY` clause for columns with millions or billions of distinct values, Impala keeps a
+similar number of temporary results in memory, to accumulate the aggregate results for each value in the group
+
+- When large tables are joined together, Impala keeps the values of the join columns from one table in memory, to
+compare them to incoming values from the other table
+
+- When a large result set is sorted by the `ORDER BY` clause, each node sorts its portion of the result set in memory
+
+- The `DISTINCT` and `UNION` operators build in-memory data structures to represent all values found so far, to
+eliminate duplicates as the query progresses
+
+When the spill-to-disk feature is activated for a join node within a query, Impala does not produce any runtime filters
+for that join operation on that host. Other join nodes within the query are not affected
+
+**How Impala handles scratch disk space for spilling:**
+
+By default, intermediate files used during large sort, join, aggregation, or analytic function operations are stored
+in the directory `/tmp/impala-scratch`. These files are removed when the operation finishes. (Multiple
+concurrent queries can perform operations that use the “spill to disk” technique, without any name conflicts
+for these temporary files.)  You can specify a different location by starting the impalad daemon with the `--
+scratch_dirs="path_to_directory"` configuration option. You can specify a single directory, or a
+comma-separated list of directories. The scratch directories must be on the local filesystem, not in HDFS. You might
+specify different directory paths for different hosts, depending on the capacity and speed of the available storage
+devices. In Impala 2.3 or higher, Impala successfully starts (with a warning Impala successfully starts (with a warning
+written to the log) if it cannot create or read and write files in one of the scratch directories. If there is less than 1 GB
+free on the filesystem where that directory resides, Impala still runs, but writes a warning message to its log. If Impala
+encounters an error reading or writing files in a scratch directory during a query, Impala logs the error and the query
+fails
+
+**Memory usage for SQL operators:**
+
+In Impala 2.10 and higher, the way SQL operators such as `GROUP BY`, `DISTINCT`, and `joins`, transition between
+using additional memory or activating the spill-to-disk feature is changed. The memory required to spill to disk is
+reserved up front, and you can examine it in the `EXPLAIN` plan when the `EXPLAIN_LEVEL` query option is set to `2`
+or higher
+
+The infrastructure of the spilling feature affects the way the affected SQL operators, such as GROUP BY, DISTINCT,
+and joins, use memory. On each host that participates in the query, each such operator in a query requires memory to
+store rows of data and other data structures. Impala reserves a certain amount of memory up front for each operator
+that supports spill-to-disk that is sufficient to execute the operator. If an operator accumulates more data than can fit
+in the reserved memory, it can either reserve more memory to continue processing data in memory or start spilling
+data to temporary scratch files on disk. Thus, operators with spill-to-disk support can adapt to different memory
+constraints by using however much memory is available to speed up execution, yet tolerate low memory conditions
+by spilling data to disk
+
+The amount data depends on the portion of the data being handled by that host, and thus the operator may end up
+consuming different amounts of memory on different hosts
+
+**Added in**: This feature was added to the ORDER BY clause in Impala 1.4. This feature was extended to cover join
+queries, aggregation functions, and analytic functions in Impala 2.0. The size of the memory work area required by
+each operator that spills was reduced from 512 megabytes to 256 megabytes in Impala 2.2. The spilling mechanism
+was reworked to take advantage of the Impala buffer pool feature and be more predictable and stable in Impala 2.10.
+
+#### DEFAULT_SPILLABLE_BUFFER_SIZE Query Option
+
+Specifies the default size for a memory buffer used when the spill-to-disk mechanism is activated, for example for
+queries against a large table with no statistics, or large join operations
+
+**Type**: `integer`
+
+**Default**: 2097152 (2 MB)
+
+**Units**: A numeric argument represents a size in bytes; you can also use a suffix of m or mb for megabytes, or g or gb
+for gigabytes. If you specify a value with unrecognized formats, subsequent queries fail with an error
+
+**Usage notes**:
+
+This query option sets an upper bound on the size of the internal buffer size that can be used during spill-to-disk
+operations. The actual size of the buffer is chosen by the query planner
+
+If overall query performance is limited by the time needed for spilling, consider increasing the
+`DEFAULT_SPILLABLE_BUFFER_SIZE` setting. Larger buffer sizes result in Impala issuing larger I/O requests to
+storage devices, which might result in higher throughput, particularly on rotational disks
+
+The tradeoff with a large value for this setting is increased memory usage during spill-to-disk operations. Reducing
+this value may reduce memory consumption
+
+To determine if the value for this setting is having an effect by capping the spillable buffer size, you can see the buffer
+size chosen by the query planner for a particular query. `EXPLAIN` the query while the setting `EXPLAIN_LEVEL=2`
+is in effect
+
+```sql
+set default_spillable_buffer_size=4MB;
+```
+
+#### MIN_SPILLABLE_BUFFER_SIZE Query Option
+
+Specifies the minimum size for a memory buffer used when the spill-to-disk mechanism is activated, for example for
+queries against a large table with no statistics, or large join operations
+
+**Type**: `integer`
+
+**Default**: 65536 (64 KB)
+
+**Units**: A numeric argument represents a size in bytes; you can also use a suffix of m or mb for megabytes, or g or gb
+for gigabytes. If you specify a value with unrecognized formats, subsequent queries fail with an error
+
+**Usage notes**:
+
+This query option sets a lower bound on the size of the internal buffer size that can be used during spill-to-disk
+operations. The actual size of the buffer is chosen by the query planner
+
+If overall query performance is limited by the time needed for spilling, consider increasing the
+`MIN_SPILLABLE_BUFFER_SIZE` setting. Larger buffer sizes result in Impala issuing larger I/O requests to
+storage devices, which might result in higher throughput, particularly on rotational disks
+
+The tradeoff with a large value for this setting is increased memory usage during spill-to-disk operations. Reducing
+this value may reduce memory consumption
+
+To determine if the value for this setting is having an effect by capping the spillable buffer size, you can see the buffer
+size chosen by the query planner for a particular query. `EXPLAIN` the query while the setting `EXPLAIN_LEVEL=2`
+is in effect
+
+```sql
+set min_spillable_buffer_size=128KB;
+```
+---
+
+# Using the Parquet File Format with Impala Tables
+
+Impala helps you to create, manage, and query Parquet tables. Parquet is a column-oriented binary file format
+intended to be highly efficient for the types of large-scale queries that Impala is best at. Parquet is especially good
+for queries scanning particular columns within a table, for example to query “wide” tables with many columns, or
+to perform aggregation operations such as `SUM()` and `AVG()` that need to process most or all of the values from
+a column. Each data file contains the values for a set of rows (the “row group”). Within a data file, the values from
+each column are organized so that they are all adjacent, enabling good compression for the values from that column.
+Queries against a Parquet table can retrieve and analyze these values from any column quickly and with minimal I/O
+
+File Type|Format|Compression Codecs|Impala Can CREATE?|Impala Can INSERT?
+--|:--:|--:|--:|--:
+Parquet|Structured|Snappy, gzip;currently Snappy by default|Yes|Yes: `CREATE TABLE,INSERT, LOAD DATA`, and query
+
+## Creating Parquet Tables in Impala
+
+To create a table named `PARQUET_TABLE` that uses the Parquet format, you would use a command like the
+following, substituting your own table name, column names, and data types
+
+```sql
+[impala-host:21000] > create table parquet_table_name (x INT, y STRING)
+ STORED AS PARQUET;
+```
+
+Or, to clone the column names and data types of an existing table:
+
+```SQL
+[impala-host:21000] > create table parquet_table_name LIKE other_table_name STORED AS PARQUET;
+```
+
+In Impala 1.4.0 and higher, you can derive column definitions from a raw Parquet data file, even without an existing
+Impala table. For example, you can create an external table pointing to an HDFS directory, and base the column
+definitions on one of the files in that directory
+
+```SQL
+CREATE EXTERNAL TABLE ingest_existing_files LIKE PARQUET '/user/etl/destination/datafile1.dat' STORED AS PARQUET LOCATION '/user/etl/destination';
+```
+
+Or, you can refer to an existing data file and create a new empty table with suitable column definitions. Then you can
+use `INSERT` to create new data files or `LOAD DATA` to transfer existing data files into the new table
+
+```SQL
+CREATE TABLE columns_from_data_file LIKE PARQUET '/user/etl/destination/datafile1.dat' STORED AS PARQUET;
+```
+
+In this example, the new table is partitioned by year, month, and day. These partition key columns are not part of the
+data file, so you specify them in the `CREATE TABLE` statement
+
+```SQL
+CREATE TABLE columns_from_data_file LIKE PARQUET '/user/etl/destination/datafile1.dat' PARTITION (year INT, month TINYINT, day TINYINT) STORED AS PARQUET;
+```
