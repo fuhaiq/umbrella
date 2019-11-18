@@ -258,7 +258,7 @@ You can verify which parts of your query are being vectorized using the explain 
 ```SQL
 create table src(key int, value string) stored as orc;
 set hive.vectorized.execution.enabled = true;
-explain select count(*) from orc;
+explain select count(*) from src;
 +------------------------------------------------------------------------------------------------------------+--+
 |                                                  Explain                                                   |
 +------------------------------------------------------------------------------------------------------------+--+
@@ -449,7 +449,283 @@ During the process of correlation detection, it is possible that the detector ca
 
 ## Operator Tree Transformation
 
-In a correlation, there are two kinds of ReduceSinkOperators. The first kinds of ReduceSinkOperators are at the bottom layer of a query operator tree which are needed to emit rows to the shuffling phase. For example, in Figure 1, RS1 and RS3 are bottom layer ReduceSinkOperators. The second kinds of ReduceSinkOperators are unnecessary ones which can be removed from the optimized operator tree. For example, in Figure 1, RS2 and RS4 are unnecessary ReduceSinkOperators. Because the input rows of the Reduce phase may need to be forwarded to different operators and those input rows are coming from a single stream, we add a new operator called DemuxOperator to dispatch input rows of the Reduce phase to corresponding operators. In the operator tree transformation, we first connect children of those bottom layer ReduceSinkOperators to the DemuxOperator and reassign tags of those bottom layer ReduceSinkOperators (the DemuxOperator is the only child of those bottom layer ReduceSinkOperators). In the DemuxOperator, we record two mappings. The first one is called newTagToOldTag which maps those new tags assigned to those bottom layer ReduceSinkOperators to their original tags. Those original tags are needed to make JoinOperator work correctly. The second mapping is called newTagToChildIndex which maps those new tags to the children indexes. With this mapping, the DemuxOperator can know the correct operator that a row needs to be forwarded based on the tag of this row. The second step of operator tree transformation is to remove those unnecessary ReduceSinkOperators. To make the operator tree in the Reduce phase work correctly, we add a new operator called MuxOperator to the original place of those unnecessary ReduceSinkOperators. It is worth noting that if an operator has multiple unnecessary ReduceSinkOperators as its parents, we only add a single MuxOperator.
+In a correlation, there are two kinds of ReduceSinkOperators. The first kinds of ReduceSinkOperators are at the bottom layer of a query operator tree which are needed to emit rows to the shuffling phase. For example, in Figure 1, RS1 and RS3 are bottom layer ReduceSinkOperators. The second kinds of ReduceSinkOperators are unnecessary ones which can be removed from the optimized operator tree. For example, in Figure 1, RS2 and RS4 are unnecessary ReduceSinkOperators. Because the input rows of the Reduce phase may need to be forwarded to different operators and those input rows are coming from a single stream, we add a new operator called DemuxOperator to dispatch input rows of the Reduce phase to corresponding operators. In the operator tree transformation, we first connect children of those bottom layer ReduceSinkOperators to the DemuxOperator and reassign tags of those bottom layer ReduceSinkOperators (the DemuxOperator is the only child of those bottom layer ReduceSinkOperators). In the DemuxOperator, we record two mappings. The first one is called newTagToOldTag which maps those new tags assigned to those bottom layer ReduceSinkOperators to their original tags. Those original tags are needed to make JoinOperator work correctly. The second mapping is called newTagToChildIndex which maps those new tags to the children indexes. With this mapping, the DemuxOperator can know the correct operator that a row needs to be forwarded based on the tag of this row. The second step of operator tree transformation is to remove those unnecessary ReduceSinkOperators. To make the operator tree in the Reduce phase work correctly, we add a new operator called `MuxOperator` to the original place of those unnecessary ReduceSinkOperators. It is worth noting that if an operator has multiple unnecessary ReduceSinkOperators as its parents, we only add a single MuxOperator.
+
+```SQL
+create table test.src(key int, value int) stored as orc;
+set hive.optimize.correlation=false;
+
+EXPLAIN SELECT tmp1.key, count(*)
+FROM (SELECT key, avg(value) AS avg
+      FROM src
+      GROUP BY /*AGG1*/ key) tmp1
+JOIN /*JOIN1*/ src ON (tmp1.key = src.key)
+WHERE src.value > tmp1.avg
+GROUP BY /*AGG2*/ tmp1.key;
+
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-6 depends on stages: Stage-1
+  Stage-3 depends on stages: Stage-6
+  Stage-0 depends on stages: Stage-3
+
+STAGE PLANS:
+  Stage: Stage-1
+    Map Reduce
+      Map Operator Tree:
+          TableScan
+            alias: src
+            Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+            Filter Operator
+              predicate: key is not null (type: boolean)
+              Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+              Group By Operator
+                aggregations: sum(value), count(value)
+                keys: key (type: int)
+                mode: hash
+                outputColumnNames: _col0, _col1, _col2
+                Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+                Reduce Output Operator
+                  key expressions: _col0 (type: int)
+                  sort order: +
+                  Map-reduce partition columns: _col0 (type: int)
+                  Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+                  value expressions: _col1 (type: bigint), _col2 (type: bigint)
+      Execution mode: vectorized
+      Reduce Operator Tree:
+        Group By Operator
+          aggregations: sum(VALUE._col0), count(VALUE._col1)
+          keys: KEY._col0 (type: int)
+          mode: mergepartial
+          outputColumnNames: _col0, _col1, _col2
+          Statistics: Num rows: 5479 Data size: 43832 Basic stats: COMPLETE Column stats: NONE
+          Select Operator
+            expressions: _col0 (type: int), (_col1 / _col2) (type: double)
+            outputColumnNames: _col0, _col1
+            Statistics: Num rows: 5479 Data size: 43832 Basic stats: COMPLETE Column stats: NONE
+            File Output Operator
+              compressed: false
+              table:
+                  input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                  output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                  serde: org.apache.hadoop.hive.serde2.lazybinary.LazyBinarySerDe
+
+  Stage: Stage-6
+    Map Reduce Local Work
+      Alias -> Map Local Tables:
+        $hdt$_1:src 	
+          Fetch Operator
+            limit: -1
+      Alias -> Map Local Operator Tree:
+        $hdt$_1:src 	
+          TableScan
+            alias: src
+            Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+            Filter Operator
+              predicate: key is not null (type: boolean)
+              Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+              Select Operator
+                expressions: key (type: int), value (type: int)
+                outputColumnNames: _col0, _col1
+                Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+                HashTable Sink Operator
+                  keys:
+                    0 _col0 (type: int)
+                    1 _col0 (type: int)
+
+  Stage: Stage-3
+    Map Reduce
+      Map Operator Tree:
+          TableScan
+            Map Join Operator
+              condition map:
+                   Inner Join 0 to 1
+              keys:
+                0 _col0 (type: int)
+                1 _col0 (type: int)
+              outputColumnNames: _col0, _col1, _col3
+              Statistics: Num rows: 12053 Data size: 96430 Basic stats: COMPLETE Column stats: NONE
+              Filter Operator
+                predicate: (UDFToDouble(_col3) > _col1) (type: boolean)
+                Statistics: Num rows: 4017 Data size: 32137 Basic stats: COMPLETE Column stats: NONE
+                Select Operator
+                  expressions: _col0 (type: int)
+                  outputColumnNames: _col0
+                  Statistics: Num rows: 4017 Data size: 32137 Basic stats: COMPLETE Column stats: NONE
+                  Group By Operator
+                    aggregations: count()
+                    keys: _col0 (type: int)
+                    mode: hash
+                    outputColumnNames: _col0, _col1
+                    Statistics: Num rows: 4017 Data size: 32137 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Map-reduce partition columns: _col0 (type: int)
+                      Statistics: Num rows: 4017 Data size: 32137 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: bigint)
+      Execution mode: vectorized
+      Local Work:
+        Map Reduce Local Work
+      Reduce Operator Tree:
+        Group By Operator
+          aggregations: count(VALUE._col0)
+          keys: KEY._col0 (type: int)
+          mode: mergepartial
+          outputColumnNames: _col0, _col1
+          Statistics: Num rows: 2008 Data size: 16064 Basic stats: COMPLETE Column stats: NONE
+          File Output Operator
+            compressed: false
+            Statistics: Num rows: 2008 Data size: 16064 Basic stats: COMPLETE Column stats: NONE
+            table:
+                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
+
+-- use correlation optimization
+set hive.optimize.correlation=true;
+
+SELECT tmp1.key, count(*)
+FROM (SELECT key, avg(value) AS avg
+      FROM src
+      GROUP BY /*AGG1*/ key) tmp1
+JOIN /*JOIN1*/ src ON (tmp1.key = src.key)
+WHERE src.value > tmp1.avg
+GROUP BY /*AGG2*/ tmp1.key;
+
+Explain
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
+
+STAGE PLANS:
+  Stage: Stage-1
+    Map Reduce
+      Map Operator Tree:
+          TableScan
+            alias: src
+            Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+            Filter Operator
+              predicate: key is not null (type: boolean)
+              Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+              Group By Operator
+                aggregations: sum(value), count(value)
+                keys: key (type: int)
+                mode: hash
+                outputColumnNames: _col0, _col1, _col2
+                Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+                Reduce Output Operator
+                  key expressions: _col0 (type: int)
+                  sort order: +
+                  Map-reduce partition columns: _col0 (type: int)
+                  Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+                  value expressions: _col1 (type: bigint), _col2 (type: bigint)
+          TableScan
+            alias: src
+            Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+            Filter Operator
+              predicate: key is not null (type: boolean)
+              Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+              Select Operator
+                expressions: key (type: int), value (type: int)
+                outputColumnNames: _col0, _col1
+                Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+                Reduce Output Operator
+                  key expressions: _col0 (type: int)
+                  sort order: +
+                  Map-reduce partition columns: _col0 (type: int)
+                  Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+                  value expressions: _col1 (type: int)
+      Reduce Operator Tree:
+        Demux Operator
+          Statistics: Num rows: 21916 Data size: 175328 Basic stats: COMPLETE Column stats: NONE
+          Group By Operator
+            aggregations: sum(VALUE._col0), count(VALUE._col1)
+            keys: KEY._col0 (type: int)
+            mode: mergepartial
+            outputColumnNames: _col0, _col1, _col2
+            Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+            Select Operator
+              expressions: _col0 (type: int), (_col1 / _col2) (type: double)
+              outputColumnNames: _col0, _col1
+              Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: NONE
+              Mux Operator
+                Statistics: Num rows: 32874 Data size: 262992 Basic stats: COMPLETE Column stats: NONE
+                Join Operator
+                  condition map:
+                       Inner Join 0 to 1
+                  keys:
+                    0 _col0 (type: int)
+                    1 _col0 (type: int)
+                  outputColumnNames: _col0, _col1, _col3
+                  Statistics: Num rows: 36161 Data size: 289291 Basic stats: COMPLETE Column stats: NONE
+                  Filter Operator
+                    predicate: (UDFToDouble(_col3) > _col1) (type: boolean)
+                    Statistics: Num rows: 12053 Data size: 96424 Basic stats: COMPLETE Column stats: NONE
+                    Select Operator
+                      expressions: _col0 (type: int)
+                      outputColumnNames: _col0
+                      Statistics: Num rows: 12053 Data size: 96424 Basic stats: COMPLETE Column stats: NONE
+                      Mux Operator
+                        Statistics: Num rows: 12053 Data size: 96424 Basic stats: COMPLETE Column stats: NONE
+                        Group By Operator
+                          aggregations: count()
+                          keys: _col0 (type: int)
+                          mode: complete
+                          outputColumnNames: _col0, _col1
+                          Statistics: Num rows: 6026 Data size: 48208 Basic stats: COMPLETE Column stats: NONE
+                          File Output Operator
+                            compressed: false
+                            Statistics: Num rows: 6026 Data size: 48208 Basic stats: COMPLETE Column stats: NONE
+                            table:
+                                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+          Mux Operator
+            Statistics: Num rows: 32874 Data size: 262992 Basic stats: COMPLETE Column stats: NONE
+            Join Operator
+              condition map:
+                   Inner Join 0 to 1
+              keys:
+                0 _col0 (type: int)
+                1 _col0 (type: int)
+              outputColumnNames: _col0, _col1, _col3
+              Statistics: Num rows: 36161 Data size: 289291 Basic stats: COMPLETE Column stats: NONE
+              Filter Operator
+                predicate: (UDFToDouble(_col3) > _col1) (type: boolean)
+                Statistics: Num rows: 12053 Data size: 96424 Basic stats: COMPLETE Column stats: NONE
+                Select Operator
+                  expressions: _col0 (type: int)
+                  outputColumnNames: _col0
+                  Statistics: Num rows: 12053 Data size: 96424 Basic stats: COMPLETE Column stats: NONE
+                  Mux Operator
+                    Statistics: Num rows: 12053 Data size: 96424 Basic stats: COMPLETE Column stats: NONE
+                    Group By Operator
+                      aggregations: count()
+                      keys: _col0 (type: int)
+                      mode: complete
+                      outputColumnNames: _col0, _col1
+                      Statistics: Num rows: 6026 Data size: 48208 Basic stats: COMPLETE Column stats: NONE
+                      File Output Operator
+                        compressed: false
+                        Statistics: Num rows: 6026 Data size: 48208 Basic stats: COMPLETE Column stats: NONE
+                        table:
+                            input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                            output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                            serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
+```
 
 ## Executing Optimized Operator Tree in the Reduce Phase
 
