@@ -1,3 +1,11 @@
+What is a SerDe?
+
+  - SerDe is a short name for "Serializer and Deserializer."
+  - Hive uses SerDe (and FileFormat) to read and write table rows.
+  - HDFS files --> InputFileFormat --> <key, value> --> Deserializer --> Row object
+  - Row object --> Serializer --> <key, value> --> OutputFileFormat --> HDFS files
+
+
 # EXPLAIN Syntax
 
 Hive provides an EXPLAIN command that shows the execution plan for a query. The syntax for this statement is as follows:
@@ -164,3 +172,6 @@ A map/reduce stage itself has 2 parts:
   - A mapping from table alias to Map Operator Tree – This mapping tells the mappers which operator tree to call in order to process the rows from a particular table or result of a previous map/reduce stage. In Stage-1 in the above example, the rows from ods.myzx_t_qxxsdd_h table are processed by the operator tree rooted at a Reduce Output Operator. Similarly, in other stages the rows of the results of Stage-1 are processed by another operator tree rooted at another Reduce Output Operator. Each of these Reduce Output Operators partitions the data to the reducers according to the criteria shown in the metadata.
 
   - A Reduce Operator Tree – This is the operator tree which processes all the rows on the reducer of the map/reduce job. In Stage-1 for example, the Reducer Operator Tree is carrying out a partial aggregation whereas the Reducer Operator Tree in other stages computes the final aggregation from the partial aggregates computed in Stage-1
+
+
+## The CBO Clause
