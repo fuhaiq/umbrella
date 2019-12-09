@@ -1,0 +1,9 @@
+java -XX:ArchiveClassesAtExit=nio.jsa -jar nio-1-jar-with-dependencies.jar
+
+java -Xlog:class+load=info -XX:SharedArchiveFile=nio.jsa -jar nio-1-jar-with-dependencies.jar
+
+java -XX:SharedArchiveFile=nio.jsa -jar nio-1-jar-with-dependencies.jar
+
+
+linux:
+java -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:SharedArchiveFile=nio.jsa -jar nio-1-jar-with-dependencies.jar
