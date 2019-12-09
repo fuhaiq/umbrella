@@ -310,4 +310,443 @@ Gathering Writes是指数据从多个buffer写入到同一个channel。如下图
 
 buffers数组是write()方法的入参，write()方法会按照buffer在数组中的顺序，将数据写入到channel，注意只有position和limit之间的数据才会被写入。因此，如果一个buffer的容量为128byte，但是仅仅包含58byte的数据，那么这58byte的数据将被写入到channel中。因此与Scattering Reads相反，Gathering Writes能较好的处理动态消息
 
+```Java
+try (var file = new RandomAccessFile(yaml.getScatter(), "r");
+      var channel = file.getChannel();
+      var targetFile = new RandomAccessFile(yaml.getGather(), "rw");
+      var targetChannel = targetFile.getChannel();) {
+  ByteBuffer[] buffers =
+       {ByteBuffer.allocate(4), ByteBuffer.allocate(5), ByteBuffer.allocate(6)};
+  while (channel.read(buffers) != -1) {
+    for (var i = 0; i < buffers.length; i++) {
+       buffers[i].flip();
+    }
+    targetChannel.write(buffers);
+    for (var i = 0; i < buffers.length; i++) {
+       buffers[i].clear();
+    }
+  }
+  }
+}
+```
+
 ![](./img/2.png)
+
+---
+
+# Java NIO FileChannel
+
+> A FileChannel cannot be set into non-blocking mode. It always runs in blocking mode.
+
+使用FileChannel配合缓冲区（非直接缓冲区）实现文件复制的功能
+
+```Java
+try (
+    var source = FileChannel.open(Paths.get(yaml.getFrom()), StandardOpenOption.READ);
+    var sink = FileChannel.open(Paths.get(yaml.getTo()), Sets.newHashSet(StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE));) {
+    var buffer = ByteBuffer.allocate(1024*1024); // 1MB
+   while(source.read(buffer) != -1) {
+      buffer.flip();//read mode
+      sink.write(buffer);
+      buffer.clear();
+   }
+}
+```
+
+## 直接与非直接缓冲区
+
+  - 非直接缓冲区是需要经过一个：copy的阶段的(从内核空间copy到用户空间)
+  - 直接缓冲区不需要经过copy阶段，也可以理解成--->内存映射文件
+  - 字节缓冲区要么是直接的，要么是非直接的。如果为直接字节缓冲区，则 Java 虚拟机会尽最大努力直接在机此缓冲区上执行本机 I/O 操作。也就是说，在每次调用基础操作系统的一个本机 I/O 操作之前（或之后），虚拟机都会尽量避免将缓冲区的内容复制到中间缓冲区中（或从中间缓冲区中复制内容）
+  - 直接字节缓冲区可以通过调用此类的 `allocateDirect()` 工厂方法 来创建。此方法返回的 缓冲区进行分配和取消分配所需成本通常高于非直接缓冲区 。直接缓冲区的内容可以驻留在常规的垃圾回收堆之外，因此，它们对应用程序的内存需求量造成的影响可能并不明显。所以，建议将直接缓冲区主要分配给那些易受基础系统的机 本机 I/O 操作影响的大型、持久的缓冲区。一般情况下，最好仅在直接缓冲区能在程序性能方面带来明显好处时分配它们
+  - 直接字节缓冲区还可以过通过`FileChannel`的`map`方法将文件区域直接映射到内存中创建。该方法返回`MappedByteBuffer`。Java 平台的实现有助于通过 JNI 从本机代码创建直接字节缓冲区。如果以上这些缓冲区中的某个缓冲区实例指的是不可访问的内存区域，则试图访问该区域不会更改该缓冲区的内容，并且将会在访问期间或稍后的某个时间导致抛出不确定的异常
+  - 字节缓冲区是直接缓冲区还是非直接缓冲区可通过调用其 `isDirect()` 方法来确定。提供此方法是为了能够在性能关键型代码中执行显式缓冲区管理
+  - 非直接缓冲区将内存建立在jvm缓存中（`allocate`方法）。直接缓冲区将内存建立在操作系统的物理内存中（`allocateDirect`方法）
+
+**非直接缓冲区**
+
+![](./img/3.png)
+
+**直接缓冲区**
+
+![](./img/4.png)
+
+使用内存映射文件的方式实现文件复制的功能(直接操作缓冲区)：
+
+```java
+try (var source = FileChannel.open(Paths.get(yaml.getFrom()), StandardOpenOption.READ);
+    var sink = FileChannel.open(Paths.get(yaml.getTo()), Sets.newHashSet(StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE));) {
+      var sourceMapBuffer = source.map(MapMode.READ_ONLY, 0, source.size());
+      var sinkMapBuffer = sink.map(MapMode.READ_WRITE, 0, source.size());
+      while(sourceMapBuffer.hasRemaining()) {
+        sinkMapBuffer.put(sourceMapBuffer.get());
+      }
+    }
+```
+
+## Java NIO Channel to Channel Transfers
+
+在Java NIO中，如果两个通道中有一个是FileChannel，那你可以直接将数据从一个channel传输到另外一个channel
+
+### transferFrom
+
+FileChannel的transferFrom()方法可以将数据从源通道传输到FileChannel中（译者注：这个方法在JDK文档中的解释为将字节从给定的可读取字节通道传输到此通道的文件中）。下面是一个简单的例子
+
+```Java
+try (
+  var source = FileChannel.open(Paths.get(yaml.getRead()), StandardOpenOption.READ);
+  var sink = FileChannel.open(Paths.get(yaml.getGather()), StandardOpenOption.WRITE);) {
+    long position = 0;
+    long count = source.size();
+    sink.transferFrom(source, position, count);
+}
+```
+
+方法的输入参数position表示从position处开始向目标文件写入数据，count表示最多传输的字节数。**如果源通道的剩余空间小于 count 个字节，则所传输的字节数要小于请求的字节数**
+
+> 此外要注意，在SoketChannel的实现中，SocketChannel只会传输此刻准备好的数据（可能不足count字节）。因此，SocketChannel可能不会将请求的所有数据(count个字节)全部传输到FileChannel中
+
+### transferTo
+
+transferTo()方法将数据从FileChannel传输到其他的channel中。下面是一个简单的例子
+
+```java
+try (
+  var source = FileChannel.open(Paths.get(yaml.getRead()), StandardOpenOption.READ);
+  var sink = FileChannel.open(Paths.get(yaml.getGather()), StandardOpenOption.WRITE);) {
+    long position = 0;
+    long count = source.size();
+    source.transferTo(position, count, sink);
+}
+```
+
+---
+
+# IO模型理解
+
+根据UNIX网络编程对I/O模型的分类，在UNIX可以归纳成5种I/O模型
+
+  - 阻塞I/O
+  - 非阻塞I/O
+  - I/O多路复用
+  - 信号驱动I/O
+  - 异步I/O
+
+## 文件描述符
+
+Linux 的内核将所有外部设备都看做一个文件来操作，对一个文件的读写操作会调用内核提供的系统命令(api)，返回一个file descriptor（fd，文件描述符）。而对一个socket的读写也会有响应的描述符，称为socket fd（socket文件描述符），描述符就是一个数字，指向内核中的一个结构体（文件路径，数据区等一些属性）
+
+## 用户空间和内核空间
+
+为了保证用户进程不能直接操作内核（kernel），保证内核的安全，操心系统将虚拟空间划分为两部分
+  - 内核空间
+  - 用户空间
+
+## I/O运行过程
+
+我们来看看IO在系统中的运行是怎么样的(我们以read为例)
+
+![](./img/5.png)
+
+可以发现的是：当应用程序调用read方法时，是需要等待的--->从内核空间中找数据，再将内核空间的数据拷贝到用户空间的.这个等待是必要的过程
+
+### 阻塞I/O模型
+
+在进程(用户)空间中调用recvfrom，其系统调用直到数据包到达且被复制到应用进程的缓冲区中或者发生错误时才返回，在此期间一直等待
+
+例子：
+Java3y跟女朋友去买喜茶，排了很久的队终于可以点饮料了。我要绿研，谢谢。可是喜茶不是点了单就能立即拿，于是我在喜茶门口等了一小时才拿到绿研（在门口干等一小时）
+
+![](./img/6.png)
+
+### 非阻塞I/O模型
+
+recvfrom从应用层到内核的时候，如果没有数据就直接返回一个EWOULDBLOCK错误，一般都对非阻塞I/O模型进行轮询检查这个状态，看内核是不是有数据到来
+
+例子：
+Java3y跟女朋友去买一点点，排了很久的队终于可以点饮料了。我要波霸奶茶，谢谢。可是一点点不是点了单就能立即拿，同时服务员告诉我：你大概要等半小时哦。你们先去逛逛吧~于是Java3y跟女朋友去玩了几把斗地主，感觉时间差不多了。于是又去一点点问：请问到我了吗？我的单号是xxx。服务员告诉Java3y：还没到呢，现在的单号是XXX，你还要等一会，可以去附近耍耍。问了好几次后，终于拿到我的波霸奶茶了（去逛了下街、斗了下地主，时不时问问到我了没有）
+
+![](./img/7.png)
+
+### I/O复用模型
+
+在Linux下对文件的操作是利用文件描述符(file descriptor)来实现的：调用select/poll/epoll/pselect其中一个函数，传入多个文件描述符，如果有一个文件描述符就绪，则返回，否则阻塞直到超时
+
+例子：
+Java3y跟女朋友去麦当劳吃汉堡包，现在就厉害了可以使用微信小程序点餐了。于是跟女朋友找了个地方坐下就用小程序点餐了。点餐了之后玩玩斗地主、聊聊天什么的。时不时听到广播在复述XXX请取餐，反正我的单号还没到，就继续玩呗。~~等听到广播的时候再取餐就是了。时间过得挺快的，此时传来：Java3y请过来取餐。于是我就能拿到我的麦辣鸡翅汉堡了（听广播取餐，广播不是为我一个人服务。广播喊到我了，我过去取就Ok了）
+
+![](./img/8.png)
+
+  - 当用户进程调用了select，那么整个进程会被block；
+  - 而同时，kernel会“监视”所有select负责的socket；
+  - 当任何一个socket中的数据准备好了，select就会返回；
+  - 这个时候用户进程再调用read操作，将数据从kernel拷贝到用户进程(空间)。
+
+所以，I/O 多路复用的特点是通过一种机制一个进程能同时等待多个文件描述符，而这些文件描述符其中的任意一个进入读就绪状态，select()函数就可以返回
+
+> select/epoll的优势并不是对于单个连接能处理得更快，而是在于能处理更多的连接
+
+---
+
+# Selector
+
+Selector（选择器）是Java NIO中能够检测一到多个NIO通道，并能够知晓通道是否为诸如读写事件做好准备的组件。这样，一个单独的线程可以管理多个channel，从而管理多个网络连接
+
+## 为什么使用Selector?
+
+仅用单个线程来处理多个Channels的好处是，只需要更少的线程来处理通道。事实上，可以只用一个线程处理所有的通道。对于操作系统来说，线程之间上下文切换的开销很大，而且每个线程都要占用系统的一些资源（如内存）。因此，使用的线程越少越好。
+
+但是，需要记住，现代的操作系统和CPU在多任务方面表现的越来越好，所以多线程的开销随着时间的推移，变得越来越小了。实际上，如果一个CPU有多个内核，不使用多任务可能是在浪费CPU能力。不管怎么说，关于那种设计的讨论应该放在另一篇不同的文章中。在这里，只要知道使用Selector能够处理多个通道就足够了。
+
+下面是单线程使用一个Selector处理3个channel的示例图
+![](./img/overview-selectors.png)
+
+## Selector的创建
+
+通过调用Selector.open()方法创建一个Selector
+
+```Java
+Selector selector = Selector.open();
+```
+
+## Registering Channels with the Selector
+
+为了将Channel和Selector配合使用，必须将channel注册到selector上。通过SelectableChannel.register()方法来实现，如下
+
+```Java
+channel.configureBlocking(false);
+SelectionKey key = channel.register(selector, Selectionkey.OP_READ);
+```
+
+与Selector一起使用时，Channel**必须处于非阻塞模式下**。这意味着不能将FileChannel与Selector一起使用，因为FileChannel不能切换到非阻塞模式。而套接字通道`Socket channels`可以
+
+Notice the second parameter of the `register()` method. This is an "interest set", meaning what events you are interested in listening for in the Channel, via the Selector. There are four different events you can listen for
+
+  1. Connect
+  2. Accept
+  3. Read
+  4. Write
+
+通道触发了一个事件意思是该事件已经就绪。所以，某个channel成功连接到另一个服务器称为"连接就绪-connect"。一个server socket channel准备好接收新进入的连接称为"接收就绪-accept"。一个有数据可读的通道可以说是"读就绪-read"。等待写数据的通道可以说是"写就绪-write". 这四种事件用SelectionKey的四个常量来表示
+
+  1. SelectionKey.OP_CONNECT
+  2. SelectionKey.OP_ACCEPT
+  3. SelectionKey.OP_READ
+  4. SelectionKey.OP_WRITE
+
+If you are interested in more than one event, OR the constants together, like this:
+
+```java
+int interestSet = SelectionKey.OP_READ | SelectionKey.OP_WRITE;    
+```
+
+## java.nio.channels.SelectionKey
+
+在上一小节中，当向Selector注册Channel时，register()方法会返回一个SelectionKey对象。这个对象包含了一些你感兴趣的属性
+
+  - The interest set
+  - The ready set
+  - The Channel
+  - The Selector
+  - An attached object (optional)
+
+### Interest Set
+
+interest集合是你所选择的感兴趣的事件集合。可以通过SelectionKey读写interest集合
+
+```Java
+int interestSet = selectionKey.interestOps();
+boolean isInterestedInAccept  = interestSet & SelectionKey.OP_ACCEPT;
+boolean isInterestedInConnect = interestSet & SelectionKey.OP_CONNECT;
+boolean isInterestedInRead    = interestSet & SelectionKey.OP_READ;
+boolean isInterestedInWrite   = interestSet & SelectionKey.OP_WRITE;    
+```
+
+可以看到，用"位与"操作interest 集合和给定的SelectionKey常量，可以确定某个确定的事件是否在interest 集合中
+
+### Ready Set
+
+The ready set is the set of operations the channel is ready for. You will primarily be accessing the ready set after a selection
+
+```Java
+int readySet = selectionKey.readyOps();
+```
+
+可以用像检测interest集合那样的方法，来检测channel中什么事件或操作已经就绪. 或者，也可以使用以下四个方法，它们都会返回一个布尔类型
+
+```Java
+selectionKey.isAcceptable();
+selectionKey.isConnectable();
+selectionKey.isReadable();
+selectionKey.isWritable();
+```
+
+### Channel + Selector
+
+从SelectionKey访问Channel和Selector很简单
+
+```Java
+Channel  channel  = selectionKey.channel();
+Selector selector = selectionKey.selector();    
+```
+
+### Attaching Objects
+
+You can attach an object to a SelectionKey this is a handy way of recognizing a given channel, or attaching further information to the channel. For instance, you may attach the Buffer you are using with the channel, or an object containing more aggregate data. 需要注意的是如果附加的对象不再使用，一定要人为清除，因为垃圾回收器不会回收该对象，若不清除的话会成内存泄漏.一个单独的通道可被注册到多个选择器中，有些时候我们需要通过`isRegistered`方法来检查一个通道是否已经被注册到任何一个选择器上。 通常来说，我们并不会这么做
+
+```Java
+selectionKey.attach(theObject);
+Object attachedObj = selectionKey.attachment();
+```
+
+还可以在用register()方法向Selector注册Channel的时候附加对象:
+
+```java
+SelectionKey key = channel.register(selector, SelectionKey.OP_READ, theObject);
+```
+
+## Selecting Channels via a Selector
+
+一旦向Selector注册了一或多个通道，就可以调用几个重载的select()方法。这些方法返回你所感兴趣的事件（如连接、接受、读或写）已经准备就绪的那些通道。换句话说，如果你对“读就绪”的通道感兴趣，select()方法会返回读事件已经就绪的那些通道
+
+```Java
+int select()
+int select(long timeout)
+int selectNow()
+```
+
+  - `select()` blocks until at least one channel is ready for the events you registered for
+
+  - `select(long timeout)` does the same as select() except it blocks for a maximum of timeout milliseconds (the parameter).
+
+  - `selectNow() `doesn't block at all. It returns immediately with whatever channels are ready(此方法执行非阻塞的选择操作。如果自从前一次选择操作后，没有通道变成可选择的，则此方法直接返回零)
+
+```Java
+/*
+Selects a set of keys whose corresponding channels are ready for I/O operations.
+This method performs a non-blocking selection operation. If no channels have become selectable since the previous selection operation then this method immediately returns zero.
+
+Invoking this method clears the effect of any previous invocations of the wakeup method.
+*/
+public abstract int selectNow() throws IOException;
+```
+
+select()方法返回的int值表示有多少通道已经就绪。亦即，自上次调用select()方法后有多少通道变成就绪状态。如果调用select()方法，因为有一个通道变成就绪状态，返回了1，若再次调用select()方法，如果另一个通道就绪了，它会再次返回1。如果对第一个就绪的channel没有做任何操作，现在就有两个就绪的通道，但在每次select()方法调用之间，只有一个通道就绪了
+
+### selectedKeys()
+
+Once you have called one of the select() methods and its return value has indicated that one or more channels are ready, you can access the ready channels via the "selected key set", by calling the selectors selectedKeys() method
+
+```Java
+Set<SelectionKey> selectedKeys = selector.selectedKeys();
+```
+
+When you register a channel with a Selector the Channel.register() method returns a SelectionKey object. This key represents that channels registration with that selector. It is these keys you can access via the `selectedKeys()` method
+
+You can iterate this selected key set to access the ready channels. Here is how that looks:
+
+```Java
+Set<SelectionKey> selectedKeys = selector.selectedKeys();
+
+Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+
+while(keyIterator.hasNext()) {
+
+  SelectionKey key = keyIterator.next();
+
+  if(key.isAcceptable()) {
+      // a connection was accepted by a ServerSocketChannel.
+
+  } else if (key.isConnectable()) {
+      // a connection was established with a remote server.
+
+  } else if (key.isReadable()) {
+      // a channel is ready for reading
+
+  } else if (key.isWritable()) {
+      // a channel is ready for writing
+  }
+
+  keyIterator.remove();
+}
+```
+
+> 注意每次迭代末尾的keyIterator.remove()调用。Selector不会自己从已选择键集中移除SelectionKey实例。必须在处理完通道时自己移除。下次该通道变成就绪时，Selector会再次将其放入已选择键集中
+
+SelectionKey.channel()方法返回的通道需要转型成你要处理的类型，如ServerSocketChannel或SocketChannel等
+
+### wakeUp()
+
+某个线程调用select()方法后阻塞了，即使没有通道已经就绪，也有办法让其从select()方法返回。只要让其它线程在第一个线程调用select()方法的`Selector`对象上调用Selector.wakeup()方法即可。阻塞在select()方法上的线程会立马返回
+
+### close()
+
+用完Selector后调用其close()方法会关闭该Selector，且使注册到该Selector上的所有SelectionKey实例无效。通道本身并不会关闭
+
+
+## 完整的示例
+
+---
+
+# Java NIO Pipe
+
+Java NIO 管道是2个线程之间的**单向**数据连接。Pipe有一个source通道和一个sink通道。数据会被写到sink通道，从source通道读取。
+
+这里是Pipe原理的图示：
+
+![](./img/pipe-internals.png)
+
+## 创建管道
+
+通过Pipe.open()方法打开管道
+
+```java
+Pipe pipe = Pipe.open();
+```
+
+### 向管道写数据
+
+要向管道写数据，需要访问sink通道。像这样
+
+```Java
+Pipe.SinkChannel sinkChannel = pipe.sink();
+```
+
+通过调用SinkChannel的write()方法，将数据写入SinkChannel,像这样
+
+```Java
+String newData = "New String to write to file..." + System.currentTimeMillis();
+
+ByteBuffer buf = ByteBuffer.allocate(48);
+buf.clear();
+buf.put(newData.getBytes());
+
+buf.flip();
+
+while(buf.hasRemaining()) {
+    sinkChannel.write(buf);
+}
+```
+
+### 从管道读取数据
+
+从读取管道的数据，需要访问source通道，像这样
+
+```Java
+Pipe.SourceChannel sourceChannel = pipe.source();
+```
+
+调用source通道的read()方法来读取数据，像这样
+
+```java
+ByteBuffer buf = ByteBuffer.allocate(48);
+int bytesRead = sourceChannel.read(buf);
+```
+
+read()方法返回的int值会告诉我们多少字节被读进了缓冲区
+
+> Pipe的更多意义在于多线程分别操作source,sink以及Selector.
+
+---
+
+# Java NIO AsynchronousFileChannel

@@ -209,15 +209,33 @@ Q3 CBO ON|142|86,217,653|35,036
 
 Vectorized query execution is a Hive feature that greatly reduces the CPU usage for typical query operations like scans, filters, aggregates, and joins. A standard query execution system processes one row at a time. This involves long code paths and significant metadata interpretation in the inner loop of execution. Vectorized query execution streamlines operations by processing a block of 1024 rows at a time.Within the block, each column is stored as a vector (an array of a primitive data type). Simple operations like arithmetic and comparisons are done by quickly iterating through the vectors in a tight loop, with no or very few function calls or conditional branches inside the loop. These loops compile in a streamlined way that uses relatively few instructions and finishes each instruction in fewer clock cycles, on average, by effectively using the processor pipeline and cache memory. A detailed design document is attached to the vectorized query execution JIRA, at [https://issues.apache.org/jira/browse/HIVE-4160](https://issues.apache.org/jira/browse/HIVE-4160)
 
+![图片alt](./img/o22.png)
+
+When query vectorization is enabled, the query engine processes vectors of columns, which greatly improves CPU utilization for typical query operations like scans, filters, aggregates, and joins.
+
 ## Enabling vectorized execution
 
-To use vectorized query execution, you must store your data in **ORC** format, and set the following variable as shown in Hive SQL
+To use vectorized query execution, ~~you must store your data in **ORC** format~~, and set the following variable as shown in Hive SQL
 
-```
-set hive.vectorized.execution.enabled = true;
-```
+property|desc|default
+---|:--:|---:
+hive.vectorized.execution.enabled|true to enable vectorized mode of query execution|false
+hive.vectorized.execution.reduce.enabled|Turns on or off vectorization for the reduce-side of query execution. Applies only when the execution engine is set to [Spark, Tez]|true
+hive.vectorized.execution.reduce.groupby.enabled|true to enable vectorized mode of the reduce-side GROUP BY query execution|true
+hive.vectorized.execution.reducesink.new.enabled|true to enable the new vectorization of queries using ReduceSink|true
+hive.vectorized.execution.mapjoin.native.enabled|true to enable native (i.e. non-pass through) vectorization of queries using MapJoin|true
+hive.vectorized.execution.mapjoin.native.multikey.only.enabled|true to restrict use of native vector map join hash tables to the MultiKey in queries using MapJoin|false
+hive.vectorized.execution.mapjoin.minmax.enabled|true to enable vector map join hash tables to use max / max filtering for integer join queries using MapJoin|false
+hive.vectorized.execution.mapjoin.overflow.repeated.threshold|The number of small table rows for a match in vector map join hash tables where we use the repeated field optimization in overflow vectorized row batch for join queries using MapJoin. A value of -1 means do use the join result optimization. Otherwise, threshold value can be 0 to maximum integer|-1
+hive.vectorized.execution.mapjoin.native.fast.hashtable.enabled|true to enable use of native fast vector map join hash tables in queries using MapJoin|false
+hive.vectorized.groupby.checkinterval|For vectorized GROUP BY operations, specifies the number of row entries added to the hash table before rechecking the average variable size when estimating memory usage|100000
+hive.vectorized.groupby.maxentries|Maximum number of entries in the vector GROUP BY aggregation hashtables. Exceeding this will trigger a flush regardless of memory pressure condition|1000000
+hive.vectorized.use.vectorized.input.format|true to allow Hive to take advantage of input formats that support vectorization|true
+hive.vectorized.use.vector.serde.deserialize|Enables Hive to use built-in vector SerDes to process text & SequenceFile tables(row-based) for vectorized query execution. In addition, this configuration also helps vectorization of intermediate tasks in multi-stage query execution|false
+hive.vectorized.use.row.serde.deserialize|true to enable vectorizing using row deserialize|false
+hive.vectorized.input.format.excludes|This flag should be used to provide a comma separated list of fully qualified classnames to exclude certain FileInputFormats from vectorized execution using the vectorized file inputformat. Note that vectorized execution could still occur for that input format based on whether `hive.vectorized.use.vector.serde.deserialize` or `hive.vectorized.use.row.serde.deserialize` is enabled or not|(empty)
+hive.vectorized.groupby.flush.percent|Sets the percentage between 0 and 100 percent of entries in the vectorized GROUP BY aggregation hash that is flushed when the memory threshold is exceeded. To set no flushing, set this property to `0.0`. To set flushing at 100 percent, set this property to `1.0`|0.1(10%)
 
-Additional configuration variables for vectorized execution are documented in [Configuration Properties – Vectorization.](https://cwiki.apache.org/confluence/display/Hive/Configuration+Properties#ConfigurationProperties-Vectorization)
 
 ## Supported data types and operations
 
@@ -253,59 +271,104 @@ The following expressions can be vectorized when used on supported types:
 
 ## Seeing whether vectorization is used for a query
 
-You can verify which parts of your query are being vectorized using the explain feature. For example, when Fetch is used in the plan instead of Map, it does not vectorize and the explain output will not include the **"Execution mode: vectorized"** notation
+You can verify which parts of your query are being vectorized using the explain feature.
 
 ```SQL
-create table src(key int, value string) stored as orc;
-set hive.vectorized.execution.enabled = true;
-explain select count(*) from src;
-+------------------------------------------------------------------------------------------------------------+--+
-|                                                  Explain                                                   |
-+------------------------------------------------------------------------------------------------------------+--+
-| STAGE DEPENDENCIES:                                                                                        |
-|   Stage-1 is a root stage                                                                                  |
-|   Stage-0 depends on stages: Stage-1                                                                       |
-|                                                                                                            |
-| STAGE PLANS:                                                                                               |
-|   Stage: Stage-1                                                                                           |
-|     Map Reduce                                                                                             |
-|       Map Operator Tree:                                                                                   |
-|           TableScan                                                                                        |
-|             alias: src                                                                                     |
-|             Statistics: Num rows: 10958 Data size: 1041010 Basic stats: COMPLETE Column stats: COMPLETE    |
-|             Select Operator                                                                                |
-|               Statistics: Num rows: 10958 Data size: 1041010 Basic stats: COMPLETE Column stats: COMPLETE  |
-|               Group By Operator                                                                            |
-|                 aggregations: count()                                                                      |
-|                 mode: hash                                                                                 |
-|                 outputColumnNames: _col0                                                                   |
-|                 Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: COMPLETE          |
-|                 Reduce Output Operator                                                                     |
-|                   sort order:                                                                              |
-|                   Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: COMPLETE        |
-|                   value expressions: _col0 (type: bigint)                                                  |
-|       Execution mode: vectorized                                                                           |
-|       Reduce Operator Tree:                                                                                |
-|         Group By Operator                                                                                  |
-|           aggregations: count(VALUE._col0)                                                                 |
-|           mode: mergepartial                                                                               |
-|           outputColumnNames: _col0                                                                         |
-|           Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: COMPLETE                |
-|           File Output Operator                                                                             |
-|             compressed: true                                                                               |
-|             Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: COMPLETE              |
-|             table:                                                                                         |
-|                 input format: org.apache.hadoop.mapred.SequenceFileInputFormat                             |
-|                 output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat                   |
-|                 serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe                                  |
-|                                                                                                            |
-|   Stage: Stage-0                                                                                           |
-|     Fetch Operator                                                                                         |
-|       limit: -1                                                                                            |
-|       Processor Tree:                                                                                      |
-|         ListSink                                                                                           |
-|                                                                                                            |
-+------------------------------------------------------------------------------------------------------------+--+
+set hive.vectorized.execution.enabled=true;
+explain vectorization select count(*) from src;
+
++----------------------------------------------------------------------------------------------------------+--+
+|                                                 Explain                                                  |
++----------------------------------------------------------------------------------------------------------+--+
+| PLAN VECTORIZATION:                                                                                      |
+|   enabled: true                                                                                          |
+|   enabledConditionsMet: [hive.vectorized.execution.enabled IS true]                                      |
+|                                                                                                          |
+| STAGE DEPENDENCIES:                                                                                      |
+|   Stage-1 is a root stage                                                                                |
+|   Stage-0 depends on stages: Stage-1                                                                     |
+|                                                                                                          |
+| STAGE PLANS:                                                                                             |
+|   Stage: Stage-1                                                                                         |
+|     Map Reduce                                                                                           |
+|       Map Operator Tree:                                                                                 |
+|           TableScan                                                                                      |
+|             alias: src                                                                                   |
+|             Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: COMPLETE    |
+|             Select Operator                                                                              |
+|               Statistics: Num rows: 10958 Data size: 87664 Basic stats: COMPLETE Column stats: COMPLETE  |
+|               Group By Operator                                                                          |
+|                 aggregations: count()                                                                    |
+|                 mode: hash                                                                               |
+|                 outputColumnNames: _col0                                                                 |
+|                 Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: COMPLETE        |
+|                 Reduce Output Operator                                                                   |
+|                   sort order:                                                                            |
+|                   Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: COMPLETE      |
+|                   value expressions: _col0 (type: bigint)                                                |
+|       Execution mode: vectorized                                                                         |
+|       Map Vectorization:                                                                                 |
+|           enabled: true                                                                                  |
+|           enabledConditionsMet: hive.vectorized.use.vectorized.input.format IS true                      |
+|           groupByVectorOutput: true                                                                      |
+|           inputFileFormats: org.apache.hadoop.hive.ql.io.orc.OrcInputFormat                              |
+|           allNative: false                                                                               |
+|           usesVectorUDFAdaptor: false                                                                    |
+|           vectorized: true                                                                               |
+|       Reduce Vectorization:                                                                              |
+|           enabled: false                                                                                 |
+|           enableConditionsMet: hive.vectorized.execution.reduce.enabled IS true                          |
+|           enableConditionsNotMet: hive.execution.engine mr IN [tez, spark] IS false                      |
+|       Reduce Operator Tree:                                                                              |
+|         Group By Operator                                                                                |
+|           aggregations: count(VALUE._col0)                                                               |
+|           mode: mergepartial                                                                             |
+|           outputColumnNames: _col0                                                                       |
+|           Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: COMPLETE              |
+|           File Output Operator                                                                           |
+|             compressed: true                                                                             |
+|             Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: COMPLETE            |
+|             table:                                                                                       |
+|                 input format: org.apache.hadoop.mapred.SequenceFileInputFormat                           |
+|                 output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat                 |
+|                 serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe                                |
+|                                                                                                          |
+|   Stage: Stage-0                                                                                         |
+|     Fetch Operator                                                                                       |
+|       limit: -1                                                                                          |
+|       Processor Tree:                                                                                    |
+|         ListSink                                                                                         |
+|                                                                                                          |
++----------------------------------------------------------------------------------------------------------+--+
+
+set hive.execution.engine=tez;
+explain vectorization select count(*) from src;
+
++-----------------------------------------------------------------+--+
+|                             Explain                             |
++-----------------------------------------------------------------+--+
+| Plan optimized by CBO.                                          |
+|                                                                 |
+| Vertex dependency in root stage                                 |
+| Reducer 2 <- Map 1 (CUSTOM_SIMPLE_EDGE)                         |
+|                                                                 |
+| Stage-0                                                         |
+|   Fetch Operator                                                |
+|     limit:-1                                                    |
+|     Stage-1                                                     |
+|       Reducer 2 vectorized                                      |
+|       File Output Operator [FS_6]                               |
+|         Group By Operator [GBY_4] (rows=1 width=8)              |
+|           Output:["_col0"],aggregations:["count(VALUE._col0)"]  |
+|         <-Map 1 [CUSTOM_SIMPLE_EDGE] vectorized                 |
+|           PARTITION_ONLY_SHUFFLE [RS_3]                         |
+|             Group By Operator [GBY_2] (rows=1 width=8)          |
+|               Output:["_col0"],aggregations:["count()"]         |
+|               Select Operator [SEL_1] (rows=10958 width=8)      |
+|                 TableScan [TS_0] (rows=10958 width=8)           |
+|                   test@src,src,Tbl:COMPLETE,Col:COMPLETE        |
+|                                                                 |
++-----------------------------------------------------------------+--+
 ```
 
 # Correlation Optimizer
@@ -591,7 +654,7 @@ STAGE PLANS:
 -- use correlation optimization
 set hive.optimize.correlation=true;
 
-SELECT tmp1.key, count(*)
+EXPLAIN SELECT tmp1.key, count(*)
 FROM (SELECT key, avg(value) AS avg
       FROM src
       GROUP BY /*AGG1*/ key) tmp1

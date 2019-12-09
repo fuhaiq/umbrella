@@ -175,3 +175,46 @@ A map/reduce stage itself has 2 parts:
 
 
 ## The CBO Clause
+
+> Since Hive release 4.0.0
+
+## The DEPENDENCY Clause
+
+```sql
+explain dependency select * from t_store_daily_his where his_dt = '2019-04-01';
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--+
+|                                                                                Explain                                                                                 |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--+
+| {"input_tables":[{"tablename":"dwd@t_store_daily_his","tabletype":"MANAGED_TABLE"}],"input_partitions":[{"partitionName":"dwd@t_store_daily_his@his_dt=2019-04-01"}]}  |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--+
+```
+
+it will be returned in JSON format.
+
+```json
+{
+  "input_tables": [
+    {
+      "tablename": "dwd@t_store_daily_his",
+      "tabletype": "MANAGED_TABLE"
+    }
+  ],
+  "input_partitions": [
+    {
+      "partitionName": "dwd@t_store_daily_his@his_dt=2019-04-01"
+    }
+  ]
+}
+```
+
+
+## The VECTORIZATION Clause
+
+Syntax: `EXPLAIN VECTORIZATION [ONLY] [SUMMARY|OPERATOR|EXPRESSION|DETAIL]`
+
+  - `ONLY` option suppresses most non-vectorization elements.
+  - `SUMMARY` (default) shows vectorization information for the PLAN (is vectorization enabled) and a summary of Map and Reduce work.
+  - `OPERATOR` shows vectorization information for operators. E.g. Filter Vectorization. Includes all information of `SUMMARY`.
+  - `EXPRESSION` shows vectorization information for expressions. E.g. predicateExpression. Includes all information of `SUMMARY` and `OPERATOR`.
+  - `DETAIL` shows detail-level vectorization information.  It includes all information of `SUMMARY`, `OPERATOR`, and `EXPRESSION`.
