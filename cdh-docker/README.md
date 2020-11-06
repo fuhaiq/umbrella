@@ -71,12 +71,14 @@ sudo yum install docker-ce
 #### cdh-mysql 容器（来自官方mariadb镜像）
 根据自己的实际目录修改！！！ 本地目录不存在的要先创建
 ```
-docker run --name cdh-mysql -h cdh-mysql --net=cdh \
+docker run --name cdh-mysql -h cdh-mysql --privileged=true --net=cdh \
+-v /aliyun/docker-instances/cdh-mysql:/var/lib/mysql \
 -v /aliyun/docker-images/cdh-mysql/conf:/etc/mysql/conf.d \
 -v /aliyun/docker-images/cdh-mysql/init:/docker-entrypoint-initdb.d \
 -e MYSQL_ROOT_PASSWORD=Topfounder123 -d mariadb
 ```
-这里有2个添加卷
+这里有3个添加卷
+- /var/lib/mysql - mysql数据目录
 - /etc/mysql/conf.d – 加载数据库配置，因为用到innodb引擎
 - /docker-entrypoint-initdb.d – 数据库启动的时候加载的初始化脚本（即CDH数据库初始化）
 
