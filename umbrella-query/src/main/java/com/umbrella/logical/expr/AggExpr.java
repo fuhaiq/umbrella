@@ -28,10 +28,6 @@ public abstract class AggExpr implements LogicalExpr {
         public Sum(LogicalExpr expr) {
             super("sum", expr);
         }
-        @Override
-        public Field toField(Schema schema) {
-            return Field.notNullable(name, new ArrowType.Int(64, true));
-        }
     }
 
     public static class Min extends AggExpr {
@@ -49,10 +45,6 @@ public abstract class AggExpr implements LogicalExpr {
     public static class Avg extends AggExpr {
         public Avg(LogicalExpr expr) {
             super("avg", expr);
-        }
-        @Override
-        public Field toField(Schema schema) {
-            return Field.notNullable(name, new ArrowType.FloatingPoint(FloatingPointPrecision.SINGLE));
         }
     }
 

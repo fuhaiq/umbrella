@@ -12,6 +12,8 @@ public final class ExprFunction {
             case Integer i -> new LiteralInt(i);
             case Long l -> new LiteralLong(l);
             case String s -> new LiteralString(s);
+            case Float f -> new LiteralFloat(f);
+            case Double d -> new LiteralDouble(d);
             default -> throw new UnsupportedOperationException(value.getClass().getName() + " is not supported");
         };
     }
@@ -28,7 +30,7 @@ public final class ExprFunction {
         return new AsExpr(expr, name);
     }
 
-    public static LogicalExpr cast(LogicalExpr expr, String name) {
+    public static LogicalExpr alias(LogicalExpr expr, String name) {
         return as(expr, name);
     }
 
