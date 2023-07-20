@@ -16,7 +16,8 @@ public abstract class SortExpr implements LogicalExpr {
 
     @Override
     public Field toField(Schema schema) {
-        return Field.notNullable(sort, expr.toField(schema).getType());
+        var field = expr.toField(schema);
+        return Field.notNullable(sort + "(" + field.getName() + ")", field.getType());
     }
 
     @Override
