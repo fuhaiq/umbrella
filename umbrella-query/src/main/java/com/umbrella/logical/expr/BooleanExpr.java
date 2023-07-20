@@ -14,6 +14,18 @@ public abstract class BooleanExpr extends BinaryExpr {
         return Field.notNullable(name, ArrowType.PrimitiveType.Bool.INSTANCE);
     }
 
+    public static class And extends BooleanExpr {
+        public And(LogicalExpr l, LogicalExpr r) {
+            super("and", "AND", l, r);
+        }
+    }
+
+    public static class Or extends BooleanExpr {
+        public Or(LogicalExpr l, LogicalExpr r) {
+            super("or", "OR", l, r);
+        }
+    }
+
     public static class Eq extends BooleanExpr {
         public Eq(LogicalExpr l, LogicalExpr r) {
             super("eq", "=", l, r);

@@ -15,6 +15,6 @@ public abstract class BinaryExpr implements LogicalExpr {
 
     @Override
     public String toString() {
-        return l.toString() + op + r.toString();
+        return l.toString() + " " + op + " " + r.toString();
     }
 }

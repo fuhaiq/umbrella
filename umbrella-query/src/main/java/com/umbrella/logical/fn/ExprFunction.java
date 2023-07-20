@@ -34,6 +34,18 @@ public final class ExprFunction {
         return as(expr, name);
     }
 
+    public static LogicalExpr not(LogicalExpr expr) {
+        return new UnaryExpr.Not(expr);
+    }
+
+    public static LogicalExpr and(LogicalExpr l, LogicalExpr r) {
+        return new BooleanExpr.And(l, r);
+    }
+
+    public static LogicalExpr or(LogicalExpr l, LogicalExpr r) {
+        return new BooleanExpr.Or(l, r);
+    }
+
     public static LogicalExpr eq(LogicalExpr l, LogicalExpr r) {
         return new BooleanExpr.Eq(l, r);
     }
@@ -58,6 +70,22 @@ public final class ExprFunction {
         return new BooleanExpr.LtEq(l, r);
     }
 
+    public static LogicalExpr add(LogicalExpr l, LogicalExpr r) {
+        return new MathExpr.Add(l, r);
+    }
+
+    public static LogicalExpr sub(LogicalExpr l, LogicalExpr r) {
+        return new MathExpr.Subtract(l, r);
+    }
+
+    public static LogicalExpr div(LogicalExpr l, LogicalExpr r) {
+        return new MathExpr.Divide(l, r);
+    }
+
+    public static LogicalExpr mul(LogicalExpr l, LogicalExpr r) {
+        return new MathExpr.Multiply(l, r);
+    }
+
     public static LogicalExpr min(LogicalExpr expr) {
         return new AggExpr.Min(expr);
     }
@@ -76,6 +104,14 @@ public final class ExprFunction {
 
     public static LogicalExpr avg(LogicalExpr expr) {
         return new AggExpr.Avg(expr);
+    }
+
+    public static LogicalExpr asc(LogicalExpr expr) {
+        return new SortExpr.ASC(expr);
+    }
+
+    public static LogicalExpr desc(LogicalExpr expr) {
+        return new SortExpr.DESC(expr);
     }
 
 }

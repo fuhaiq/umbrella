@@ -17,6 +17,10 @@ public interface DataFrame {
 
     DataFrame agg(List<LogicalExpr> groupBy, List<AggExpr> aggExpr);
 
+    DataFrame orderBy(LogicalExpr... expr);
+
+    DataFrame limit(int n);
+
     Schema schema();
 
     void explain();

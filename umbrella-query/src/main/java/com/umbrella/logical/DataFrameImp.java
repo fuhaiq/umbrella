@@ -31,6 +31,16 @@ public record DataFrameImp(LogicalPlan input) implements DataFrame {
     }
 
     @Override
+    public DataFrame orderBy(LogicalExpr... expr) {
+        return new DataFrameImp(new OrderBy(input, expr));
+    }
+
+    @Override
+    public DataFrame limit(int n) {
+        return new DataFrameImp(new Limit(input, n));
+    }
+
+    @Override
     public Schema schema() {
         return input.schema();
     }

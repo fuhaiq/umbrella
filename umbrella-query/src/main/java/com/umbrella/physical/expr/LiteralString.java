@@ -1,5 +1,6 @@
 package com.umbrella.physical.expr;
 
+import com.umbrella.execution.ExecutionContext;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -13,16 +14,11 @@ public record LiteralString(String value) implements PhysicalExpr {
         // Instantiate a VarCharVector. This doesn't allocate any memory for the data in vector.
 //        return new VarCharVector(value, allocator);
 
-        var vector = new VarCharVector(RandomStringUtils.randomAlphabetic(6), allocator);
+        var vector = new VarCharVector(RandomStringUtils.randomAlphabetic(6), ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
             vector.set(i, value.getBytes(StandardCharsets.UTF_8));
         }
         return vector;
-    }
-
-    @Override
-    public String toString() {
-        return "'"+ value +"'";
     }
 }

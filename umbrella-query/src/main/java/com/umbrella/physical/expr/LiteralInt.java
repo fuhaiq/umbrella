@@ -1,5 +1,6 @@
 package com.umbrella.physical.expr;
 
+import com.umbrella.execution.ExecutionContext;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -10,16 +11,11 @@ public record LiteralInt(Integer n) implements PhysicalExpr {
     public FieldVector evaluate(VectorSchemaRoot tabular) {
         // Instantiate a IntVector. This doesn't allocate any memory for the data in vector.
 //        return new IntVector(RandomStringUtils.randomAlphabetic(6), allocator);
-        var vector = new IntVector(RandomStringUtils.randomAlphabetic(6), allocator);
+        var vector = new IntVector(RandomStringUtils.randomAlphabetic(6), ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
             vector.set(i, n);
         }
         return vector;
-    }
-
-    @Override
-    public String toString() {
-        return n.toString();
     }
 }
