@@ -1,4 +1,4 @@
-package com.umbrella.physical.expr;
+package com.umbrella.physical.arrow.expr;
 
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -25,7 +25,9 @@ public abstract class BinaryExpr implements PhysicalExpr {
         checkState(ll.getValueCount() == rr.getValueCount(),
                 "Binary expression operands do not have the same value count: "
         + ll.getValueCount() + " != " + rr.getValueCount());
-        return evaluate(ll, rr);
+        var vector = evaluate(ll ,rr);
+        vector.setValueCount(ll.getValueCount());
+        return vector;
     }
 
     protected abstract FieldVector evaluate(FieldVector l, FieldVector r);

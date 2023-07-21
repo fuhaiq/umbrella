@@ -1,4 +1,4 @@
-package com.umbrella.physical.expr;
+package com.umbrella.physical.arrow.expr;
 
 import com.umbrella.execution.ExecutionContext;
 import org.apache.arrow.vector.FieldVector;
@@ -11,14 +11,12 @@ import java.nio.charset.StandardCharsets;
 public record LiteralString(String value) implements PhysicalExpr {
     @Override
     public FieldVector evaluate(VectorSchemaRoot tabular) {
-        // Instantiate a VarCharVector. This doesn't allocate any memory for the data in vector.
-//        return new VarCharVector(value, allocator);
-
         var vector = new VarCharVector(RandomStringUtils.randomAlphabetic(6), ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
             vector.set(i, value.getBytes(StandardCharsets.UTF_8));
         }
+        vector.setValueCount(tabular.getRowCount());
         return vector;
     }
 }

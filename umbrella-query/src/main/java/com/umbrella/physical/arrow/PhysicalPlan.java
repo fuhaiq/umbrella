@@ -1,4 +1,4 @@
-package com.umbrella.physical;
+package com.umbrella.physical.arrow;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.pojo.Schema;

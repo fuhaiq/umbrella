@@ -1,6 +1,6 @@
 package com.umbrella.logical.expr;
 
-import org.apache.arrow.vector.types.pojo.ArrowType;
+import static org.apache.arrow.vector.types.Types.MinorType.*;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 
@@ -12,7 +12,7 @@ public abstract class BooleanExpr extends BinaryExpr {
     @Override
     public Field toField(Schema schema) {
         var name = l.toField(schema).getName() + " " + op + " " + r.toField(schema).getName();
-        return Field.notNullable(name, ArrowType.Bool.INSTANCE);
+        return Field.notNullable(name, BIT.getType());
     }
 
     public static class And extends BooleanExpr {

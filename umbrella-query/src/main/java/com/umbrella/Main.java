@@ -1,6 +1,8 @@
 package com.umbrella;
 
 import com.umbrella.execution.ExecutionContext;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
 
 import static com.umbrella.logical.fn.ExprFunction.*;
 
