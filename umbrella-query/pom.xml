@@ -12,6 +12,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <arrow.version>12.0.1</arrow.version>
     </properties>
 
     <dependencies>
@@ -41,33 +42,47 @@
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-vector</artifactId>
-            <version>12.0.1</version>
+            <version>${arrow.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.arrow/arrow-memory-netty -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-memory-netty</artifactId>
-            <version>12.0.1</version>
+            <version>${arrow.version}</version>
             <scope>runtime</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.arrow/arrow-compression -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-compression</artifactId>
-            <version>12.0.1</version>
+            <version>${arrow.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.arrow/arrow-dataset -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-dataset</artifactId>
-            <version>12.0.1</version>
+            <version>${arrow.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.arrow/arrow-tools -->
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-tools</artifactId>
+            <version>${arrow.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.arrow/arrow-algorithm -->
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-algorithm</artifactId>
+            <version>${arrow.version}</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.12.0</version>
         </dependency>
+
 
     </dependencies>
 
