@@ -43,6 +43,12 @@ public abstract class BooleanExpr extends BinaryExpr {
                     vector.set(index, evaluate(chi.get(index), chir.get(index), l.getMinorType()) ? 1 : 0);
                 }
             }
+            case BitVector b -> {
+                var br = (BitVector) r;
+                for (var index = 0; index < b.getValueCount(); index++) {
+                    vector.set(index, evaluate(b.get(index), br.get(index), l.getMinorType()) ? 1 : 0);
+                }
+            }
             default -> throw new UnsupportedOperationException("Type "+ l.getMinorType() +" is not supported in Binary expression");
         }
         return vector;
@@ -50,8 +56,8 @@ public abstract class BooleanExpr extends BinaryExpr {
 
     protected abstract boolean evaluate(Object l, Object r, Types.MinorType type);
 
-    public static class And extends BooleanExpr {
-        protected And(PhysicalExpr l, PhysicalExpr r) {
+    public static class Eq extends BooleanExpr {
+        protected Eq(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
@@ -62,6 +68,25 @@ public abstract class BooleanExpr extends BinaryExpr {
                 case FLOAT4 -> (float) l == (float) r;
                 case FLOAT8 -> (double) l == (double) r;
                 case VARCHAR -> l.equals(r);
+                case BIT -> (boolean) l == (boolean) r;
+                default -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Binary expression");
+            };
+        }
+    }
+
+    public static class Neq extends BooleanExpr {
+        protected Neq(PhysicalExpr l, PhysicalExpr r) {
+            super(l, r);
+        }
+        @Override
+        protected boolean evaluate(Object l, Object r, Types.MinorType type) {
+            return switch (type) {
+                case INT -> (int) l != (int) r;
+                case BIGINT -> (long) l != (long) r;
+                case FLOAT4 -> (float) l != (float) r;
+                case FLOAT8 -> (double) l != (double) r;
+                case VARCHAR -> !l.equals(r);
+                case BIT -> (boolean) l != (boolean) r;
                 default -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Binary expression");
             };
         }

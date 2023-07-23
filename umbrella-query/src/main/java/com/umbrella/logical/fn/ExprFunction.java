@@ -14,6 +14,7 @@ public final class ExprFunction {
             case String s -> new LiteralString(s);
             case Float f -> new LiteralFloat(f);
             case Double d -> new LiteralDouble(d);
+            case Boolean b -> new LiteralBool(b);
             default -> throw new UnsupportedOperationException(value.getClass().getName() + " is not supported");
         };
     }
