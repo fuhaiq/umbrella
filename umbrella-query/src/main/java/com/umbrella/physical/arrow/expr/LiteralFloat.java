@@ -10,7 +10,7 @@ public record LiteralFloat(Float n) implements PhysicalExpr {
 
     @Override
     public FieldVector evaluate(VectorSchemaRoot tabular) {
-        var vector = new Float4Vector(RandomStringUtils.randomAlphabetic(6), ExecutionContext.instance().allocator());
+        var vector = new Float4Vector(n.toString(), ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
             vector.set(i, n);

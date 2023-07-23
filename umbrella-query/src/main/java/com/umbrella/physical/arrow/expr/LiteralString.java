@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 public record LiteralString(String value) implements PhysicalExpr {
     @Override
     public FieldVector evaluate(VectorSchemaRoot tabular) {
-        var vector = new VarCharVector(RandomStringUtils.randomAlphabetic(6), ExecutionContext.instance().allocator());
+        var vector = new VarCharVector(value, ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
             vector.set(i, value.getBytes(StandardCharsets.UTF_8));

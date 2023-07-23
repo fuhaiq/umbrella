@@ -9,7 +9,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 public record LiteralInt(Integer n) implements PhysicalExpr {
     @Override
     public FieldVector evaluate(VectorSchemaRoot tabular) {
-        var vector = new IntVector(RandomStringUtils.randomAlphabetic(6), ExecutionContext.instance().allocator());
+        var vector = new IntVector(n.toString(), ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
             vector.set(i, n);
