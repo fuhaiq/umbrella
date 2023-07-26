@@ -13,20 +13,28 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <arrow.version>12.0.1</arrow.version>
+        <calcite.version>1.34.0</calcite.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-core</artifactId>
-            <version>1.34.0</version>
+            <version>${calcite.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.calcite/calcite-linq4j -->
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-linq4j</artifactId>
-            <version>1.34.0</version>
+            <version>${calcite.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.calcite/calcite-example-csv -->
+        <dependency>
+            <groupId>org.apache.calcite</groupId>
+            <artifactId>calcite-example-csv</artifactId>
+            <version>1.21.0</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.javatuples</groupId>
@@ -104,6 +112,15 @@
                     <source>17</source>
                     <target>17</target>
                     <compilerArgs>--enable-preview</compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M6</version>
+                <configuration>
+                    <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
 

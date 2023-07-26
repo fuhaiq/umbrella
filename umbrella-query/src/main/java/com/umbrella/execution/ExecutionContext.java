@@ -13,7 +13,7 @@ import java.io.Closeable;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class ExecutionContext implements Closeable {
+public final class ExecutionContext {
     private ExecutionContext(){
         allocator = new RootAllocator();
     }
@@ -49,13 +49,7 @@ public final class ExecutionContext implements Closeable {
         }
     }
 
-
-    @Override
-    public void close() {
-        allocator.close();
-    }
-
     public void stop() {
-        close();
+        allocator.close();
     }
 }
