@@ -1,5 +1,6 @@
 package com.umbrella.calcite.adapter.parquet;
 
+import com.codepoetics.protonpack.StreamUtils;
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
 import org.apache.arrow.dataset.jni.NativeMemoryPool;
@@ -45,10 +46,16 @@ public class ParquetEnumerator<T> implements Enumerator<T> {
     @Override
     public boolean moveNext() {
         try {
-            while(!cancelFlag.get() && reader.loadNextBatch()) {
+            if(!cancelFlag.get() && reader.loadNextBatch()) {
                 try (var root = reader.getVectorSchemaRoot()) {
                     checkState(root.getRowCount() == 1, "返回多行记录");
-
+                    var columns = root.getFieldVectors().size();
+                    var row = new Object[columns];
+                    for (var i = 0; i < columns; i++) {
+                        row[i] = root.getVector(i).getObject(0);
+                    }
+                    current = (T) row;
+                    return true;
                 }
             }
             return false;
