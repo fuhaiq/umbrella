@@ -19,13 +19,13 @@ import org.apache.calcite.util.Pair;
 
 import static org.apache.arrow.vector.types.Types.MinorType.*;
 
-public class SchemaFileTable extends AbstractTable implements ScannableTable {
+public class SchemaBasedFileTable extends AbstractTable implements ScannableTable {
 
     private final String uri;
 
     private final FileFormat format;
 
-    public SchemaFileTable(String uri, FileFormat format) {
+    public SchemaBasedFileTable(String uri, FileFormat format) {
         this.uri = uri;
         this.format = format;
     }
@@ -35,7 +35,7 @@ public class SchemaFileTable extends AbstractTable implements ScannableTable {
         return new AbstractEnumerable<>(){
             @Override
             public Enumerator<Object[]> enumerator() {
-                return new SchemaFileEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format);
+                return new SchemaBasedFileEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format);
             }
         };
     }
@@ -61,6 +61,8 @@ public class SchemaFileTable extends AbstractTable implements ScannableTable {
                     type = typeFactory.createSqlType(SqlTypeName.VARCHAR);
                 } else if (field.getType().getTypeID() == ArrowType.ArrowTypeID.Decimal) {
                     type = typeFactory.createSqlType(SqlTypeName.DECIMAL);
+                } else if (field.getType().getTypeID() == ArrowType.ArrowTypeID.Timestamp) {
+                    type = typeFactory.createSqlType(SqlTypeName.TIMESTAMP);
                 } else throw new UnsupportedOperationException("Type "+ field.getType().toString() +" is not supported");
                 return new Pair<>(field.getName(), type);
             }).toList();

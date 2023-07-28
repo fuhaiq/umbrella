@@ -16,7 +16,7 @@ import static com.google.common.base.Preconditions.*;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SchemaFileEnumerator<T> implements Enumerator<T> {
+public class SchemaBasedFileEnumerator<T> implements Enumerator<T> {
 
     private final AtomicBoolean cancelFlag;
     private int current_count;
@@ -27,7 +27,7 @@ public class SchemaFileEnumerator<T> implements Enumerator<T> {
     private final ArrowReader reader;
     private VectorSchemaRoot root;
 
-    public SchemaFileEnumerator(AtomicBoolean cancelFlag, String uri, FileFormat format) {
+    public SchemaBasedFileEnumerator(AtomicBoolean cancelFlag, String uri, FileFormat format) {
         this.cancelFlag = cancelFlag;
         ScanOptions options = new ScanOptions(/*batchSize*/ 32768);
         allocator = new RootAllocator();
