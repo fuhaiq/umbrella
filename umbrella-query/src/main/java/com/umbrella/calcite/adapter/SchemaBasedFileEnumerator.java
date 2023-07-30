@@ -12,8 +12,11 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.calcite.linq4j.Enumerator;
+import org.apache.calcite.rex.RexCall;
+
 import static com.google.common.base.Preconditions.*;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SchemaBasedFileEnumerator<T> implements Enumerator<T> {
@@ -27,14 +30,17 @@ public class SchemaBasedFileEnumerator<T> implements Enumerator<T> {
     private final ArrowReader reader;
     private VectorSchemaRoot root;
 
-    public SchemaBasedFileEnumerator(AtomicBoolean cancelFlag, String uri, FileFormat format) {
+    private final List<RexCall> filters;
+
+    public SchemaBasedFileEnumerator(AtomicBoolean cancelFlag, String uri, FileFormat format, ScanOptions options, List<RexCall> filters) {
         this.cancelFlag = cancelFlag;
-        ScanOptions options = new ScanOptions(/*batchSize*/ 32768);
+        this.filters = filters;
         allocator = new RootAllocator();
         datasetFactory = new FileSystemDatasetFactory(allocator, NativeMemoryPool.getDefault(), format, uri);
         dataset = datasetFactory.finish();
         scanner = dataset.newScan(options);
         reader = scanner.scanBatches();
+
     }
 
     @Override
@@ -63,6 +69,7 @@ public class SchemaBasedFileEnumerator<T> implements Enumerator<T> {
             }
             if(reader.loadNextBatch()) {
                 checkState(current_count == 0, "读取下一个批次,但上一个批次数据没有消耗完");
+                root.close(); // 释放上一次批次数据
                 root = reader.getVectorSchemaRoot();
                 return (current_count = root.getRowCount()) != 0;
             }

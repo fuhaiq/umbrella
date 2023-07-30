@@ -85,6 +85,22 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.12.0</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.substrait/core -->
+        <dependency>
+            <groupId>io.substrait</groupId>
+            <artifactId>core</artifactId>
+            <version>0.14.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.substrait/isthmus -->
+        <dependency>
+            <groupId>io.substrait</groupId>
+            <artifactId>isthmus</artifactId>
+            <version>0.14.0</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>
