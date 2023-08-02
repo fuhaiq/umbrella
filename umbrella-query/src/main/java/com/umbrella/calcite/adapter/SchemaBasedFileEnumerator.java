@@ -29,7 +29,6 @@ public class SchemaBasedFileEnumerator<T> implements Enumerator<T> {
     private final Scanner scanner;
     private final ArrowReader reader;
     private VectorSchemaRoot root;
-
     private final List<RexCall> filters;
 
     public SchemaBasedFileEnumerator(AtomicBoolean cancelFlag, String uri, FileFormat format, ScanOptions options, List<RexCall> filters) {
@@ -63,13 +62,12 @@ public class SchemaBasedFileEnumerator<T> implements Enumerator<T> {
                 root = reader.getVectorSchemaRoot();
                 return (current_count = root.getRowCount()) != 0;
             }
-            if(current_count != 0) {
+            if(current_count > 0) {
                 checkNotNull(root, "继续读取当前批次,但数据集为空");
                 return true;
             }
             if(reader.loadNextBatch()) {
                 checkState(current_count == 0, "读取下一个批次,但上一个批次数据没有消耗完");
-                root.close(); // 释放上一次批次数据
                 root = reader.getVectorSchemaRoot();
                 return (current_count = root.getRowCount()) != 0;
             }

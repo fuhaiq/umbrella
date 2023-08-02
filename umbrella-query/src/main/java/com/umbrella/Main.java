@@ -3,6 +3,8 @@ package com.umbrella;
 import com.umbrella.calcite.SchemaMapDataContext;
 import com.umbrella.calcite.adapter.SchemaBasedFileTable;
 import org.apache.arrow.dataset.file.FileFormat;
+import org.apache.calcite.adapter.enumerable.EnumerableInterpretable;
+import org.apache.calcite.adapter.enumerable.EnumerableRel;
 import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.interpreter.Bindables;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -11,17 +13,22 @@ import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.tools.*;
+
+import java.util.HashMap;
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
         var schema = CalciteSchema.createRootSchema(true);
 
-        schema.add("user",
-                new SchemaBasedFileTable("file:///C:\\work\\user.parquet",
-                        FileFormat.PARQUET));
-        // [registration_dttm, id, first_name, last_name, email, gender, ip_address, cc, country, birthdate, salary, title, comments]
+//        var fileName = "file:///C:\\work\\user.parquet";
 
+        //[s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal, s_comment]
+        var fileName = "file:/Users/haiqing.fu/Downloads/part-00000-f789dcc2-3a14-4651-bbc2-ea8fbf76c829-c000.snappy.parquet";
+
+        schema.add("user",
+                new SchemaBasedFileTable(fileName,
+                        FileFormat.PARQUET));
         // inject schema
         var configBuilder = Frameworks.newConfigBuilder();
         configBuilder.defaultSchema(schema.plus());
@@ -29,9 +36,9 @@ public class Main {
 
         var df = RelBuilder.create(config);
         var logicalPlan = df.scan("user").
-                project(df.field("first_name"), df.field("last_name"), df.field("title"), df.field("salary")).
+                project(df.field("s_name"), df.field("s_suppkey"), df.field("s_phone")).
 //                filter(df.call(SqlStdOperatorTable.GREATER_THAN,
-//                        df.field("salary"),
+//                        df.field("s_suppkey"),
 //                        df.literal(100))).
                 build();
 
@@ -70,20 +77,22 @@ public class Main {
 //
 //        var bindable = EnumerableInterpretable.toBindable(new HashMap<>(),
 //                null, enumerable, EnumerableRel.Prefer.ARRAY);
-//
+
         var bind = bindable.bind(new SchemaMapDataContext(schema.plus()));
 
-        var enumerator = bind.enumerator();
-
-        while (enumerator.moveNext()) {
-            Object current = enumerator.current();
-            Object[] values = (Object[]) current;
+        try(var enumerator = bind.enumerator()){
             StringBuilder sb = new StringBuilder();
-            for (Object v : values) {
-                sb.append(v).append(",");
+            var count = 0;
+            while (enumerator.moveNext()) {
+                Object current = enumerator.current();
+                Object[] values = (Object[]) current;
+                for (Object v : values) {
+                    sb.append(v).append(",");
+                }
+                sb.setLength(sb.length() - 1);
+                System.out.println(sb);
+                sb.delete(0, sb.length()-1);
             }
-            sb.setLength(sb.length() - 1);
-            System.out.println(sb);
         }
     }
 }

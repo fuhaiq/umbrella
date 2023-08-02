@@ -40,6 +40,8 @@ public class SchemaBasedFileTable extends AbstractTable implements ScannableTabl
 
     private RelDataType relDataType;
 
+    private final int batchSize = 32768;
+
     public SchemaBasedFileTable(String uri, FileFormat format) {
         this.uri = uri;
         this.format = format;
@@ -51,7 +53,7 @@ public class SchemaBasedFileTable extends AbstractTable implements ScannableTabl
             @Override
             public Enumerator<Object[]> enumerator() {
                 return new SchemaBasedFileEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
-                        new ScanOptions(/*batchSize*/ 32768),
+                        new ScanOptions(batchSize),
                 List.of());
             }
         };
@@ -69,7 +71,7 @@ public class SchemaBasedFileTable extends AbstractTable implements ScannableTabl
             @Override
             public Enumerator<Object[]> enumerator() {
                 return new SchemaBasedFileEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
-                        new ScanOptions(/*batchSize*/ 32768, Optional.of(names)),
+                        new ScanOptions(batchSize, Optional.of(names)),
                         filters);
             }
         };
