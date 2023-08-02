@@ -61,17 +61,25 @@ public class SchemaBasedFileTable extends AbstractTable implements ScannableTabl
 
     @Override
     public Enumerable<Object[]> scan(DataContext root, List<RexNode> f, int @Nullable [] projects) {
-        var names = new String[projects.length];
-        for (var i = 0; i < projects.length; i++) {
-            names[i] = relDataType.getFieldNames().get(projects[i]);
+        Optional<String[]> columns;
+        if(projects != null && projects.length > 0) {
+            var names = new String[projects.length];
+            for (var i = 0; i < projects.length; i++) {
+                names[i] = relDataType.getFieldNames().get(projects[i]);
+            }
+            columns = Optional.of(names);
+        } else {
+            columns = Optional.empty();
         }
+
         List<RexCall> filters = (f == null || f.size() ==0) ? List.of() :
                 f.stream().map(it -> (RexCall) it).toList();
+
         return new AbstractEnumerable<>(){
             @Override
             public Enumerator<Object[]> enumerator() {
                 return new SchemaBasedFileEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
-                        new ScanOptions(batchSize, Optional.of(names)),
+                        new ScanOptions(batchSize, columns),
                         filters);
             }
         };
