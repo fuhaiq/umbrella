@@ -12,14 +12,12 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.calcite.linq4j.Enumerator;
-import org.apache.calcite.rex.RexCall;
 
 import static com.google.common.base.Preconditions.*;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SchemaBasedFileEnumerator<T> implements Enumerator<T> {
+public class SchemaFileProjectableEnumerator<T> implements Enumerator<T> {
 
     private final AtomicBoolean cancelFlag;
     private int current_count;
@@ -29,11 +27,9 @@ public class SchemaBasedFileEnumerator<T> implements Enumerator<T> {
     private final Scanner scanner;
     private final ArrowReader reader;
     private VectorSchemaRoot root;
-    private final List<RexCall> filters;
 
-    public SchemaBasedFileEnumerator(AtomicBoolean cancelFlag, String uri, FileFormat format, ScanOptions options, List<RexCall> filters) {
+    public SchemaFileProjectableEnumerator(AtomicBoolean cancelFlag, String uri, FileFormat format, ScanOptions options) {
         this.cancelFlag = cancelFlag;
-        this.filters = filters;
         allocator = new RootAllocator();
         datasetFactory = new FileSystemDatasetFactory(allocator, NativeMemoryPool.getDefault(), format, uri);
         dataset = datasetFactory.finish();

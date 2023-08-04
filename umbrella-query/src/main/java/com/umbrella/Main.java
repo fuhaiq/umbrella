@@ -1,10 +1,8 @@
 package com.umbrella;
 
 import com.umbrella.calcite.SchemaMapDataContext;
-import com.umbrella.calcite.adapter.SchemaBasedFileTable;
+import com.umbrella.calcite.adapter.SchemaFileTable;
 import org.apache.arrow.dataset.file.FileFormat;
-import org.apache.calcite.adapter.enumerable.EnumerableInterpretable;
-import org.apache.calcite.adapter.enumerable.EnumerableRel;
 import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.interpreter.Bindables;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -14,7 +12,6 @@ import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.tools.*;
 
-import java.util.HashMap;
 import java.util.List;
 
 public class Main {
@@ -26,8 +23,11 @@ public class Main {
         //[s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal, s_comment]
         var fileName = "file:/Users/haiqing.fu/Downloads/part-00000-f789dcc2-3a14-4651-bbc2-ea8fbf76c829-c000.snappy.parquet";
 
-        schema.add("user",
-                new SchemaBasedFileTable(fileName,
+
+//        var fileName = "file:/Users/haiqing.fu/Downloads/part-00000-43eb05ce-afaa-4be3-80b7-5c966f0da9b9-c000.snappy.orc";
+
+        schema.add("supplier",
+                new SchemaFileTable(fileName,
                         FileFormat.PARQUET));
         // inject schema
         var configBuilder = Frameworks.newConfigBuilder();
@@ -35,11 +35,14 @@ public class Main {
         var config = configBuilder.build();
 
         var df = RelBuilder.create(config);
-        var logicalPlan = df.scan("user").
-                project(df.field("s_name"), df.field("s_suppkey"), df.field("s_phone")).
-//                filter(df.call(SqlStdOperatorTable.GREATER_THAN,
-//                        df.field("s_suppkey"),
-//                        df.literal(100))).
+        var logicalPlan = df.scan("supplier").
+                project(df.field("s_comment"), df.field("s_suppkey"), df.field("s_phone")).
+                filter(df.call(SqlStdOperatorTable.GREATER_THAN,
+                        df.field("s_phone"),
+                        df.literal(100))).
+                filter(df.call(SqlStdOperatorTable.LESS_THAN,
+                        df.field("s_phone"),
+                        df.literal(200))).
                 build();
 
         System.out.println(logicalPlan.explain());
@@ -47,13 +50,13 @@ public class Main {
         // optimize
         var program = new HepProgramBuilder().addRuleCollection(List.of(
                 CoreRules.PROJECT_TABLE_SCAN,
-                CoreRules.FILTER_SCAN,
+                CoreRules.FILTER_SCAN
 //                CoreRules.FILTER_TO_CALC,
 //                CoreRules.PROJECT_TO_CALC,
 //                CoreRules.FILTER_CALC_MERGE,
 //                CoreRules.PROJECT_CALC_MERGE,
 //                CoreRules.FILTER_INTO_JOIN     // 过滤谓词下推到Join之前
-                EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE
+//                EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE
 //                EnumerableRules.ENUMERABLE_PROJECT_RULE,
 //                EnumerableRules.ENUMERABLE_FILTER_RULE
 //                EnumerableRules.ENUMERABLE_PROJECT_TO_CALC_RULE,
@@ -71,28 +74,27 @@ public class Main {
 
         System.out.println(optimizedPlan.explain());
 
-        var bindable = (Bindables.BindableTableScan) optimizedPlan;
+//        var bindable = (Bindables.BindableTableScan) optimizedPlan;
 
 //        var enumerable = (EnumerableRel) optimizedPlan;
 //
 //        var bindable = EnumerableInterpretable.toBindable(new HashMap<>(),
 //                null, enumerable, EnumerableRel.Prefer.ARRAY);
 
-        var bind = bindable.bind(new SchemaMapDataContext(schema.plus()));
-
-        try(var enumerator = bind.enumerator()){
-            StringBuilder sb = new StringBuilder();
-            var count = 0;
-            while (enumerator.moveNext()) {
-                Object current = enumerator.current();
-                Object[] values = (Object[]) current;
-                for (Object v : values) {
-                    sb.append(v).append(",");
-                }
-                sb.setLength(sb.length() - 1);
-                System.out.println(sb);
-                sb.delete(0, sb.length()-1);
-            }
-        }
+//        var bind = bindable.bind(new SchemaMapDataContext(schema.plus()));
+//
+//        try(var enumerator = bind.enumerator()){
+//            StringBuilder sb = new StringBuilder();
+//            while (enumerator.moveNext()) {
+//                Object current = enumerator.current();
+//                Object[] values = (Object[]) current;
+//                for (Object v : values) {
+//                    sb.append(v).append(",");
+//                }
+//                sb.setLength(sb.length() - 1);
+//                System.out.println(sb);
+//                sb.delete(0, sb.length()-1);
+//            }
+//        }
     }
 }

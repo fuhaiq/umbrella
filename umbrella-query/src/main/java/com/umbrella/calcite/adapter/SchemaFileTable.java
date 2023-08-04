@@ -1,7 +1,5 @@
 package com.umbrella.calcite.adapter;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
 import org.apache.arrow.dataset.jni.NativeMemoryPool;
@@ -13,26 +11,29 @@ import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.linq4j.Enumerator;
-import org.apache.calcite.rel.rules.ProjectTableScanRule;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.ProjectableFilterableTable;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Pair;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.javatuples.Triplet;
 
-import java.util.Arrays;
+import static com.google.common.base.Preconditions.*;
+
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static org.apache.arrow.vector.types.Types.MinorType.*;
 
-public class SchemaBasedFileTable extends AbstractTable implements ScannableTable, ProjectableFilterableTable {
+public class SchemaFileTable extends AbstractTable implements ScannableTable, ProjectableFilterableTable {
 
     private final String uri;
 
@@ -42,7 +43,7 @@ public class SchemaBasedFileTable extends AbstractTable implements ScannableTabl
 
     private final int batchSize = 32768;
 
-    public SchemaBasedFileTable(String uri, FileFormat format) {
+    public SchemaFileTable(String uri, FileFormat format) {
         this.uri = uri;
         this.format = format;
     }
@@ -52,15 +53,15 @@ public class SchemaBasedFileTable extends AbstractTable implements ScannableTabl
         return new AbstractEnumerable<>(){
             @Override
             public Enumerator<Object[]> enumerator() {
-                return new SchemaBasedFileEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
-                        new ScanOptions(batchSize),
-                List.of());
+                return new SchemaFileProjectableEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
+                        new ScanOptions(batchSize));
             }
         };
     }
 
     @Override
     public Enumerable<Object[]> scan(DataContext root, List<RexNode> f, int @Nullable [] projects) {
+        checkNotNull(relDataType, "文件 Schema 信息为空");
         Optional<String[]> columns;
         if(projects != null && projects.length > 0) {
             var names = new String[projects.length];
@@ -78,9 +79,9 @@ public class SchemaBasedFileTable extends AbstractTable implements ScannableTabl
         return new AbstractEnumerable<>(){
             @Override
             public Enumerator<Object[]> enumerator() {
-                return new SchemaBasedFileEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
+                return new SchemaFileFilterableEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
                         new ScanOptions(batchSize, columns),
-                        filters);
+                        filters, relDataType);
             }
         };
     }
