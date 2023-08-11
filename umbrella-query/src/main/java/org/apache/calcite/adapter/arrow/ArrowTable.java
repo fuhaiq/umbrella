@@ -1,89 +1,26 @@
-package com.umbrella.calcite.adapter;
+package org.apache.calcite.adapter.arrow;
 
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
 import org.apache.arrow.dataset.jni.NativeMemoryPool;
-import org.apache.arrow.dataset.scanner.ScanOptions;
 import org.apache.arrow.memory.RootAllocator;
-
 import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.calcite.DataContext;
-import org.apache.calcite.linq4j.AbstractEnumerable;
-import org.apache.calcite.linq4j.Enumerable;
-import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
-import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.schema.ProjectableFilterableTable;
-import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Pair;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.javatuples.Triplet;
-
-import static com.google.common.base.Preconditions.*;
-
-import java.util.List;
-import java.util.Optional;
 
 import static org.apache.arrow.vector.types.Types.MinorType.*;
 
-public class SchemaFileTable extends AbstractTable implements ScannableTable, ProjectableFilterableTable {
-
+public class ArrowTable extends AbstractTable {
     private final String uri;
-
     private final FileFormat format;
-
     private RelDataType relDataType;
 
-    private final int batchSize = 32768;
-
-    public SchemaFileTable(String uri, FileFormat format) {
+    public ArrowTable(String uri, FileFormat format) {
         this.uri = uri;
         this.format = format;
-    }
-
-    @Override
-    public Enumerable<Object[]> scan(DataContext root) {
-        return new AbstractEnumerable<>(){
-            @Override
-            public Enumerator<Object[]> enumerator() {
-                return new SchemaFileProjectableEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
-                        new ScanOptions(batchSize));
-            }
-        };
-    }
-
-    @Override
-    public Enumerable<Object[]> scan(DataContext root, List<RexNode> f, int @Nullable [] projects) {
-        checkNotNull(relDataType, "文件 Schema 信息为空");
-        Optional<String[]> columns;
-        if(projects != null && projects.length > 0) {
-            var names = new String[projects.length];
-            for (var i = 0; i < projects.length; i++) {
-                names[i] = relDataType.getFieldNames().get(projects[i]);
-            }
-            columns = Optional.of(names);
-        } else {
-            columns = Optional.empty();
-        }
-
-        List<RexCall> filters = (f == null || f.size() ==0) ? List.of() :
-                f.stream().map(it -> (RexCall) it).toList();
-
-        return new AbstractEnumerable<>(){
-            @Override
-            public Enumerator<Object[]> enumerator() {
-                return new SchemaFileFilterableEnumerator<>(DataContext.Variable.CANCEL_FLAG.get(root), uri, format,
-                        new ScanOptions(batchSize, columns),
-                        filters, relDataType);
-            }
-        };
     }
 
     @Override

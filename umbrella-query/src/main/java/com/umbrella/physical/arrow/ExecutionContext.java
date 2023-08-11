@@ -1,17 +1,9 @@
-package com.umbrella.execution;
+package com.umbrella.physical.arrow;
 
-import com.umbrella.logical.DataFrame;
-import com.umbrella.logical.DataFrameImp;
-import com.umbrella.logical.Scan;
-import org.apache.arrow.dataset.file.FileFormat;
-import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
-import org.apache.arrow.dataset.jni.NativeMemoryPool;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 
-import java.io.Closeable;
 import java.util.Objects;
-import java.util.Optional;
 
 public final class ExecutionContext {
     private ExecutionContext(){
@@ -35,18 +27,6 @@ public final class ExecutionContext {
 
     public BufferAllocator allocator() {
         return allocator;
-    }
-
-    public DataFrame parquet(String uri) {
-        return parquet(uri, Optional.empty());
-    }
-
-    public DataFrame parquet(String uri, Optional<String[]> projection) {
-        try (
-                var factory = new FileSystemDatasetFactory(allocator, NativeMemoryPool.getDefault(), FileFormat.PARQUET, uri)
-        ) {
-            return new DataFrameImp(new Scan(uri, factory.inspect(), projection));
-        }
     }
 
     public void stop() {

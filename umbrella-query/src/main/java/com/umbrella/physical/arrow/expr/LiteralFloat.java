@@ -1,10 +1,9 @@
 package com.umbrella.physical.arrow.expr;
 
-import com.umbrella.execution.ExecutionContext;
+import com.umbrella.physical.arrow.ExecutionContext;
 import org.apache.arrow.vector.Float4Vector;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.commons.lang3.RandomStringUtils;
 
 public record LiteralFloat(Float n) implements PhysicalExpr {
 
@@ -17,5 +16,12 @@ public record LiteralFloat(Float n) implements PhysicalExpr {
         }
         vector.setValueCount(tabular.getRowCount());
         return vector;
+    }
+
+    @Override
+    public String toString() {
+        return "LiteralFloat{" +
+                "n=" + n +
+                '}';
     }
 }
