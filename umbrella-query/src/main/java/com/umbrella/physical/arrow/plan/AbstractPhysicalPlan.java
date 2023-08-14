@@ -17,7 +17,7 @@ public abstract class AbstractPhysicalPlan implements PhysicalPlan {
     public VectorSchemaRoot execute() {
         try(var output = input.execute()) {
             var ret = execute(output);
-            if(!ret.syncSchema()) throw new RuntimeException("Failed synchronizes the schema from the current vectors");
+            ret.syncSchema();
             return ret;
         }
     }

@@ -5,8 +5,6 @@ import com.umbrella.physical.arrow.expr.PhysicalExpr;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
-import java.util.BitSet;
-
 import static com.google.common.base.Preconditions.checkState;
 
 public class PhysicalFilter extends AbstractPhysicalPlan {
@@ -19,13 +17,20 @@ public class PhysicalFilter extends AbstractPhysicalPlan {
 
     @Override
     protected VectorSchemaRoot execute(VectorSchemaRoot input) {
-        var size = input.getRowCount();
-        var bit = new BitSet(size);
+        var retSize = 0;
         var bool = (BitVector) expr.evaluate(input);
-        for (int i = 0; i < size; i++) {
-            bit.set(i, bool.get(i) == 1);
+        checkState(bool.getValueCount() == input.getRowCount(), "数据条数不一致");
+        var fieldsSize = input.getFieldVectors().size();
+        for (var i = 0; i < input.getRowCount(); i++) {
+            for(var index = 0; index < fieldsSize; index++) {
+                var f = input.getVector(index);
+                checkState(bool.getValueCount() == f.getValueCount(), "数据条数不一致");
+            }
+            retSize += bool.get(i);
         }
-        var retSize = bit.cardinality();
+
+
+
         return null;
     }
 

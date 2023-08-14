@@ -13,7 +13,7 @@ public record LiteralString(String value) implements PhysicalExpr {
         var vector = new VarCharVector(value, ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
-            vector.set(i, value.getBytes(StandardCharsets.UTF_8));
+            vector.setSafe(i, value.getBytes(StandardCharsets.UTF_8));
         }
         vector.setValueCount(tabular.getRowCount());
         return vector;

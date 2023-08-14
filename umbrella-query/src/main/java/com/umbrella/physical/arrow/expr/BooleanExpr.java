@@ -18,7 +18,7 @@ public abstract class BooleanExpr extends BinaryExpr {
             var type = l.getMinorType();
             if(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == VARCHAR || type == BIT) {
                 if(l.getObject(index) instanceof Comparable lc && r.getObject(index) instanceof Comparable rc) {
-                    vector.set(index, evaluate(lc, rc) ? 1 : 0);
+                    vector.setSafe(index, evaluate(lc, rc) ? 1 : 0);
                     continue;
                 }
                 throw new UnsupportedOperationException("Type "+ type +" is not supported in Bool expression");

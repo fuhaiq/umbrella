@@ -18,6 +18,12 @@ public class ArrowTable extends AbstractTable {
     private final FileFormat format;
     private RelDataType relDataType;
 
+    public String getUri() {
+        return uri;
+    }
+    public FileFormat getFormat() {
+        return format;
+    }
     public ArrowTable(String uri, FileFormat format) {
         this.uri = uri;
         this.format = format;

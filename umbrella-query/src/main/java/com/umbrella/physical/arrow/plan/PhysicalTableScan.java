@@ -1,5 +1,6 @@
 package com.umbrella.physical.arrow.plan;
 
+import com.google.common.collect.Iterables;
 import com.umbrella.physical.arrow.ExecutionContext;
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
@@ -7,14 +8,17 @@ import org.apache.arrow.dataset.jni.NativeMemoryPool;
 import org.apache.arrow.dataset.scanner.ScanOptions;
 import org.apache.arrow.dataset.scanner.Scanner;
 import org.apache.arrow.dataset.source.Dataset;
+import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowReader;
+import org.apache.arrow.vector.util.TransferPair;
+import org.apache.arrow.vector.util.VectorBatchAppender;
 import org.apache.arrow.vector.util.VectorSchemaRootAppender;
 
 import java.util.List;
 import java.util.Optional;
 
-public record PhysicalTableScan(String uri, Optional<String[]> projection) implements PhysicalPlan{
+public record PhysicalTableScan(String uri, FileFormat format, Optional<String[]> projection) implements PhysicalPlan{
 
     @Override
     public List<PhysicalPlan> getInputs() {
@@ -24,20 +28,25 @@ public record PhysicalTableScan(String uri, Optional<String[]> projection) imple
     @Override
     public VectorSchemaRoot execute() {
         VectorSchemaRoot result = null;
-        ScanOptions options = new ScanOptions(/*batchSize*/ 32768, projection);
+        var options = new ScanOptions(/*batchSize*/ 32768, projection);
         try (
                 var datasetFactory = new FileSystemDatasetFactory(ExecutionContext.instance().allocator(),
-                        NativeMemoryPool.getDefault(), FileFormat.PARQUET, uri);
-                Dataset dataset = datasetFactory.finish();
-                Scanner scanner = dataset.newScan(options);
-                ArrowReader reader = scanner.scanBatches()
+                        NativeMemoryPool.getDefault(), format, uri);
+                var dataset = datasetFactory.finish();
+                var scanner = dataset.newScan(options);
+                var reader = scanner.scanBatches()
         ) {
             while (reader.loadNextBatch()) {
-                try (VectorSchemaRoot root = reader.getVectorSchemaRoot()) {
+                try (var root = reader.getVectorSchemaRoot()) {
                     if(result == null) {
                         result = VectorSchemaRoot.create(root.getSchema(), ExecutionContext.instance().allocator());
                     }
-                    VectorSchemaRootAppender.append(result, root);
+
+                    var fields = root.getFieldVectors();
+                    for(int i = 0; i < fields.size(); i++) {
+                        fields.get(i).makeTransferPair(result.getVector(i)).transfer();
+                    }
+                    result.setRowCount(result.getRowCount() + root.getRowCount());
                 }
             }
             return result;

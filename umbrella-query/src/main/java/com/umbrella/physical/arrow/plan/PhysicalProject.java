@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PhysicalProject extends AbstractPhysicalPlan {
     private final List<PhysicalExpr> expr;
-    protected PhysicalProject(PhysicalPlan input, List<PhysicalExpr> expr) {
+    public PhysicalProject(PhysicalPlan input, List<PhysicalExpr> expr) {
         super(input);
         this.expr = expr;
     }

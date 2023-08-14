@@ -14,7 +14,7 @@ public interface PhysicalPlan {
 
     default String format(PhysicalPlan plan, int indent) {
         var b = new StringBuilder();
-        b.append("\t".repeat(Math.max(0, indent)));
+        b.append("  ".repeat(Math.max(0, indent)));
         b.append(plan.toString()).append("\n");
         plan.getInputs().forEach(it -> b.append(format(it, indent + 1)));
         return b.toString();

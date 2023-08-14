@@ -17,7 +17,7 @@ public record CastExpr(PhysicalExpr expr, Types.MinorType type) implements Physi
             var vector = new IntVector(res.getName(), ExecutionContext.instance().allocator());
             vector.allocateNew(size);
             for (var i = 0; i < size; i++) {
-                vector.set(i, (int) res.getObject(i));
+                vector.setSafe(i, (int) res.getObject(i));
             }
             vector.setValueCount(size);
             return vector;
@@ -25,7 +25,7 @@ public record CastExpr(PhysicalExpr expr, Types.MinorType type) implements Physi
             var vector = new BigIntVector(res.getName(), ExecutionContext.instance().allocator());
             vector.allocateNew(size);
             for (var i = 0; i < size; i++) {
-                vector.set(i, (long) res.getObject(i));
+                vector.setSafe(i, (long) res.getObject(i));
             }
             vector.setValueCount(size);
             return vector;
@@ -33,7 +33,7 @@ public record CastExpr(PhysicalExpr expr, Types.MinorType type) implements Physi
             var vector = new Float4Vector(res.getName(), ExecutionContext.instance().allocator());
             vector.allocateNew(size);
             for (var i = 0; i < size; i++) {
-                vector.set(i, (float) res.getObject(i));
+                vector.setSafe(i, (float) res.getObject(i));
             }
             vector.setValueCount(size);
             return vector;
@@ -41,7 +41,7 @@ public record CastExpr(PhysicalExpr expr, Types.MinorType type) implements Physi
             var vector = new Float8Vector(res.getName(), ExecutionContext.instance().allocator());
             vector.allocateNew(size);
             for (var i = 0; i < size; i++) {
-                vector.set(i, (double) res.getObject(i));
+                vector.setSafe(i, (double) res.getObject(i));
             }
             vector.setValueCount(size);
             return vector;
@@ -49,7 +49,7 @@ public record CastExpr(PhysicalExpr expr, Types.MinorType type) implements Physi
             var vector = new VarCharVector(res.getName(), ExecutionContext.instance().allocator());
             vector.allocateNew(size);
             for (var i = 0; i < size; i++) {
-                vector.set(i, res.getObject(i).toString().getBytes(StandardCharsets.UTF_8));
+                vector.setSafe(i, res.getObject(i).toString().getBytes(StandardCharsets.UTF_8));
             }
             vector.setValueCount(size);
             return vector;

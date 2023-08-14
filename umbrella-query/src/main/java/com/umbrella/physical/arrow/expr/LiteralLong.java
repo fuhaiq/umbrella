@@ -12,7 +12,7 @@ public record LiteralLong(Long n) implements PhysicalExpr {
         var vector = new BigIntVector(n.toString(), ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
-            vector.set(i, n);
+            vector.setSafe(i, n);
         }
         vector.setValueCount(tabular.getRowCount());
         return vector;

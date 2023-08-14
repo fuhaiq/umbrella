@@ -18,7 +18,7 @@ public abstract class MathExpr extends BinaryExpr {
         vector.allocateNew(l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
             if(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8) {
-                vector.set(index, evaluate(l.getObject(index), r.getObject(index), type));
+                vector.setSafe(index, evaluate(l.getObject(index), r.getObject(index), type));
                 continue;
             }
             throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
