@@ -2,6 +2,7 @@ package com.umbrella.physical.arrow.expr;
 
 import com.umbrella.physical.arrow.ExecutionContext;
 import org.apache.arrow.vector.*;
+import org.apache.arrow.vector.util.VectorBatchAppender;
 
 public record ColumnExpr(int i) implements PhysicalExpr {
     @Override
@@ -15,9 +16,10 @@ public record ColumnExpr(int i) implements PhysicalExpr {
             case FLOAT8 -> ret = new Float8Vector(v.getField(), ExecutionContext.instance().allocator());
             case VARCHAR -> ret = new VarCharVector(v.getField(), ExecutionContext.instance().allocator());
             case BIT -> ret = new BitVector(v.getField(), ExecutionContext.instance().allocator());
+            case DECIMAL -> ret = new DecimalVector(v.getField(), ExecutionContext.instance().allocator());
             case default -> throw new UnsupportedOperationException("Vector type "+ v.getMinorType() +" is not supported");
         }
-        v.makeTransferPair(ret).transfer();
+        VectorBatchAppender.batchAppend(ret, v);
         return ret;
     }
 

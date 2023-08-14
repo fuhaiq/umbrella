@@ -8,8 +8,8 @@ import java.util.List;
 
 public interface PhysicalPlan {
     List<PhysicalPlan> getInputs();
-    default void explain() {
-        System.out.println(format(this, 0));
+    default String explain() {
+        return format(this, 0);
     }
 
     default String format(PhysicalPlan plan, int indent) {

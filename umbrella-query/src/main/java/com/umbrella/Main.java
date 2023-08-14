@@ -37,10 +37,10 @@ public class Main {
 
         var df = RelBuilder.create(config);
         var logicalPlan = df.scan("supplier").
-                project(df.alias(df.literal("HELLO"), "msg"), df.field("s_nationkey"), df.field("s_suppkey")).
+                project(df.literal(89.87), df.field("s_nationkey"), df.field("s_nationkey"), df.field("s_suppkey")).
 //                filter(df.call(SqlStdOperatorTable.GREATER_THAN,
-//                        df.field("s_phone"),
-//                        df.literal(100))).
+//                        df.field("s_nationkey"),
+//                        df.literal(20))).
 //                filter(
 //                        df.or(
 //                                df.call(SqlStdOperatorTable.LESS_THAN,
@@ -58,8 +58,8 @@ public class Main {
 
         // optimize
         var program = new HepProgramBuilder().addRuleCollection(List.of(
-                CoreRules.PROJECT_TABLE_SCAN,
-                CoreRules.FILTER_SCAN
+                CoreRules.PROJECT_TABLE_SCAN
+//                CoreRules.FILTER_SCAN
 //                CoreRules.FILTER_MERGE,
 //                CoreRules.FILTER_TO_CALC,
 //                CoreRules.PROJECT_TO_CALC,
@@ -84,23 +84,14 @@ public class Main {
 
         System.out.println(optimizedPlan.explain());
 
-//        VectorSchemaRoot execute = null;
-//        try (
-//                var allocator = new RootAllocator();
-//                var factory = new FileSystemDatasetFactory(allocator, NativeMemoryPool.getDefault(), FileFormat.PARQUET, fileName);
-//        ) {
-//            var arrowSchema = factory.inspect();
-//            var scan = new PhysicalTableScan(fileName, arrowSchema, Optional.of(new String[]{"s_address", "s_phone"}));
-//            System.out.println(scan.execute().contentToTSVString());
-//        }
 
         var engine = ExecutionContext.instance();
+
         var physicalPlan = engine.createPhysicalPlan(optimizedPlan);
-        physicalPlan.explain();
+        System.out.println(physicalPlan.explain());
+
         try(var ret = physicalPlan.execute()) {
             System.out.println(ret.contentToTSVString());
         }
-
-
     }
 }

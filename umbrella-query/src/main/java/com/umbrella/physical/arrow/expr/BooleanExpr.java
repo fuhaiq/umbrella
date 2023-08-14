@@ -16,7 +16,7 @@ public abstract class BooleanExpr extends BinaryExpr {
         vector.allocateNew(l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
             var type = l.getMinorType();
-            if(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == VARCHAR || type == BIT) {
+            if(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == VARCHAR || type == BIT || type == DECIMAL) {
                 if(l.getObject(index) instanceof Comparable lc && r.getObject(index) instanceof Comparable rc) {
                     vector.setSafe(index, evaluate(lc, rc) ? 1 : 0);
                     continue;

@@ -14,6 +14,7 @@ import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.arrow.vector.util.TransferPair;
 import org.apache.arrow.vector.util.VectorBatchAppender;
 import org.apache.arrow.vector.util.VectorSchemaRootAppender;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,9 +58,10 @@ public record PhysicalTableScan(String uri, FileFormat format, Optional<String[]
 
     @Override
     public String toString() {
+        String project = projection.map(strings -> "[" + StringUtils.join(strings, ",") + "]").orElse("NONE");
         return "PhysicalTableScan{" +
                 "uri='" + uri + '\'' +
-                ", projection=" + projection +
+                ", projection=" + project +
                 '}';
     }
 }

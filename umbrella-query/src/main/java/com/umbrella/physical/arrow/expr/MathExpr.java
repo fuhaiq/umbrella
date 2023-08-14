@@ -4,6 +4,8 @@ import com.umbrella.physical.arrow.TypedFieldVector;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.types.Types;
 
+import java.math.BigDecimal;
+
 import static org.apache.arrow.vector.types.Types.MinorType.*;
 
 public abstract class MathExpr extends BinaryExpr {
@@ -17,7 +19,7 @@ public abstract class MathExpr extends BinaryExpr {
         var vector = new TypedFieldVector(l.getName() + r.getName(), type);
         vector.allocateNew(l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
-            if(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8) {
+            if(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == DECIMAL) {
                 vector.setSafe(index, evaluate(l.getObject(index), r.getObject(index), type));
                 continue;
             }
@@ -41,6 +43,8 @@ public abstract class MathExpr extends BinaryExpr {
                 return ll + rr;
             } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
                 return ll + rr;
+            } else if (l instanceof BigDecimal ll && r instanceof BigDecimal rr && type == DECIMAL) {
+                return ll.add(rr);
             }
             throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
         }
@@ -60,6 +64,8 @@ public abstract class MathExpr extends BinaryExpr {
                 return ll - rr;
             } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
                 return ll - rr;
+            } else if (l instanceof BigDecimal ll && r instanceof BigDecimal rr && type == DECIMAL) {
+                return ll.subtract(rr);
             }
             throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
         }
@@ -79,6 +85,8 @@ public abstract class MathExpr extends BinaryExpr {
                 return ll * rr;
             } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
                 return ll * rr;
+            } else if (l instanceof BigDecimal ll && r instanceof BigDecimal rr && type == DECIMAL) {
+                return ll.multiply(rr);
             }
             throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
         }
@@ -98,6 +106,8 @@ public abstract class MathExpr extends BinaryExpr {
                 return ll / rr;
             } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
                 return ll / rr;
+            } else if (l instanceof BigDecimal ll && r instanceof BigDecimal rr && type == DECIMAL) {
+                return ll.divide(rr);
             }
             throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
         }
