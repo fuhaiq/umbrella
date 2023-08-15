@@ -30,7 +30,7 @@ public abstract class MathExpr extends BinaryExpr {
     protected abstract Object evaluate(Object l, Object r, Types.MinorType type);
 
     public static class Add extends MathExpr {
-        protected Add(PhysicalExpr l, PhysicalExpr r) {
+        public Add(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
@@ -51,7 +51,7 @@ public abstract class MathExpr extends BinaryExpr {
     }
 
     public static class Sub extends MathExpr {
-        protected Sub(PhysicalExpr l, PhysicalExpr r) {
+        public Sub(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
@@ -72,7 +72,7 @@ public abstract class MathExpr extends BinaryExpr {
     }
 
     public static class Mul extends MathExpr {
-        protected Mul(PhysicalExpr l, PhysicalExpr r) {
+        public Mul(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
@@ -93,7 +93,7 @@ public abstract class MathExpr extends BinaryExpr {
     }
 
     public static class Div extends MathExpr {
-        protected Div(PhysicalExpr l, PhysicalExpr r) {
+        public Div(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
@@ -114,7 +114,7 @@ public abstract class MathExpr extends BinaryExpr {
     }
 
     public static class Mod extends MathExpr {
-        protected Mod(PhysicalExpr l, PhysicalExpr r) {
+        public Mod(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override

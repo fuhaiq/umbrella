@@ -14,12 +14,13 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalSort;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -51,7 +52,7 @@ public final class ExecutionContext {
         allocator.close();
     }
 
-    public PhysicalExpr createPhysicalExpr(RexNode node) {
+    private PhysicalExpr createPhysicalExpr(RexNode node) {
         assert node != null;
         switch (node) {
             case RexLiteral n -> {
@@ -70,9 +71,24 @@ public final class ExecutionContext {
                 } else if (n.getTypeName() == SqlTypeName.CHAR) {
                     return new LiteralString(n.getValueAs(String.class));
                 } else if (n.getTypeName() == SqlTypeName.DECIMAL) {
-                    return new DecimalExpr(n.getValueAs(BigDecimal.class));
+                    //TODO DECIMAL
+//                    return new LiteralDecimal(n.getValueAs(BigDecimal.class));
+                    return new LiteralLong(n.getValueAs(Long.class));
                 } else {
                     throw new UnsupportedOperationException("SqlType " + n.getTypeName() + " is not supported");
+                }
+            }
+            case RexCall n -> {
+                if (n.isA(SqlKind.PLUS)) {
+                    var ll = createPhysicalExpr(n.operands.get(0));
+                    var rr = createPhysicalExpr(n.operands.get(1));
+                    return new MathExpr.Add(ll, rr);
+                } else if (n.isA(SqlKind.MINUS)) {
+                    var ll = createPhysicalExpr(n.operands.get(0));
+                    var rr = createPhysicalExpr(n.operands.get(1));
+                    return new MathExpr.Sub(ll, rr);
+                } else {
+                    throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
                 }
             }
             case RexInputRef n -> {

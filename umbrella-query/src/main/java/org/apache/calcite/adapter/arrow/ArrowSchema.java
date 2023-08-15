@@ -24,6 +24,10 @@ public class ArrowSchema extends AbstractSchema {
         return name;
     }
 
+    public static Builder newBuilder(String name) {
+        return new Builder(name);
+    }
+
     public static final class Builder {
         private final String name;
         private final Map<String, Table> tableMap = new HashMap<>();

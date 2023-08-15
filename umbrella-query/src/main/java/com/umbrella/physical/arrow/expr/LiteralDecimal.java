@@ -4,11 +4,10 @@ import com.umbrella.physical.arrow.ExecutionContext;
 import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
 
 import java.math.BigDecimal;
 
-public record DecimalExpr(BigDecimal n) implements PhysicalExpr {
+public record LiteralDecimal(BigDecimal n) implements PhysicalExpr {
 
     @Override
     public FieldVector evaluate(VectorBatch tabular) {

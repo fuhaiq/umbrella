@@ -2,7 +2,6 @@ package com.umbrella.physical.arrow;
 
 import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.TransferPair;
 import org.apache.calcite.rel.type.RelDataType;
 

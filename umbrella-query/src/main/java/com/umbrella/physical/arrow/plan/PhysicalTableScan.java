@@ -1,20 +1,12 @@
 package com.umbrella.physical.arrow.plan;
 
-import com.google.common.collect.Iterables;
 import com.umbrella.physical.arrow.ExecutionContext;
 import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
 import org.apache.arrow.dataset.jni.NativeMemoryPool;
 import org.apache.arrow.dataset.scanner.ScanOptions;
-import org.apache.arrow.dataset.scanner.Scanner;
-import org.apache.arrow.dataset.source.Dataset;
-import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowReader;
-import org.apache.arrow.vector.util.TransferPair;
-import org.apache.arrow.vector.util.VectorBatchAppender;
-import org.apache.arrow.vector.util.VectorSchemaRootAppender;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;

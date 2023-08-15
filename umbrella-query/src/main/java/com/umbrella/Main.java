@@ -1,5 +1,6 @@
 package com.umbrella;
 
+import com.umbrella.logical.Optimizer;
 import com.umbrella.physical.arrow.ExecutionContext;
 import com.umbrella.physical.arrow.expr.PhysicalExpr;
 import com.umbrella.physical.arrow.plan.PhysicalTableScan;
@@ -7,6 +8,7 @@ import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
 import org.apache.arrow.dataset.jni.NativeMemoryPool;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.calcite.adapter.arrow.ArrowSchema;
 import org.apache.calcite.adapter.arrow.ArrowTable;
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -15,83 +17,54 @@ import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.tools.*;
 
 import java.util.List;
 import java.util.Optional;
 
 public class Main {
-    public static void main(String[] args) {
-        var schema = CalciteSchema.createRootSchema(true);
+    public static void main(String[] args) throws SqlParseException {
+
+        var sql = """
+                select s_name, s_nationkey, s_comment from supplier limit 10
+                """;
 
         //[s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal, s_comment]
         var fileName = "file:/Users/haiqing.fu/Downloads/part-00000-43eb05ce-afaa-4be3-80b7-5c966f0da9b9-c000.snappy.orc";
 
-        schema.add("supplier",
+        var schema = ArrowSchema.newBuilder("ods").addTable("supplier",
                 new ArrowTable(fileName,
-                        FileFormat.ORC));
-        // inject schema
-        var configBuilder = Frameworks.newConfigBuilder();
-        configBuilder.defaultSchema(schema.plus());
-        var config = configBuilder.build();
+                        FileFormat.ORC)).build();
 
-        var df = RelBuilder.create(config);
-        var logicalPlan = df.scan("supplier").
-                project(df.alias(df.literal(89.87+0.02), "MSG"), df.field("s_nationkey"), df.field("s_nationkey"), df.field("s_suppkey")).
-//                filter(df.call(SqlStdOperatorTable.GREATER_THAN,
-//                        df.field("s_nationkey"),
-//                        df.literal(20))).
-//                filter(
-//                        df.or(
-//                                df.call(SqlStdOperatorTable.LESS_THAN,
-//                                        df.field("s_phone"),
-//                                        df.literal(200)),
-//                                df.call(SqlStdOperatorTable.EQUALS,
-//                                        df.field("s_nationkey"),
-//                                        df.literal(10))
-//                        )
-//                ).
-                limit(0, 20).
-                build();
-
-        System.out.println(logicalPlan.explain());
-
-        // optimize
-        var program = new HepProgramBuilder().addRuleCollection(List.of(
+        var optimizer = Optimizer.create(schema, List.of(
                 CoreRules.PROJECT_TABLE_SCAN
-//                CoreRules.FILTER_SCAN
-//                CoreRules.FILTER_MERGE,
-//                CoreRules.FILTER_TO_CALC,
-//                CoreRules.PROJECT_TO_CALC,
-//                CoreRules.FILTER_CALC_MERGE,
-//                CoreRules.PROJECT_CALC_MERGE,
-//                CoreRules.FILTER_INTO_JOIN     // 过滤谓词下推到Join之前
-//                EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE
-//                EnumerableRules.ENUMERABLE_PROJECT_RULE,
-//                EnumerableRules.ENUMERABLE_FILTER_RULE
-//                EnumerableRules.ENUMERABLE_PROJECT_TO_CALC_RULE,
-//                EnumerableRules.ENUMERABLE_FILTER_TO_CALC_RULE,
-//                EnumerableRules.ENUMERABLE_JOIN_RULE,
-//                EnumerableRules.ENUMERABLE_SORT_RULE,
-//                EnumerableRules.ENUMERABLE_CALC_RULE,
-//                EnumerableRules.ENUMERABLE_AGGREGATE_RULE
-        )).build();
+        ));
+        // 1. SQL parse: SQL string --> SqlNode
+        var sqlNode = optimizer.parse(sql);
+        System.out.println(sqlNode);
 
-        var planner = new HepPlanner(program);
-        planner.setRoot(logicalPlan);
+        // 2. SQL validate: SqlNode --> SqlNode
+        var validateSqlNode = optimizer.validate(sqlNode);
+        System.out.println(validateSqlNode);
 
-        var optimizedPlan = planner.findBestExp();
+        // 3. SQL convert: SqlNode --> RelNode
+        var relNode = optimizer.convert(validateSqlNode);
+        System.out.println(relNode);
 
-        System.out.println(optimizedPlan.explain());
-
+        // 4. SQL Optimize: RelNode --> RelNode
+        var optimizerRelTree = optimizer.optimize(
+                relNode,
+                relNode.getTraitSet());
+        System.out.println(optimizerRelTree);
 
         var engine = ExecutionContext.instance();
 
-        var physicalPlan = engine.createPhysicalPlan(optimizedPlan);
+        var physicalPlan = engine.createPhysicalPlan(optimizerRelTree);
         System.out.println(physicalPlan.explain());
 
         try(var ret = physicalPlan.execute()) {
-            System.out.println(ret.contentToTSVString(optimizedPlan.getRowType()));
+            System.out.println(ret.contentToTSVString(optimizerRelTree.getRowType()));
         }
     }
 }

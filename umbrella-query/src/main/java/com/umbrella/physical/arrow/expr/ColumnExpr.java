@@ -20,6 +20,7 @@ public record ColumnExpr(int i) implements PhysicalExpr {
             case DECIMAL -> ret = new DecimalVector(v.getField(), ExecutionContext.instance().allocator());
             case default -> throw new UnsupportedOperationException("Vector type "+ v.getMinorType() +" is not supported");
         }
+        ret.allocateNew();
         VectorBatchAppender.batchAppend(ret, v);
         return ret;
     }
