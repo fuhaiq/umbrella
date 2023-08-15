@@ -79,16 +79,25 @@ public final class ExecutionContext {
                 }
             }
             case RexCall n -> {
-                if (n.isA(SqlKind.PLUS)) {
-                    var ll = createPhysicalExpr(n.operands.get(0));
-                    var rr = createPhysicalExpr(n.operands.get(1));
-                    return new MathExpr.Add(ll, rr);
-                } else if (n.isA(SqlKind.MINUS)) {
-                    var ll = createPhysicalExpr(n.operands.get(0));
-                    var rr = createPhysicalExpr(n.operands.get(1));
-                    return new MathExpr.Sub(ll, rr);
+                if(n.operands.size() == 1) {
+                    var op = createPhysicalExpr(n.operands.get(0));
+                    if (n.isA(SqlKind.CAST)) {
+                        return null;
+                    } else {
+                        throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
+                    }
+                } else if (n.operands.size() == 2) {
+                    var l = createPhysicalExpr(n.operands.get(0));
+                    var r = createPhysicalExpr(n.operands.get(1));
+                    if (n.isA(SqlKind.PLUS)) {
+                        return new MathExpr.Add(l, r);
+                    } else if (n.isA(SqlKind.MINUS)) {
+                        return new MathExpr.Sub(l, r);
+                    } else {
+                        throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
+                    }
                 } else {
-                    throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
+                    throw new IllegalStateException("RexCall 没有操作表达式");
                 }
             }
             case RexInputRef n -> {
