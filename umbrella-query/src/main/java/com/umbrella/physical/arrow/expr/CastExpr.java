@@ -1,6 +1,7 @@
 package com.umbrella.physical.arrow.expr;
 
 import com.umbrella.physical.arrow.ExecutionContext;
+import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.types.Types;
 
@@ -10,7 +11,7 @@ import static org.apache.arrow.vector.types.Types.MinorType.*;
 
 public record CastExpr(PhysicalExpr expr, Types.MinorType type) implements PhysicalExpr {
     @Override
-    public FieldVector evaluate(VectorSchemaRoot tabular) {
+    public FieldVector evaluate(VectorBatch tabular) {
         var res = expr.evaluate(tabular);
         var size = res.getValueCount();
         if(type == INT) {

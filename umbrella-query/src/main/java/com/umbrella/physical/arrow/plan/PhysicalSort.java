@@ -1,6 +1,6 @@
 package com.umbrella.physical.arrow.plan;
 
-import org.apache.arrow.vector.VectorSchemaRoot;
+import com.umbrella.physical.arrow.VectorBatch;
 
 public class PhysicalSort extends AbstractPhysicalPlan {
     private final int offset;
@@ -14,7 +14,7 @@ public class PhysicalSort extends AbstractPhysicalPlan {
 
 
     @Override
-    protected VectorSchemaRoot execute(VectorSchemaRoot input) {
+    protected VectorBatch execute(VectorBatch input) {
         return input.slice(offset, fetch);
     }
 

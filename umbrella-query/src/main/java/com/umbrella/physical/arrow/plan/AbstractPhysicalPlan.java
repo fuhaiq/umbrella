@@ -1,5 +1,6 @@
 package com.umbrella.physical.arrow.plan;
 
+import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 import java.util.List;
@@ -14,12 +15,10 @@ public abstract class AbstractPhysicalPlan implements PhysicalPlan {
         return List.of(input);
     }
     @Override
-    public VectorSchemaRoot execute() {
+    public VectorBatch execute() {
         try(var output = input.execute()) {
-            var ret = execute(output);
-            ret.syncSchema();
-            return ret;
+            return execute(output);
         }
     }
-    protected abstract VectorSchemaRoot execute(VectorSchemaRoot input);
+    protected abstract VectorBatch execute(VectorBatch input);
 }

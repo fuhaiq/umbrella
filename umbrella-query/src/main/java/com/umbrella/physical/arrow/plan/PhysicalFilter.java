@@ -1,5 +1,6 @@
 package com.umbrella.physical.arrow.plan;
 
+import com.umbrella.physical.arrow.VectorBatch;
 import com.umbrella.physical.arrow.expr.BooleanExpr;
 import com.umbrella.physical.arrow.expr.PhysicalExpr;
 import org.apache.arrow.vector.BitVector;
@@ -16,11 +17,11 @@ public class PhysicalFilter extends AbstractPhysicalPlan {
     }
 
     @Override
-    protected VectorSchemaRoot execute(VectorSchemaRoot input) {
+    protected VectorBatch execute(VectorBatch input) {
         var retSize = 0;
         var bool = (BitVector) expr.evaluate(input);
         checkState(bool.getValueCount() == input.getRowCount(), "数据条数不一致");
-        var fieldsSize = input.getFieldVectors().size();
+        var fieldsSize = input.getColumnCount();
         for (var i = 0; i < input.getRowCount(); i++) {
             for(var index = 0; index < fieldsSize; index++) {
                 var f = input.getVector(index);

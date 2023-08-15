@@ -1,12 +1,13 @@
 package com.umbrella.physical.arrow.expr;
 
 import com.umbrella.physical.arrow.ExecutionContext;
+import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.util.VectorBatchAppender;
 
 public record ColumnExpr(int i) implements PhysicalExpr {
     @Override
-    public FieldVector evaluate(VectorSchemaRoot tabular) {
+    public FieldVector evaluate(VectorBatch tabular) {
         FieldVector ret;
         var v = tabular.getVector(i);
         switch (v.getMinorType()) {

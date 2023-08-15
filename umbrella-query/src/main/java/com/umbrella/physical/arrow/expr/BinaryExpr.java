@@ -1,9 +1,9 @@
 package com.umbrella.physical.arrow.expr;
 
+import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkState;
 public abstract class BinaryExpr implements PhysicalExpr {
 
     protected final PhysicalExpr l;
@@ -16,7 +16,7 @@ public abstract class BinaryExpr implements PhysicalExpr {
     }
 
     @Override
-    public FieldVector evaluate(VectorSchemaRoot tabular) {
+    public FieldVector evaluate(VectorBatch tabular) {
         var ll = l.evaluate(tabular);
         var rr = r.evaluate(tabular);
         checkState(ll.getField().getType().equals(rr.getField().getType()),

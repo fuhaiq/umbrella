@@ -2,7 +2,10 @@ package com.umbrella.physical.arrow;
 
 import com.google.common.collect.Iterables;
 import com.umbrella.physical.arrow.expr.*;
-import com.umbrella.physical.arrow.plan.*;
+import com.umbrella.physical.arrow.plan.PhysicalPlan;
+import com.umbrella.physical.arrow.plan.PhysicalProject;
+import com.umbrella.physical.arrow.plan.PhysicalSort;
+import com.umbrella.physical.arrow.plan.PhysicalTableScan;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.calcite.adapter.arrow.ArrowTable;
@@ -11,14 +14,12 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalSort;
 import org.apache.calcite.rel.logical.LogicalTableScan;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 

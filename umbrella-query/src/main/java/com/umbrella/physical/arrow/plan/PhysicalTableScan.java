@@ -2,6 +2,7 @@ package com.umbrella.physical.arrow.plan;
 
 import com.google.common.collect.Iterables;
 import com.umbrella.physical.arrow.ExecutionContext;
+import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
 import org.apache.arrow.dataset.jni.NativeMemoryPool;
@@ -27,7 +28,7 @@ public record PhysicalTableScan(String uri, FileFormat format, Optional<String[]
     }
 
     @Override
-    public VectorSchemaRoot execute() {
+    public VectorBatch execute() {
         VectorSchemaRoot result = null;
         var options = new ScanOptions(/*batchSize*/ 32768, projection);
         try (
@@ -50,7 +51,7 @@ public record PhysicalTableScan(String uri, FileFormat format, Optional<String[]
                     result.setRowCount(result.getRowCount() + root.getRowCount());
                 }
             }
-            return result;
+            return VectorBatch.of(result.getFieldVectors());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

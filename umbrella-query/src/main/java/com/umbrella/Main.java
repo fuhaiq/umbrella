@@ -37,7 +37,7 @@ public class Main {
 
         var df = RelBuilder.create(config);
         var logicalPlan = df.scan("supplier").
-                project(df.literal(89.87), df.field("s_nationkey"), df.field("s_nationkey"), df.field("s_suppkey")).
+                project(df.alias(df.literal(89.87+0.02), "MSG"), df.field("s_nationkey"), df.field("s_nationkey"), df.field("s_suppkey")).
 //                filter(df.call(SqlStdOperatorTable.GREATER_THAN,
 //                        df.field("s_nationkey"),
 //                        df.literal(20))).
@@ -51,7 +51,7 @@ public class Main {
 //                                        df.literal(10))
 //                        )
 //                ).
-                limit(5, 10).
+                limit(0, 20).
                 build();
 
         System.out.println(logicalPlan.explain());
@@ -91,7 +91,7 @@ public class Main {
         System.out.println(physicalPlan.explain());
 
         try(var ret = physicalPlan.execute()) {
-            System.out.println(ret.contentToTSVString());
+            System.out.println(ret.contentToTSVString(optimizedPlan.getRowType()));
         }
     }
 }

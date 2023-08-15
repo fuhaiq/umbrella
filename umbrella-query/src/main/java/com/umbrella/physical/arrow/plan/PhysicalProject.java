@@ -1,9 +1,7 @@
 package com.umbrella.physical.arrow.plan;
 
-import com.google.common.collect.Iterables;
+import com.umbrella.physical.arrow.VectorBatch;
 import com.umbrella.physical.arrow.expr.PhysicalExpr;
-import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
 
 import java.util.List;
 
@@ -15,9 +13,8 @@ public class PhysicalProject extends AbstractPhysicalPlan {
     }
 
     @Override
-    protected VectorSchemaRoot execute(VectorSchemaRoot input) {
-        var fields = Iterables.toArray(expr.stream().map(e -> e.evaluate(input)).toList(), FieldVector.class);
-        return VectorSchemaRoot.of(fields);
+    protected VectorBatch execute(VectorBatch input) {
+        return VectorBatch.of(expr.stream().map(e -> e.evaluate(input)).toList());
     }
 
     @Override

@@ -1,13 +1,14 @@
 package com.umbrella.physical.arrow.expr;
 
 import com.umbrella.physical.arrow.ExecutionContext;
+import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 public record LiteralBool(Boolean n) implements PhysicalExpr {
     @Override
-    public FieldVector evaluate(VectorSchemaRoot tabular) {
+    public FieldVector evaluate(VectorBatch tabular) {
         var vector = new BitVector(n.toString(), ExecutionContext.instance().allocator());
         vector.allocateNew(tabular.getRowCount());
         for (var i = 0; i < tabular.getRowCount(); i++) {
