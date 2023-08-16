@@ -76,40 +76,4 @@ public final class FieldVectorUtils {
                     throw new UnsupportedOperationException("Type " + type + " is not supported.");
         }
     }
-
-    public static void setSafe(FieldVector vector, int index, Object value) {
-        checkNotNull(vector, "vector is null");
-        checkNotNull(value, "value is null");
-        var type = vector.getMinorType();
-        switch (vector) {
-            case IntVector v && INT == type && value instanceof Integer i -> v.setSafe(index, i);
-            case BigIntVector v && BIGINT == type && value instanceof Long i -> v.setSafe(index, i);
-            case Float4Vector v && FLOAT4 == type && value instanceof Float i -> v.setSafe(index, i);
-            case Float8Vector v && FLOAT8 == type && value instanceof Double i -> v.setSafe(index, i);
-            case VarCharVector v && VARCHAR == type && value instanceof String i ->
-                    v.setSafe(index, i.getBytes(StandardCharsets.UTF_8));
-            case BitVector v && BIT == type && value instanceof Boolean i -> v.setSafe(index, i ? 1 : 0);
-            case DecimalVector v && DECIMAL == type && value instanceof BigDecimal i -> v.setSafe(index, i);
-            case null, default ->
-                    throw new UnsupportedOperationException("Type " + type + " is not supported.");
-        }
-    }
-
-    public static void castAndSetSafe(FieldVector vector, int index, Object value) {
-        checkNotNull(vector, "vector is null");
-        checkNotNull(value, "value is null");
-        var type = vector.getMinorType();
-        switch (vector) {
-            case IntVector v && INT == type -> v.setSafe(index, (int) value);
-            case BigIntVector v && BIGINT == type -> v.setSafe(index, (long) value);
-            case Float4Vector v && FLOAT4 == type -> v.setSafe(index, (float) value);
-            case Float8Vector v && FLOAT8 == type -> v.setSafe(index, (double) value);
-            case VarCharVector v && VARCHAR == type ->
-                    v.setSafe(index, ((String) value).getBytes(StandardCharsets.UTF_8));
-            case BitVector v && BIT == type -> v.setSafe(index, (boolean) value ? 1 : 0);
-            case DecimalVector v && DECIMAL == type -> v.setSafe(index, (BigDecimal) value);
-            case null, default ->
-                    throw new UnsupportedOperationException("Type " + type + " is not supported.");
-        }
-    }
 }
