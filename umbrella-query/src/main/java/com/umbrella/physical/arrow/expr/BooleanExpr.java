@@ -3,7 +3,8 @@ package com.umbrella.physical.arrow.expr;
 import com.umbrella.physical.arrow.ExecutionContext;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.FieldVector;
-
+import org.apache.arrow.vector.types.Types;
+import static com.google.common.base.Preconditions.checkState;
 import static org.apache.arrow.vector.types.Types.MinorType.*;
 
 public abstract class BooleanExpr extends BinaryExpr {
@@ -11,16 +12,14 @@ public abstract class BooleanExpr extends BinaryExpr {
         super(l, r);
     }
     @Override
-    protected FieldVector evaluate(FieldVector l, FieldVector r) {
+    protected FieldVector evaluate(FieldVector l, FieldVector r, Types.MinorType type) {
+        checkState(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == VARCHAR || type == BIT || type == DECIMAL, "Type "+ type +" is not supported in Bool expression");
         var vector = new BitVector(l.getName() + r.getName(), ExecutionContext.instance().allocator());
         vector.allocateNew(l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
-            var type = l.getMinorType();
-            if(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == VARCHAR || type == BIT || type == DECIMAL) {
-                if(l.getObject(index) instanceof Comparable lc && r.getObject(index) instanceof Comparable rc) {
-                    vector.setSafe(index, evaluate(lc, rc) ? 1 : 0);
-                    continue;
-                }
+            if(l.getObject(index) instanceof Comparable lc && r.getObject(index) instanceof Comparable rc) {
+                vector.set(index, evaluate(lc, rc) ? 1 : 0);
+            } else {
                 throw new UnsupportedOperationException("Type "+ type +" is not supported in Bool expression");
             }
         }

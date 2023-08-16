@@ -57,23 +57,22 @@ public final class ExecutionContext {
         switch (node) {
             case RexLiteral n -> {
                 if (n.getTypeName() == SqlTypeName.INTEGER) {
-                    return new LiteralInt(n.getValueAs(Integer.class));
+                    return new LiteralExpr.Int(n.getValueAs(Integer.class));
                 } else if (n.getTypeName() == SqlTypeName.BIGINT) {
-                    return new LiteralLong(n.getValueAs(Long.class));
+                    return new LiteralExpr.Long(n.getValueAs(Long.class));
                 } else if (n.getTypeName() == SqlTypeName.FLOAT) {
-                    return new LiteralFloat(n.getValueAs(Float.class));
+                    return new LiteralExpr.Float(n.getValueAs(Float.class));
                 } else if (n.getTypeName() == SqlTypeName.DOUBLE) {
-                    return new LiteralDouble(n.getValueAs(Double.class));
+                    return new LiteralExpr.Double(n.getValueAs(Double.class));
                 } else if (n.getTypeName() == SqlTypeName.BOOLEAN) {
-                    return new LiteralBool(n.getValueAs(Boolean.class));
+                    return new LiteralExpr.Bool(n.getValueAs(Boolean.class));
                 } else if (n.getTypeName() == SqlTypeName.VARCHAR) {
-                    return new LiteralString(n.getValueAs(String.class));
+                    return new LiteralExpr.String(n.getValueAs(String.class));
                 } else if (n.getTypeName() == SqlTypeName.CHAR) {
-                    return new LiteralString(n.getValueAs(String.class));
+                    return new LiteralExpr.String(n.getValueAs(String.class));
                 } else if (n.getTypeName() == SqlTypeName.DECIMAL) {
                     //TODO DECIMAL
-//                    return new LiteralDecimal(n.getValueAs(BigDecimal.class));
-                    return new LiteralLong(n.getValueAs(Long.class));
+                    return new LiteralExpr.Long(n.getValueAs(Long.class));
                 } else {
                     throw new UnsupportedOperationException("SqlType " + n.getTypeName() + " is not supported");
                 }
@@ -93,6 +92,8 @@ public final class ExecutionContext {
                         return new MathExpr.Add(l, r);
                     } else if (n.isA(SqlKind.MINUS)) {
                         return new MathExpr.Sub(l, r);
+                    } else if (n.isA(SqlKind.TIMES)) {
+                        return new MathExpr.Mul(l, r);
                     } else {
                         throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
                     }

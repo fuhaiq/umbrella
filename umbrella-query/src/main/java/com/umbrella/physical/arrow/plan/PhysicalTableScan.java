@@ -7,6 +7,7 @@ import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
 import org.apache.arrow.dataset.jni.NativeMemoryPool;
 import org.apache.arrow.dataset.scanner.ScanOptions;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.util.VectorSchemaRootAppender;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -34,16 +35,12 @@ public record PhysicalTableScan(String uri, FileFormat format, Optional<String[]
                 try (var root = reader.getVectorSchemaRoot()) {
                     if(result == null) {
                         result = VectorSchemaRoot.create(root.getSchema(), ExecutionContext.instance().allocator());
+                        result.allocateNew();
                     }
-
-                    var fields = root.getFieldVectors();
-                    for(int i = 0; i < fields.size(); i++) {
-                        fields.get(i).makeTransferPair(result.getVector(i)).transfer();
-                    }
-                    result.setRowCount(result.getRowCount() + root.getRowCount());
+                    VectorSchemaRootAppender.append(result, root);
                 }
             }
-            return VectorBatch.of(result.getFieldVectors());
+            return VectorBatch.of(result);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

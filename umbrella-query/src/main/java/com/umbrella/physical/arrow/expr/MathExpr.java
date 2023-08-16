@@ -1,6 +1,7 @@
 package com.umbrella.physical.arrow.expr;
 
-import com.umbrella.physical.arrow.TypedFieldVector;
+import com.umbrella.physical.arrow.ExecutionContext;
+import com.umbrella.physical.arrow.FieldVectorUtils;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.types.Types;
 
@@ -14,39 +15,55 @@ public abstract class MathExpr extends BinaryExpr {
     }
 
     @Override
-    protected FieldVector evaluate(FieldVector l, FieldVector r) {
-        var type = l.getMinorType();
-        var vector = new TypedFieldVector(l.getName() + r.getName(), type);
-        vector.allocateNew(l.getValueCount());
+    protected FieldVector evaluate(FieldVector l, FieldVector r, Types.MinorType type) {
+        var vector = FieldVectorUtils.of(l.getName() + r.getName(), type, ExecutionContext.instance().allocator());
+        FieldVectorUtils.allocateNew(vector, l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
-            if(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == DECIMAL) {
-                vector.setSafe(index, evaluate(l.getObject(index), r.getObject(index), type));
-                continue;
+            var ll = l.getObject(index);
+            var rr = r.getObject(index);
+            if(ll instanceof BigDecimal lb && rr instanceof BigDecimal rb && type == DECIMAL) {
+                FieldVectorUtils.set(vector, index, evaluate(lb, rb));
+            } else if (ll instanceof Number ln && rr instanceof Number rn) {
+                FieldVectorUtils.set(vector, index, evaluate(ln, rn, type));
+            } else {
+                throw new UnsupportedOperationException("Class "+ l.getClass().getName() +" is not supported in Math expression");
             }
-            throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
         }
-        return vector.getVector();
+        return vector;
     }
-    protected abstract Object evaluate(Object l, Object r, Types.MinorType type);
+
+    protected abstract Number evaluate(Number l, Number r, Types.MinorType type);
+
+    protected abstract BigDecimal evaluate(BigDecimal l, BigDecimal r);
+
 
     public static class Add extends MathExpr {
         public Add(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
+
         @Override
-        protected Object evaluate(Object l, Object r, Types.MinorType type) {
-            if(l instanceof Integer ll && r instanceof Integer rr && type == INT) {
-                return ll + rr;
-            } else if (l instanceof Long ll && r instanceof Long rr && type == BIGINT) {
-                return ll + rr;
-            } else if (l instanceof Float ll && r instanceof Float rr && type == FLOAT4) {
-                return ll + rr;
-            } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
-                return ll + rr;
-            } else if (l instanceof BigDecimal ll && r instanceof BigDecimal rr && type == DECIMAL) {
-                return ll.add(rr);
-            }
-            throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
+        protected Number evaluate(Number l, Number r, Types.MinorType type) {
+            return switch (type) {
+                case INT -> l.intValue() + r.intValue();
+                case BIGINT -> l.longValue() + r.longValue();
+                case FLOAT4 -> l.floatValue() + r.floatValue();
+                case FLOAT8 -> l.doubleValue() + r.doubleValue();
+                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+            };
+        }
+
+        @Override
+        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
+            return l.add(r);
+        }
+
+        @Override
+        public String toString() {
+            return "Add{" +
+                    "l=" + l +
+                    ", r=" + r +
+                    '}';
         }
     }
 
@@ -54,20 +71,29 @@ public abstract class MathExpr extends BinaryExpr {
         public Sub(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
+
         @Override
-        protected Object evaluate(Object l, Object r, Types.MinorType type) {
-            if(l instanceof Integer ll && r instanceof Integer rr && type == INT) {
-                return ll - rr;
-            } else if (l instanceof Long ll && r instanceof Long rr && type == BIGINT) {
-                return ll - rr;
-            } else if (l instanceof Float ll && r instanceof Float rr && type == FLOAT4) {
-                return ll - rr;
-            } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
-                return ll - rr;
-            } else if (l instanceof BigDecimal ll && r instanceof BigDecimal rr && type == DECIMAL) {
-                return ll.subtract(rr);
-            }
-            throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
+        protected Number evaluate(Number l, Number r, Types.MinorType type) {
+            return switch (type) {
+                case INT -> l.intValue() - r.intValue();
+                case BIGINT -> l.longValue() - r.longValue();
+                case FLOAT4 -> l.floatValue() - r.floatValue();
+                case FLOAT8 -> l.doubleValue() - r.doubleValue();
+                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+            };
+        }
+
+        @Override
+        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
+            return l.subtract(r);
+        }
+
+        @Override
+        public String toString() {
+            return "Sub{" +
+                    "l=" + l +
+                    ", r=" + r +
+                    '}';
         }
     }
 
@@ -75,20 +101,29 @@ public abstract class MathExpr extends BinaryExpr {
         public Mul(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
+
         @Override
-        protected Object evaluate(Object l, Object r, Types.MinorType type) {
-            if(l instanceof Integer ll && r instanceof Integer rr && type == INT) {
-                return ll * rr;
-            } else if (l instanceof Long ll && r instanceof Long rr && type == BIGINT) {
-                return ll * rr;
-            } else if (l instanceof Float ll && r instanceof Float rr && type == FLOAT4) {
-                return ll * rr;
-            } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
-                return ll * rr;
-            } else if (l instanceof BigDecimal ll && r instanceof BigDecimal rr && type == DECIMAL) {
-                return ll.multiply(rr);
-            }
-            throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
+        protected Number evaluate(Number l, Number r, Types.MinorType type) {
+            return switch (type) {
+                case INT -> l.intValue() * r.intValue();
+                case BIGINT -> l.longValue() * r.longValue();
+                case FLOAT4 -> l.floatValue() * r.floatValue();
+                case FLOAT8 -> l.doubleValue() * r.doubleValue();
+                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+            };
+        }
+
+        @Override
+        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
+            return l.multiply(r);
+        }
+
+        @Override
+        public String toString() {
+            return "Mul{" +
+                    "l=" + l +
+                    ", r=" + r +
+                    '}';
         }
     }
 
@@ -96,20 +131,29 @@ public abstract class MathExpr extends BinaryExpr {
         public Div(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
+
         @Override
-        protected Object evaluate(Object l, Object r, Types.MinorType type) {
-            if(l instanceof Integer ll && r instanceof Integer rr && type == INT) {
-                return ll / rr;
-            } else if (l instanceof Long ll && r instanceof Long rr && type == BIGINT) {
-                return ll / rr;
-            } else if (l instanceof Float ll && r instanceof Float rr && type == FLOAT4) {
-                return ll / rr;
-            } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
-                return ll / rr;
-            } else if (l instanceof BigDecimal ll && r instanceof BigDecimal rr && type == DECIMAL) {
-                return ll.divide(rr);
-            }
-            throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
+        protected Number evaluate(Number l, Number r, Types.MinorType type) {
+            return switch (type) {
+                case INT -> l.intValue() / r.intValue();
+                case BIGINT -> l.longValue() / r.longValue();
+                case FLOAT4 -> l.floatValue() / r.floatValue();
+                case FLOAT8 -> l.doubleValue() / r.doubleValue();
+                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+            };
+        }
+
+        @Override
+        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
+            return l.divide(r);
+        }
+
+        @Override
+        public String toString() {
+            return "Div{" +
+                    "l=" + l +
+                    ", r=" + r +
+                    '}';
         }
     }
 
@@ -117,18 +161,29 @@ public abstract class MathExpr extends BinaryExpr {
         public Mod(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
+
         @Override
-        protected Object evaluate(Object l, Object r, Types.MinorType type) {
-            if(l instanceof Integer ll && r instanceof Integer rr && type == INT) {
-                return ll % rr;
-            } else if (l instanceof Long ll && r instanceof Long rr && type == BIGINT) {
-                return ll % rr;
-            } else if (l instanceof Float ll && r instanceof Float rr && type == FLOAT4) {
-                return ll % rr;
-            } else if (l instanceof Double ll && r instanceof Double rr && type == FLOAT8) {
-                return ll % rr;
-            }
-            throw new UnsupportedOperationException("Type "+ type +" is not supported in Math expression");
+        protected Number evaluate(Number l, Number r, Types.MinorType type) {
+            return switch (type) {
+                case INT -> l.intValue() % r.intValue();
+                case BIGINT -> l.longValue() % r.longValue();
+                case FLOAT4 -> l.floatValue() % r.floatValue();
+                case FLOAT8 -> l.doubleValue() % r.doubleValue();
+                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+            };
+        }
+
+        @Override
+        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
+            throw new UnsupportedOperationException("Mod is not supported for Decimal");
+        }
+
+        @Override
+        public String toString() {
+            return "Mod{" +
+                    "l=" + l +
+                    ", r=" + r +
+                    '}';
         }
     }
 }

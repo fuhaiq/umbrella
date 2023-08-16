@@ -2,6 +2,7 @@ package com.umbrella.physical.arrow;
 
 import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.util.TransferPair;
 import org.apache.calcite.rel.type.RelDataType;
 
@@ -10,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class VectorBatch implements AutoCloseable {
     private final List<FieldVector> fieldVectors;
@@ -23,14 +25,17 @@ public class VectorBatch implements AutoCloseable {
     }
 
     public static VectorBatch of(FieldVector... vectors) {
-        checkArgument(vectors != null && vectors.length > 0, "初始化 FieldVector 不能为空");
-        var v = Arrays.stream(vectors).toList();
-        return new VectorBatch(v, v.size() == 0 ? 0 : v.get(0).getValueCount(), v.size());
+        return VectorBatch.of(Arrays.stream(vectors).toList());
     }
 
     public static VectorBatch of(List<FieldVector> vectors) {
         checkArgument(vectors != null && vectors.size() > 0, "初始化 FieldVector 不能为空");
         return new VectorBatch(vectors, vectors.get(0).getValueCount(), vectors.size());
+    }
+
+    public static VectorBatch of(VectorSchemaRoot root) {
+        checkNotNull(root, "参数 VectorSchemaRoot 不能为空");
+        return VectorBatch.of(root.getFieldVectors());
     }
 
     public FieldVector getVector(int index) {
