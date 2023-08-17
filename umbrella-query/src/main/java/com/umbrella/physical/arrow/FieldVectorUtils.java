@@ -4,9 +4,8 @@ import com.google.common.base.Strings;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.types.Types;
-import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.types.pojo.Field;
 
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -26,7 +25,21 @@ public final class FieldVectorUtils {
             case FLOAT8 -> new Float8Vector(name, allocator);
             case VARCHAR -> new VarCharVector(name, allocator);
             case BIT -> new BitVector(name, allocator);
-            case DECIMAL -> new DecimalVector(name, FieldType.nullable(type.getType()), allocator);
+            default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
+        };
+    }
+
+    public static FieldVector of(Field field, Types.MinorType type, BufferAllocator allocator) {
+        checkNotNull(field, "Field is null");
+        checkNotNull(type, "Type is null");
+        checkNotNull(allocator, "Allocator is null");
+        return switch (type) {
+            case INT ->  new IntVector(field, allocator);
+            case BIGINT -> new BigIntVector(field, allocator);
+            case FLOAT4 -> new Float4Vector(field, allocator);
+            case FLOAT8 -> new Float8Vector(field, allocator);
+            case VARCHAR -> new VarCharVector(field, allocator);
+            case BIT -> new BitVector(field, allocator);
             default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
         };
     }
@@ -53,7 +66,6 @@ public final class FieldVectorUtils {
             case VarCharVector v && VARCHAR == type && value instanceof String i ->
                     v.set(index, i.getBytes(StandardCharsets.UTF_8));
             case BitVector v && BIT == type && value instanceof Boolean i -> v.set(index, i ? 1 : 0);
-            case DecimalVector v && DECIMAL == type && value instanceof BigDecimal i -> v.set(index, i);
             case null, default ->
                     throw new UnsupportedOperationException("Type " + type + " is not supported.");
         }
@@ -71,7 +83,6 @@ public final class FieldVectorUtils {
             case VarCharVector v && VARCHAR == type ->
                     v.set(index, ((String) value).getBytes(StandardCharsets.UTF_8));
             case BitVector v && BIT == type -> v.set(index, (boolean) value ? 1 : 0);
-            case DecimalVector v && DECIMAL == type -> v.set(index, (BigDecimal) value);
             case null, default ->
                     throw new UnsupportedOperationException("Type " + type + " is not supported.");
         }

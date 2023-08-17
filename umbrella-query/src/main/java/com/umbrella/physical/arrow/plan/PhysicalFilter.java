@@ -20,9 +20,9 @@ public class PhysicalFilter extends AbstractPhysicalPlan {
     protected VectorBatch execute(VectorBatch input) {
         var retSize = 0;
         var bool = (BitVector) expr.evaluate(input);
-        checkState(bool.getValueCount() == input.getRowCount(), "数据条数不一致");
-        var fieldsSize = input.getColumnCount();
-        for (var i = 0; i < input.getRowCount(); i++) {
+        checkState(bool.getValueCount() == input.rowCount, "数据条数不一致");
+        var fieldsSize = input.rowCount;
+        for (var i = 0; i < input.rowCount; i++) {
             for(var index = 0; index < fieldsSize; index++) {
                 var f = input.getVector(index);
                 checkState(bool.getValueCount() == f.getValueCount(), "数据条数不一致");

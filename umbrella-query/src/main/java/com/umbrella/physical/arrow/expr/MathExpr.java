@@ -5,10 +5,6 @@ import com.umbrella.physical.arrow.FieldVectorUtils;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.types.Types;
 
-import java.math.BigDecimal;
-
-import static org.apache.arrow.vector.types.Types.MinorType.*;
-
 public abstract class MathExpr extends BinaryExpr {
     protected MathExpr(PhysicalExpr l, PhysicalExpr r) {
         super(l, r);
@@ -21,10 +17,8 @@ public abstract class MathExpr extends BinaryExpr {
         for (var index = 0; index < l.getValueCount(); index++) {
             var ll = l.getObject(index);
             var rr = r.getObject(index);
-            if(ll instanceof BigDecimal lb && rr instanceof BigDecimal rb && type == DECIMAL) {
-                FieldVectorUtils.set(vector, index, evaluate(lb, rb));
-            } else if (ll instanceof Number ln && rr instanceof Number rn) {
-                FieldVectorUtils.set(vector, index, evaluate(ln, rn, type));
+            if(ll instanceof Number lb && rr instanceof Number rb) {
+                FieldVectorUtils.set(vector, index, evaluate(lb, rb, type));
             } else {
                 throw new UnsupportedOperationException("Class "+ l.getClass().getName() +" is not supported in Math expression");
             }
@@ -33,9 +27,6 @@ public abstract class MathExpr extends BinaryExpr {
     }
 
     protected abstract Number evaluate(Number l, Number r, Types.MinorType type);
-
-    protected abstract BigDecimal evaluate(BigDecimal l, BigDecimal r);
-
 
     public static class Add extends MathExpr {
         public Add(PhysicalExpr l, PhysicalExpr r) {
@@ -51,11 +42,6 @@ public abstract class MathExpr extends BinaryExpr {
                 case FLOAT8 -> l.doubleValue() + r.doubleValue();
                 case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
             };
-        }
-
-        @Override
-        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
-            return l.add(r);
         }
 
         @Override
@@ -84,11 +70,6 @@ public abstract class MathExpr extends BinaryExpr {
         }
 
         @Override
-        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
-            return l.subtract(r);
-        }
-
-        @Override
         public String toString() {
             return "Sub{" +
                     "l=" + l +
@@ -111,11 +92,6 @@ public abstract class MathExpr extends BinaryExpr {
                 case FLOAT8 -> l.doubleValue() * r.doubleValue();
                 case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
             };
-        }
-
-        @Override
-        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
-            return l.multiply(r);
         }
 
         @Override
@@ -144,11 +120,6 @@ public abstract class MathExpr extends BinaryExpr {
         }
 
         @Override
-        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
-            return l.divide(r);
-        }
-
-        @Override
         public String toString() {
             return "Div{" +
                     "l=" + l +
@@ -171,11 +142,6 @@ public abstract class MathExpr extends BinaryExpr {
                 case FLOAT8 -> l.doubleValue() % r.doubleValue();
                 case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
             };
-        }
-
-        @Override
-        protected BigDecimal evaluate(BigDecimal l, BigDecimal r) {
-            throw new UnsupportedOperationException("Mod is not supported for Decimal");
         }
 
         @Override

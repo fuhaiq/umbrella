@@ -1,5 +1,6 @@
 package com.umbrella.physical.arrow;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -14,23 +15,25 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class VectorBatch implements AutoCloseable {
-    private final List<FieldVector> fieldVectors;
-    private final int rowCount;
-    private final int columnCount;
+    private final ImmutableList<FieldVector> fieldVectors;
+    public final int rowCount;
+    public final int columnCount;
 
-    private VectorBatch(List<FieldVector> fieldVectors, int rowCount, int columnCount) {
-        this.fieldVectors = fieldVectors;
-        this.rowCount = rowCount;
-        this.columnCount = columnCount;
+    private VectorBatch(List<FieldVector> fieldVectors) {
+        this.fieldVectors = ImmutableList.copyOf(fieldVectors);
+        this.columnCount = this.fieldVectors.size() == 0 ? 0 : this.fieldVectors.size();
+        this.rowCount = columnCount == 0 ? 0 : fieldVectors.get(0).getValueCount();
+
     }
 
     public static VectorBatch of(FieldVector... vectors) {
+        checkArgument(vectors != null && vectors.length > 0, "初始化 FieldVector 不能为空");
         return VectorBatch.of(Arrays.stream(vectors).toList());
     }
 
     public static VectorBatch of(List<FieldVector> vectors) {
         checkArgument(vectors != null && vectors.size() > 0, "初始化 FieldVector 不能为空");
-        return new VectorBatch(vectors, vectors.get(0).getValueCount(), vectors.size());
+        return new VectorBatch(vectors);
     }
 
     public static VectorBatch of(VectorSchemaRoot root) {
@@ -39,12 +42,10 @@ public class VectorBatch implements AutoCloseable {
     }
 
     public FieldVector getVector(int index) {
-        checkArgument(index >= 0 && index < fieldVectors.size(), "下标越界");
         return fieldVectors.get(index);
     }
 
     public <T extends FieldVector> T getVector(int index, Class<T> clazz) {
-        checkArgument(index >= 0 && index < fieldVectors.size(), "下标越界");
         return clazz.cast(fieldVectors.get(index));
     }
 
@@ -52,10 +53,6 @@ public class VectorBatch implements AutoCloseable {
         checkArgument(index >= 0, "起始位置必须 >=0");
         checkArgument(length >= 0, "截取长度必须 >=0");
         checkArgument(index + length <= rowCount, "越界,起始位置+截取长度必须 <= rowCount");
-
-        if (index == 0 && length == rowCount) {
-            return this;
-        }
 
         var sliceVectors = fieldVectors.stream().map(v -> {
             TransferPair transferPair = v.getTransferPair(v.getAllocator());
@@ -106,13 +103,5 @@ public class VectorBatch implements AutoCloseable {
             printRow(sb, row);
         }
         return sb.toString();
-    }
-
-    public int getRowCount() {
-        return rowCount;
-    }
-
-    public int getColumnCount() {
-        return columnCount;
     }
 }

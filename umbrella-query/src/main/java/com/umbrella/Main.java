@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) throws SqlParseException {
 
         var sql = """
-                select s_name, s_nationkey, s_nationkey + 1, s_nationkey - 1, s_nationkey *3, 'KKK' from supplier
+                select s_suppkey, s_nationkey+1,s_acctbal,s_acctbal/2, 'KKK' from supplier limit 10
                 """;
 
         //[s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal, s_comment]
@@ -65,8 +65,6 @@ public class Main {
 
         try(var ret = physicalPlan.execute()) {
             System.out.println(ret.contentToTSVString(optimizerRelTree.getRowType()));
-            System.out.println(ret.getColumnCount());
-            System.out.println(ret.getRowCount());
         }
     }
 }

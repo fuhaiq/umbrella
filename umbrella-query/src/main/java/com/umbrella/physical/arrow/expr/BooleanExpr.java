@@ -13,7 +13,7 @@ public abstract class BooleanExpr extends BinaryExpr {
     }
     @Override
     protected FieldVector evaluate(FieldVector l, FieldVector r, Types.MinorType type) {
-        checkState(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == VARCHAR || type == BIT || type == DECIMAL, "Type "+ type +" is not supported in Bool expression");
+        checkState(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == VARCHAR || type == BIT, "Type "+ type +" is not supported in Bool expression");
         var vector = new BitVector(l.getName() + r.getName(), ExecutionContext.instance().allocator());
         vector.allocateNew(l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
