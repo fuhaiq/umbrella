@@ -3,24 +3,20 @@ package com.umbrella.physical.arrow.expr;
 import com.umbrella.physical.arrow.ExecutionContext;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.types.Types;
-import static com.google.common.base.Preconditions.checkState;
-import static org.apache.arrow.vector.types.Types.MinorType.*;
 
 public abstract class BooleanExpr extends BinaryExpr {
     protected BooleanExpr(PhysicalExpr l, PhysicalExpr r) {
         super(l, r);
     }
     @Override
-    protected FieldVector evaluate(FieldVector l, FieldVector r, Types.MinorType type) {
-        checkState(type == INT || type == BIGINT || type == FLOAT4 || type == FLOAT8 || type == VARCHAR || type == BIT, "Type "+ type +" is not supported in Bool expression");
+    protected FieldVector evaluate(FieldVector l, FieldVector r) {
         var vector = new BitVector(l.getName() + r.getName(), ExecutionContext.instance().allocator());
         vector.allocateNew(l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
             if(l.getObject(index) instanceof Comparable lc && r.getObject(index) instanceof Comparable rc) {
                 vector.set(index, evaluate(lc, rc) ? 1 : 0);
             } else {
-                throw new UnsupportedOperationException("Type "+ type +" is not supported in Bool expression");
+                throw new UnsupportedOperationException("Bool expression only supports Comparable");
             }
         }
         return vector;

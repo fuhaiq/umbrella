@@ -1,7 +1,6 @@
 package com.umbrella.physical.arrow.plan;
 
 import com.umbrella.physical.arrow.VectorBatch;
-import org.apache.arrow.vector.VectorSchemaRoot;
 
 import java.util.List;
 

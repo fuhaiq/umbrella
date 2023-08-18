@@ -6,6 +6,8 @@ import com.umbrella.physical.arrow.VectorBatch;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.types.Types;
 
+import java.math.BigDecimal;
+
 import static org.apache.arrow.vector.types.Types.MinorType.*;
 
 public class LiteralExpr<T> implements PhysicalExpr {
@@ -20,7 +22,12 @@ public class LiteralExpr<T> implements PhysicalExpr {
 
     @Override
     public FieldVector evaluate(VectorBatch tabular) {
-        var vector = FieldVectorUtils.of(value.toString(), type, ExecutionContext.instance().allocator());
+        FieldVector vector;
+        if(type == DECIMAL && value instanceof BigDecimal n) {
+            vector = FieldVectorUtils.of(value.toString(), n, ExecutionContext.instance().allocator());
+        } else {
+            vector = FieldVectorUtils.of(value.toString(), type, ExecutionContext.instance().allocator());
+        }
         FieldVectorUtils.allocateNew(vector, tabular.rowCount);
         for (var i = 0; i < tabular.rowCount; i++) {
             FieldVectorUtils.set(vector, i, value);
@@ -101,6 +108,19 @@ public class LiteralExpr<T> implements PhysicalExpr {
         @Override
         public java.lang.String toString() {
             return "String{" +
+                    "value=" + value +
+                    '}';
+        }
+    }
+
+    public static class Decimal extends LiteralExpr<BigDecimal> {
+        public Decimal(BigDecimal value) {
+            super(value, DECIMAL);
+        }
+
+        @Override
+        public java.lang.String toString() {
+            return "Decimal{" +
                     "value=" + value +
                     '}';
         }

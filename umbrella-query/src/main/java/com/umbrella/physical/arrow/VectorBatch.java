@@ -27,12 +27,12 @@ public class VectorBatch implements AutoCloseable {
     }
 
     public static VectorBatch of(FieldVector... vectors) {
-        checkArgument(vectors != null && vectors.length > 0, "初始化 FieldVector 不能为空");
+        checkArgument(vectors != null, "初始化 FieldVector 不能为空");
         return VectorBatch.of(Arrays.stream(vectors).toList());
     }
 
     public static VectorBatch of(List<FieldVector> vectors) {
-        checkArgument(vectors != null && vectors.size() > 0, "初始化 FieldVector 不能为空");
+        checkArgument(vectors != null, "初始化 FieldVector 不能为空");
         return new VectorBatch(vectors);
     }
 

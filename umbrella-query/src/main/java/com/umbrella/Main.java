@@ -27,18 +27,19 @@ public class Main {
     public static void main(String[] args) throws SqlParseException {
 
         var sql = """
-                select s_suppkey, s_nationkey+1,s_acctbal,s_acctbal/2, 'KKK' from supplier limit 10
+                select s_acctbal+0.02 from supplier limit 10
                 """;
 
         //[s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal, s_comment]
-        var fileName = "file:/Users/haiqing.fu/Downloads/part-00000-43eb05ce-afaa-4be3-80b7-5c966f0da9b9-c000.snappy.orc";
+        var fileName = "file:/Users/haiqing.fu/Downloads/part-00000-f789dcc2-3a14-4651-bbc2-ea8fbf76c829-c000.snappy.parquet";
 
         var schema = ArrowSchema.newBuilder("ods").addTable("supplier",
                 new ArrowTable(fileName,
-                        FileFormat.ORC)).build();
+                        FileFormat.PARQUET)).build();
 
         var optimizer = Optimizer.create(schema, List.of(
                 CoreRules.PROJECT_TABLE_SCAN
+//                CoreRules.PROJECT_CALC_MERGE
         ));
         // 1. SQL parse: SQL string --> SqlNode
         var sqlNode = optimizer.parse(sql);

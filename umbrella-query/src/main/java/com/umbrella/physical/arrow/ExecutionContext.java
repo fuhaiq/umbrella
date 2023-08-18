@@ -1,18 +1,22 @@
 package com.umbrella.physical.arrow;
 
 import com.google.common.collect.Iterables;
-import com.umbrella.physical.arrow.expr.*;
-import com.umbrella.physical.arrow.plan.*;
+import com.umbrella.physical.arrow.expr.ColumnExpr;
+import com.umbrella.physical.arrow.expr.LiteralExpr;
+import com.umbrella.physical.arrow.expr.MathExpr;
+import com.umbrella.physical.arrow.expr.PhysicalExpr;
+import com.umbrella.physical.arrow.plan.PhysicalPlan;
+import com.umbrella.physical.arrow.plan.PhysicalProject;
+import com.umbrella.physical.arrow.plan.PhysicalSort;
+import com.umbrella.physical.arrow.plan.PhysicalTableScan;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.calcite.adapter.arrow.ArrowTable;
 import org.apache.calcite.interpreter.Bindables;
-import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalSort;
 import org.apache.calcite.rel.logical.LogicalTableScan;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
@@ -20,8 +24,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.util.Arrays;
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -57,24 +60,24 @@ public final class ExecutionContext {
         assert node != null;
         switch (node) {
             case RexLiteral n -> {
-                if (n.getTypeName() == SqlTypeName.INTEGER) {
+                if(n.getType().toString().equals(SqlTypeName.INTEGER.getName())) {
                     return new LiteralExpr.Int(n.getValueAs(Integer.class));
-                } else if (n.getTypeName() == SqlTypeName.BIGINT) {
+                } else if (n.getType().toString().equals(SqlTypeName.BIGINT.getName())) {
                     return new LiteralExpr.Long(n.getValueAs(Long.class));
-                } else if (n.getTypeName() == SqlTypeName.FLOAT) {
+                } else if (n.getType().toString().equals(SqlTypeName.FLOAT.getName())) {
                     return new LiteralExpr.Float(n.getValueAs(Float.class));
-                } else if (n.getTypeName() == SqlTypeName.DOUBLE) {
+                } else if (n.getType().toString().equals(SqlTypeName.DOUBLE.getName())) {
                     return new LiteralExpr.Double(n.getValueAs(Double.class));
-                } else if (n.getTypeName() == SqlTypeName.BOOLEAN) {
+                } else if (n.getType().toString().equals(SqlTypeName.BOOLEAN.getName())) {
                     return new LiteralExpr.Bool(n.getValueAs(Boolean.class));
-                } else if (n.getTypeName() == SqlTypeName.VARCHAR) {
+                } else if (n.getType().toString().equals(SqlTypeName.VARCHAR.getName())) {
                     return new LiteralExpr.String(n.getValueAs(String.class));
                 } else if (n.getTypeName() == SqlTypeName.CHAR) {
                     return new LiteralExpr.String(n.getValueAs(String.class));
                 } else if (n.getTypeName() == SqlTypeName.DECIMAL) {
-                    return new LiteralExpr.Float(n.getValueAs(Float.class));
+                    return new LiteralExpr.Decimal(n.getValueAs(BigDecimal.class));
                 } else {
-                    throw new UnsupportedOperationException("SqlType " + n.getTypeName() + " is not supported");
+                    throw new UnsupportedOperationException("SqlType " + n.getType().toString() + " is not supported");
                 }
             }
             case RexCall n -> {
@@ -96,6 +99,8 @@ public final class ExecutionContext {
                         return new MathExpr.Mul(l, r);
                     } else if (n.isA(SqlKind.DIVIDE)) {
                         return new MathExpr.Div(l, r);
+                    } else if (n.isA(SqlKind.MOD)) {
+                        return new MathExpr.Mod(l, r);
                     } else {
                         throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
                     }
@@ -118,35 +123,14 @@ public final class ExecutionContext {
             case LogicalTableScan n -> {
                 var table = n.getTable();
                 ArrowTable arrowTable = table.unwrap(ArrowTable.class);
-                var rowType = arrowTable.getRowType(new JavaTypeFactoryImpl());
-                var decimal = rowType.getFieldList().stream()
-                        .filter(i -> i.getType().getSqlTypeName() == SqlTypeName.DECIMAL)
-                        .map(RelDataTypeField::getName).toList();
-                return decimal.size() == 0 ?
-                        new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.empty())
-                        :
-                        new PhysicalDecimal2Float(
-                            new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.empty()),
-                                decimal
-                        );
+                return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.empty());
             }
             case Bindables.BindableTableScan n -> {
                 var table = n.getTable();
                 var rowType = table.getRowType();
                 var project = Iterables.toArray(n.projects.stream().map(i -> rowType.getFieldNames().get(i)).toList(), String.class);
                 ArrowTable arrowTable = table.unwrap(ArrowTable.class);
-                var decimal = rowType.getFieldList().stream()
-                        .filter(i -> i.getType().getSqlTypeName() == SqlTypeName.DECIMAL)
-                        .map(RelDataTypeField::getName).toList();
-
-                var intersect = Arrays.stream(project).filter(decimal::contains).toList();
-                return intersect.size() == 0 ?
-                        new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.of(project))
-                        :
-                        new PhysicalDecimal2Float(
-                                new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.of(project)),
-                                intersect
-                        );
+                return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.of(project));
             }
             case LogicalProject n -> {
                 return new PhysicalProject(createPhysicalPlan(n.getInput()), n.getProjects().stream().map(this::createPhysicalExpr).toList());
