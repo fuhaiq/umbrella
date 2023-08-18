@@ -21,7 +21,7 @@ public class VectorBatch implements AutoCloseable {
 
     private VectorBatch(List<FieldVector> fieldVectors) {
         this.fieldVectors = ImmutableList.copyOf(fieldVectors);
-        this.columnCount = this.fieldVectors.size() == 0 ? 0 : this.fieldVectors.size();
+        this.columnCount = this.fieldVectors.isEmpty() ? 0 : this.fieldVectors.size();
         this.rowCount = columnCount == 0 ? 0 : fieldVectors.get(0).getValueCount();
 
     }

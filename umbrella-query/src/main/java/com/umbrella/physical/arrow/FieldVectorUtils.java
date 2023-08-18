@@ -27,7 +27,7 @@ public final class FieldVectorUtils {
             case FLOAT8 -> new Float8Vector(name, allocator);
             case VARCHAR -> new VarCharVector(name, allocator);
             case BIT -> new BitVector(name, allocator);
-            default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
+            case null, default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
         };
     }
 
@@ -47,7 +47,7 @@ public final class FieldVectorUtils {
             case VARCHAR -> new VarCharVector(field, allocator);
             case BIT -> new BitVector(field, allocator);
             case DECIMAL -> new DecimalVector(field, allocator);
-            default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
+            case null, default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
         };
     }
 
@@ -66,14 +66,14 @@ public final class FieldVectorUtils {
         checkNotNull(value, "value is null");
         var type = vector.getMinorType();
         switch (vector) {
-            case IntVector v && INT == type && value instanceof Integer i -> v.set(index, i);
-            case BigIntVector v && BIGINT == type && value instanceof Long i -> v.set(index, i);
-            case Float4Vector v && FLOAT4 == type && value instanceof Float i -> v.set(index, i);
-            case Float8Vector v && FLOAT8 == type && value instanceof Double i -> v.set(index, i);
-            case VarCharVector v && VARCHAR == type && value instanceof String i ->
+            case IntVector v when INT == type && value instanceof Integer i -> v.set(index, i);
+            case BigIntVector v when BIGINT == type && value instanceof Long i -> v.set(index, i);
+            case Float4Vector v when FLOAT4 == type && value instanceof Float i -> v.set(index, i);
+            case Float8Vector v when FLOAT8 == type && value instanceof Double i -> v.set(index, i);
+            case VarCharVector v when VARCHAR == type && value instanceof String i ->
                     v.set(index, i.getBytes(StandardCharsets.UTF_8));
-            case BitVector v && BIT == type && value instanceof Boolean i -> v.set(index, i ? 1 : 0);
-            case DecimalVector v && DECIMAL == type && value instanceof BigDecimal i -> v.set(index, i);
+            case BitVector v when BIT == type && value instanceof Boolean i -> v.set(index, i ? 1 : 0);
+            case DecimalVector v when DECIMAL == type && value instanceof BigDecimal i -> v.set(index, i);
             case null, default ->
                     throw new UnsupportedOperationException("Type " + type + " is not supported.");
         }
@@ -84,13 +84,13 @@ public final class FieldVectorUtils {
         checkNotNull(value, "value is null");
         var type = vector.getMinorType();
         switch (vector) {
-            case IntVector v && INT == type -> v.set(index, (int) value);
-            case BigIntVector v && BIGINT == type -> v.set(index, (long) value);
-            case Float4Vector v && FLOAT4 == type -> v.set(index, (float) value);
-            case Float8Vector v && FLOAT8 == type -> v.set(index, (double) value);
-            case VarCharVector v && VARCHAR == type ->
+            case IntVector v when INT == type -> v.set(index, (int) value);
+            case BigIntVector v when BIGINT == type -> v.set(index, (long) value);
+            case Float4Vector v when FLOAT4 == type -> v.set(index, (float) value);
+            case Float8Vector v when FLOAT8 == type -> v.set(index, (double) value);
+            case VarCharVector v when VARCHAR == type ->
                     v.set(index, ((String) value).getBytes(StandardCharsets.UTF_8));
-            case BitVector v && BIT == type -> v.set(index, (boolean) value ? 1 : 0);
+            case BitVector v when BIT == type -> v.set(index, (boolean) value ? 1 : 0);
             case null, default ->
                     throw new UnsupportedOperationException("Type " + type + " is not supported.");
         }

@@ -57,7 +57,6 @@ public final class ExecutionContext {
     }
 
     private PhysicalExpr createPhysicalExpr(RexNode node) {
-        assert node != null;
         switch (node) {
             case RexLiteral n -> {
                 if(n.getType().toString().equals(SqlTypeName.INTEGER.getName())) {
@@ -118,7 +117,6 @@ public final class ExecutionContext {
     }
 
     public PhysicalPlan createPhysicalPlan(RelNode node) {
-        assert node != null;
         switch (node) {
             case LogicalTableScan n -> {
                 var table = n.getTable();
