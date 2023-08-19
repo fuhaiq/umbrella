@@ -67,7 +67,7 @@ public class Optimizer {
         // create SqlValidator
         var validatorConfig = SqlValidator.Config.DEFAULT
                 .withLenientOperatorLookup(config.lenientOperatorLookup())
-                .withSqlConformance(config.conformance())
+                .withConformance(config.conformance())
                 .withDefaultNullCollation(config.defaultNullCollation())
                 .withIdentifierExpansion(true);
         var validator = SqlValidatorUtil.newValidator(

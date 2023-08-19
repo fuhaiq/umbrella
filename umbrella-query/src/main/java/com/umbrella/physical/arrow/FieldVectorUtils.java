@@ -27,7 +27,7 @@ public final class FieldVectorUtils {
             case FLOAT8 -> new Float8Vector(name, allocator);
             case VARCHAR -> new VarCharVector(name, allocator);
             case BIT -> new BitVector(name, allocator);
-            case null, default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
+            default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
         };
     }
 
@@ -47,7 +47,7 @@ public final class FieldVectorUtils {
             case VARCHAR -> new VarCharVector(field, allocator);
             case BIT -> new BitVector(field, allocator);
             case DECIMAL -> new DecimalVector(field, allocator);
-            case null, default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
+            default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
         };
     }
 
@@ -65,34 +65,39 @@ public final class FieldVectorUtils {
         checkNotNull(vector, "vector is null");
         checkNotNull(value, "value is null");
         var type = vector.getMinorType();
-        switch (vector) {
-            case IntVector v when INT == type && value instanceof Integer i -> v.set(index, i);
-            case BigIntVector v when BIGINT == type && value instanceof Long i -> v.set(index, i);
-            case Float4Vector v when FLOAT4 == type && value instanceof Float i -> v.set(index, i);
-            case Float8Vector v when FLOAT8 == type && value instanceof Double i -> v.set(index, i);
-            case VarCharVector v when VARCHAR == type && value instanceof String i ->
-                    v.set(index, i.getBytes(StandardCharsets.UTF_8));
-            case BitVector v when BIT == type && value instanceof Boolean i -> v.set(index, i ? 1 : 0);
-            case DecimalVector v when DECIMAL == type && value instanceof BigDecimal i -> v.set(index, i);
-            case null, default ->
-                    throw new UnsupportedOperationException("Type " + type + " is not supported.");
-        }
+        if(vector instanceof IntVector v && INT == type && value instanceof Integer i) {
+            v.set(index, i);
+        } else if (vector instanceof BigIntVector v && BIGINT == type && value instanceof Long i) {
+            v.set(index, i);
+        } else if (vector instanceof Float4Vector v && FLOAT4 == type && value instanceof Float i) {
+            v.set(index, i);
+        } else if (vector instanceof Float8Vector v && FLOAT8 == type && value instanceof Double i) {
+            v.set(index, i);
+        } else if (vector instanceof VarCharVector v && VARCHAR == type && value instanceof String i) {
+            v.set(index, i.getBytes(StandardCharsets.UTF_8));
+        } else if (vector instanceof BitVector v && BIT == type && value instanceof Boolean i) {
+            v.set(index, i ? 1 : 0);
+        } else if (vector instanceof DecimalVector v && DECIMAL == type && value instanceof BigDecimal i) {
+            v.set(index, i);
+        } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
     }
 
     public static void castAndSet(FieldVector vector, int index, Object value) {
         checkNotNull(vector, "vector is null");
         checkNotNull(value, "value is null");
         var type = vector.getMinorType();
-        switch (vector) {
-            case IntVector v when INT == type -> v.set(index, (int) value);
-            case BigIntVector v when BIGINT == type -> v.set(index, (long) value);
-            case Float4Vector v when FLOAT4 == type -> v.set(index, (float) value);
-            case Float8Vector v when FLOAT8 == type -> v.set(index, (double) value);
-            case VarCharVector v when VARCHAR == type ->
-                    v.set(index, ((String) value).getBytes(StandardCharsets.UTF_8));
-            case BitVector v when BIT == type -> v.set(index, (boolean) value ? 1 : 0);
-            case null, default ->
-                    throw new UnsupportedOperationException("Type " + type + " is not supported.");
-        }
+        if(vector instanceof IntVector v && INT == type) {
+            v.set(index, (int) value);
+        } else if (vector instanceof BigIntVector v && BIGINT == type) {
+            v.set(index, (long) value);
+        } else if (vector instanceof Float4Vector v && FLOAT4 == type) {
+            v.set(index, (float) value);
+        } else if (vector instanceof Float8Vector v && FLOAT8 == type) {
+            v.set(index, (double) value);
+        } else if (vector instanceof VarCharVector v && VARCHAR == type) {
+            v.set(index, ((String) value).getBytes(StandardCharsets.UTF_8));
+        } else if (vector instanceof BitVector v && BIT == type) {
+            v.set(index, (boolean) value ? 1 : 0);
+        } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
     }
 }

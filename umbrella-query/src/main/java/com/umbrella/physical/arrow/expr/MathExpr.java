@@ -68,7 +68,7 @@ public abstract class MathExpr extends BinaryExpr {
                 case BIGINT -> l.longValue() + r.longValue();
                 case FLOAT4 -> l.floatValue() + r.floatValue();
                 case FLOAT8 -> l.doubleValue() + r.doubleValue();
-                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+                default -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
             };
         }
 
@@ -98,7 +98,7 @@ public abstract class MathExpr extends BinaryExpr {
                 case BIGINT -> l.longValue() - r.longValue();
                 case FLOAT4 -> l.floatValue() - r.floatValue();
                 case FLOAT8 -> l.doubleValue() - r.doubleValue();
-                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+                default -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
             };
         }
 
@@ -128,7 +128,7 @@ public abstract class MathExpr extends BinaryExpr {
                 case BIGINT -> l.longValue() * r.longValue();
                 case FLOAT4 -> l.floatValue() * r.floatValue();
                 case FLOAT8 -> l.doubleValue() * r.doubleValue();
-                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+                default -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
             };
         }
 
@@ -158,7 +158,7 @@ public abstract class MathExpr extends BinaryExpr {
                 case BIGINT -> l.longValue() / r.longValue();
                 case FLOAT4 -> l.floatValue() / r.floatValue();
                 case FLOAT8 -> l.doubleValue() / r.doubleValue();
-                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+                default -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
             };
         }
 
@@ -188,7 +188,7 @@ public abstract class MathExpr extends BinaryExpr {
                 case BIGINT -> l.longValue() % r.longValue();
                 case FLOAT4 -> l.floatValue() % r.floatValue();
                 case FLOAT8 -> l.doubleValue() % r.doubleValue();
-                case default, null -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
+                default -> throw new UnsupportedOperationException("Type "+ type +" is not supported in Add expression");
             };
         }
 

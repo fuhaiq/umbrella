@@ -57,89 +57,75 @@ public final class ExecutionContext {
     }
 
     private PhysicalExpr createPhysicalExpr(RexNode node) {
-        switch (node) {
-            case RexLiteral n -> {
-                if(n.getType().toString().equals(SqlTypeName.INTEGER.getName())) {
-                    return new LiteralExpr.Int(n.getValueAs(Integer.class));
-                } else if (n.getType().toString().equals(SqlTypeName.BIGINT.getName())) {
-                    return new LiteralExpr.Long(n.getValueAs(Long.class));
-                } else if (n.getType().toString().equals(SqlTypeName.FLOAT.getName())) {
-                    return new LiteralExpr.Float(n.getValueAs(Float.class));
-                } else if (n.getType().toString().equals(SqlTypeName.DOUBLE.getName())) {
-                    return new LiteralExpr.Double(n.getValueAs(Double.class));
-                } else if (n.getType().toString().equals(SqlTypeName.BOOLEAN.getName())) {
-                    return new LiteralExpr.Bool(n.getValueAs(Boolean.class));
-                } else if (n.getType().toString().equals(SqlTypeName.VARCHAR.getName())) {
-                    return new LiteralExpr.String(n.getValueAs(String.class));
-                } else if (n.getTypeName() == SqlTypeName.CHAR) {
-                    return new LiteralExpr.String(n.getValueAs(String.class));
-                } else if (n.getTypeName() == SqlTypeName.DECIMAL) {
-                    return new LiteralExpr.Decimal(n.getValueAs(BigDecimal.class));
+        if(node instanceof RexLiteral n) {
+            if(n.getType().toString().equals(SqlTypeName.INTEGER.getName())) {
+                return new LiteralExpr.Int(n.getValueAs(Integer.class));
+            } else if (n.getType().toString().equals(SqlTypeName.BIGINT.getName())) {
+                return new LiteralExpr.Long(n.getValueAs(Long.class));
+            } else if (n.getType().toString().equals(SqlTypeName.FLOAT.getName())) {
+                return new LiteralExpr.Float(n.getValueAs(Float.class));
+            } else if (n.getType().toString().equals(SqlTypeName.DOUBLE.getName())) {
+                return new LiteralExpr.Double(n.getValueAs(Double.class));
+            } else if (n.getType().toString().equals(SqlTypeName.BOOLEAN.getName())) {
+                return new LiteralExpr.Bool(n.getValueAs(Boolean.class));
+            } else if (n.getType().toString().equals(SqlTypeName.VARCHAR.getName())) {
+                return new LiteralExpr.String(n.getValueAs(String.class));
+            } else if (n.getTypeName() == SqlTypeName.CHAR) {
+                return new LiteralExpr.String(n.getValueAs(String.class));
+            } else if (n.getTypeName() == SqlTypeName.DECIMAL) {
+                return new LiteralExpr.Decimal(n.getValueAs(BigDecimal.class));
+            } else {
+                throw new UnsupportedOperationException("SqlType " + n.getType().toString() + " is not supported");
+            }
+        } else if (node instanceof RexCall n) {
+            if(n.operands.size() == 1) {
+                var op = createPhysicalExpr(n.operands.get(0));
+                if (n.isA(SqlKind.CAST)) {
+                    return null;
                 } else {
-                    throw new UnsupportedOperationException("SqlType " + n.getType().toString() + " is not supported");
+                    throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
                 }
-            }
-            case RexCall n -> {
-                if(n.operands.size() == 1) {
-                    var op = createPhysicalExpr(n.operands.get(0));
-                    if (n.isA(SqlKind.CAST)) {
-                        return null;
-                    } else {
-                        throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
-                    }
-                } else if (n.operands.size() == 2) {
-                    var l = createPhysicalExpr(n.operands.get(0));
-                    var r = createPhysicalExpr(n.operands.get(1));
-                    if (n.isA(SqlKind.PLUS)) {
-                        return new MathExpr.Add(l, r);
-                    } else if (n.isA(SqlKind.MINUS)) {
-                        return new MathExpr.Sub(l, r);
-                    } else if (n.isA(SqlKind.TIMES)) {
-                        return new MathExpr.Mul(l, r);
-                    } else if (n.isA(SqlKind.DIVIDE)) {
-                        return new MathExpr.Div(l, r);
-                    } else if (n.isA(SqlKind.MOD)) {
-                        return new MathExpr.Mod(l, r);
-                    } else {
-                        throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
-                    }
+            } else if (n.operands.size() == 2) {
+                var l = createPhysicalExpr(n.operands.get(0));
+                var r = createPhysicalExpr(n.operands.get(1));
+                if (n.isA(SqlKind.PLUS)) {
+                    return new MathExpr.Add(l, r);
+                } else if (n.isA(SqlKind.MINUS)) {
+                    return new MathExpr.Sub(l, r);
+                } else if (n.isA(SqlKind.TIMES)) {
+                    return new MathExpr.Mul(l, r);
+                } else if (n.isA(SqlKind.DIVIDE)) {
+                    return new MathExpr.Div(l, r);
+                } else if (n.isA(SqlKind.MOD)) {
+                    return new MathExpr.Mod(l, r);
                 } else {
-                    throw new IllegalStateException("RexCall 没有操作表达式");
+                    throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
                 }
+            } else {
+                throw new IllegalStateException("RexCall 没有操作表达式");
             }
-            case RexInputRef n -> {
-                return new ColumnExpr(n.getIndex());
-            }
-            case null, default -> {
-                throw new UnsupportedOperationException("RexNode " + node.getClass().getName() + " is not supported");
-            }
-        }
+        } else if (node instanceof RexInputRef n) {
+            return new ColumnExpr(n.getIndex());
+        } else throw new UnsupportedOperationException("RexNode " + node.getClass().getName() + " is not supported");
     }
 
     public PhysicalPlan createPhysicalPlan(RelNode node) {
-        switch (node) {
-            case LogicalTableScan n -> {
-                var table = n.getTable();
-                ArrowTable arrowTable = table.unwrap(ArrowTable.class);
-                return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.empty());
-            }
-            case Bindables.BindableTableScan n -> {
-                var table = n.getTable();
-                var rowType = table.getRowType();
-                var project = Iterables.toArray(n.projects.stream().map(i -> rowType.getFieldNames().get(i)).toList(), String.class);
-                ArrowTable arrowTable = table.unwrap(ArrowTable.class);
-                return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.of(project));
-            }
-            case LogicalProject n -> {
-                return new PhysicalProject(createPhysicalPlan(n.getInput()), n.getProjects().stream().map(this::createPhysicalExpr).toList());
-            }
-            case LogicalSort n -> {
-                var offset = n.offset == null ? 0 : ((RexLiteral) n.offset).getValueAs(Integer.class);
-                var fetch = n.fetch == null ? 0 : ((RexLiteral) n.fetch).getValueAs(Integer.class);
-                return new PhysicalSort(createPhysicalPlan(n.getInput()), offset, fetch);
-            }
-            case null, default ->
-                    throw new UnsupportedOperationException("RelNode " + node.getRelTypeName() + " is not supported");
-        }
+        if(node instanceof LogicalTableScan n) {
+            var table = n.getTable();
+            ArrowTable arrowTable = table.unwrap(ArrowTable.class);
+            return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.empty());
+        } else if (node instanceof Bindables.BindableTableScan n) {
+            var table = n.getTable();
+            var rowType = table.getRowType();
+            var project = Iterables.toArray(n.projects.stream().map(i -> rowType.getFieldNames().get(i)).toList(), String.class);
+            ArrowTable arrowTable = table.unwrap(ArrowTable.class);
+            return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.of(project));
+        } else if (node instanceof LogicalProject n) {
+            return new PhysicalProject(createPhysicalPlan(n.getInput()), n.getProjects().stream().map(this::createPhysicalExpr).toList());
+        } else if (node instanceof LogicalSort n) {
+            var offset = n.offset == null ? 0 : ((RexLiteral) n.offset).getValueAs(Integer.class);
+            var fetch = n.fetch == null ? 0 : ((RexLiteral) n.fetch).getValueAs(Integer.class);
+            return new PhysicalSort(createPhysicalPlan(n.getInput()), offset, fetch);
+        } else throw new UnsupportedOperationException("RelNode " + node.getRelTypeName() + " is not supported");
     }
 }
