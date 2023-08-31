@@ -1,13 +1,17 @@
 package com.umbrella.physical.arrow;
 
 import com.google.common.base.Strings;
-
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.javatuples.Pair;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -29,10 +33,6 @@ public final class FieldVectorUtils {
             case BIT -> new BitVector(name, allocator);
             default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
         };
-    }
-
-    public static DecimalVector of(String name, BigDecimal value, BufferAllocator allocator) {
-        return new DecimalVector(name, allocator, value.precision(), value.scale());
     }
 
     public static FieldVector of(Field field, Types.MinorType type, BufferAllocator allocator) {
@@ -99,5 +99,32 @@ public final class FieldVectorUtils {
         } else if (vector instanceof BitVector v && BIT == type) {
             v.set(index, (boolean) value ? 1 : 0);
         } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
+    }
+
+    public static Number cast(Number value, Types.MinorType type, int scale) {
+        checkNotNull(value, "value is null");
+        checkNotNull(type, "type is null");
+        if(type == INT) {
+            return value.intValue();
+        } else if (type == BIGINT) {
+            return value.longValue();
+        } else if (type == FLOAT4) {
+            return value.floatValue();
+        } else if (type == FLOAT8) {
+            return value.doubleValue();
+        } else if (type == DECIMAL) {
+            checkState(scale >= 0, "scale must >= 0");
+            return NumberUtils.toScaledBigDecimal(value.floatValue(), scale, MathContext.DECIMAL32.getRoundingMode());
+        } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
+    }
+
+    public static Pair<Integer, Integer> compareTo(ArrowType a, ArrowType b) {
+        if(a instanceof ArrowType.Decimal ad && b instanceof ArrowType.Decimal bd) {
+            if(ad.getScale() == bd.getScale() && ad.getPrecision() == bd.getPrecision()) return null;
+            return Pair.with(
+                    Math.max(ad.getPrecision(), bd.getPrecision()),
+                    Math.max(ad.getScale(), bd.getScale())
+            );
+        } else return null;
     }
 }

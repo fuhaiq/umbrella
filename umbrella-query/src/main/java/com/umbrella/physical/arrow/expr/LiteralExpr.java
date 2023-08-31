@@ -3,6 +3,7 @@ package com.umbrella.physical.arrow.expr;
 import com.umbrella.physical.arrow.ExecutionContext;
 import com.umbrella.physical.arrow.FieldVectorUtils;
 import com.umbrella.physical.arrow.VectorBatch;
+import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.types.Types;
 
@@ -24,7 +25,7 @@ public class LiteralExpr<T> implements PhysicalExpr {
     public FieldVector evaluate(VectorBatch tabular) {
         FieldVector vector;
         if(type == DECIMAL && value instanceof BigDecimal n) {
-            vector = FieldVectorUtils.of(value.toString(), n, ExecutionContext.instance().allocator());
+            vector = new DecimalVector(value.toString(), ExecutionContext.instance().allocator(), n.precision(), n.scale());
         } else {
             vector = FieldVectorUtils.of(value.toString(), type, ExecutionContext.instance().allocator());
         }

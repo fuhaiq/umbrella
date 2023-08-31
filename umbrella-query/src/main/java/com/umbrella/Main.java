@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) throws SqlParseException {
 
         var sql = """
-                select s_acctbal+0.02 from supplier limit 10
+                select s_nationkey,s_nationkey/0.01 from supplier limit 10
                 """;
 
         //[s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal, s_comment]
