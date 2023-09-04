@@ -86,29 +86,29 @@ public abstract class MathExpr extends BinaryExpr {
                 if(rType == BIGINT) return lValue - r.longValue();
                 if(rType == FLOAT4) return lValue - r.floatValue();
                 if(rType == FLOAT8) return lValue - r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Sub expression");
             } else if (lType == BIGINT) {
                 var lValue = l.longValue();
                 if(rType == INT) return lValue - r.intValue();
                 if(rType == BIGINT) return lValue - r.longValue();
                 if(rType == FLOAT4) return lValue - r.floatValue();
                 if(rType == FLOAT8) return lValue - r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Sub expression");
             } else if (lType == FLOAT4) {
                 var lValue = l.floatValue();
                 if(rType == INT) return lValue - r.intValue();
                 if(rType == BIGINT) return lValue - r.longValue();
                 if(rType == FLOAT4) return lValue - r.floatValue();
                 if(rType == FLOAT8) return lValue - r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Sub expression");
             } else if (lType == FLOAT8) {
                 var lValue = l.doubleValue();
                 if(rType == INT) return lValue - r.intValue();
                 if(rType == BIGINT) return lValue - r.longValue();
                 if(rType == FLOAT4) return lValue - r.floatValue();
                 if(rType == FLOAT8) return lValue - r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
-            } else throw new UnsupportedOperationException("Type "+ lType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Sub expression");
+            } else throw new UnsupportedOperationException("Type "+ lType +" is not supported in Sub expression");
         }
 
         @Override
@@ -133,29 +133,29 @@ public abstract class MathExpr extends BinaryExpr {
                 if(rType == BIGINT) return lValue * r.longValue();
                 if(rType == FLOAT4) return lValue * r.floatValue();
                 if(rType == FLOAT8) return lValue * r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Mul expression");
             } else if (lType == BIGINT) {
                 var lValue = l.longValue();
                 if(rType == INT) return lValue * r.intValue();
                 if(rType == BIGINT) return lValue * r.longValue();
                 if(rType == FLOAT4) return lValue * r.floatValue();
                 if(rType == FLOAT8) return lValue * r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Mul expression");
             } else if (lType == FLOAT4) {
                 var lValue = l.floatValue();
                 if(rType == INT) return lValue * r.intValue();
                 if(rType == BIGINT) return lValue * r.longValue();
                 if(rType == FLOAT4) return lValue * r.floatValue();
                 if(rType == FLOAT8) return lValue * r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Mul expression");
             } else if (lType == FLOAT8) {
                 var lValue = l.doubleValue();
                 if(rType == INT) return lValue * r.intValue();
                 if(rType == BIGINT) return lValue * r.longValue();
                 if(rType == FLOAT4) return lValue * r.floatValue();
                 if(rType == FLOAT8) return lValue * r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
-            } else throw new UnsupportedOperationException("Type "+ lType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Mul expression");
+            } else throw new UnsupportedOperationException("Type "+ lType +" is not supported in Mul expression");
         }
 
         @Override
@@ -180,29 +180,29 @@ public abstract class MathExpr extends BinaryExpr {
                 if(rType == BIGINT) return lValue / r.longValue();
                 if(rType == FLOAT4) return lValue / r.floatValue();
                 if(rType == FLOAT8) return lValue / r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Div expression");
             } else if (lType == BIGINT) {
                 var lValue = l.longValue();
                 if(rType == INT) return lValue / r.intValue();
                 if(rType == BIGINT) return lValue / r.longValue();
                 if(rType == FLOAT4) return lValue / r.floatValue();
                 if(rType == FLOAT8) return lValue / r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Div expression");
             } else if (lType == FLOAT4) {
                 var lValue = l.floatValue();
                 if(rType == INT) return lValue / r.intValue();
                 if(rType == BIGINT) return lValue / r.longValue();
                 if(rType == FLOAT4) return lValue / r.floatValue();
                 if(rType == FLOAT8) return lValue / r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Div expression");
             } else if (lType == FLOAT8) {
                 var lValue = l.doubleValue();
                 if(rType == INT) return lValue / r.intValue();
                 if(rType == BIGINT) return lValue / r.longValue();
                 if(rType == FLOAT4) return lValue / r.floatValue();
                 if(rType == FLOAT8) return lValue / r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
-            } else throw new UnsupportedOperationException("Type "+ lType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Div expression");
+            } else throw new UnsupportedOperationException("Type "+ lType +" is not supported in Div expression");
         }
 
         @Override
@@ -227,29 +227,29 @@ public abstract class MathExpr extends BinaryExpr {
                 if(rType == BIGINT) return lValue % r.longValue();
                 if(rType == FLOAT4) return lValue % r.floatValue();
                 if(rType == FLOAT8) return lValue % r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Mod expression");
             } else if (lType == BIGINT) {
                 var lValue = l.longValue();
                 if(rType == INT) return lValue % r.intValue();
                 if(rType == BIGINT) return lValue % r.longValue();
                 if(rType == FLOAT4) return lValue % r.floatValue();
                 if(rType == FLOAT8) return lValue % r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Mod expression");
             } else if (lType == FLOAT4) {
                 var lValue = l.floatValue();
                 if(rType == INT) return lValue % r.intValue();
                 if(rType == BIGINT) return lValue % r.longValue();
                 if(rType == FLOAT4) return lValue % r.floatValue();
                 if(rType == FLOAT8) return lValue % r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Mod expression");
             } else if (lType == FLOAT8) {
                 var lValue = l.doubleValue();
                 if(rType == INT) return lValue % r.intValue();
                 if(rType == BIGINT) return lValue % r.longValue();
                 if(rType == FLOAT4) return lValue % r.floatValue();
                 if(rType == FLOAT8) return lValue % r.doubleValue();
-                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Add expression");
-            } else throw new UnsupportedOperationException("Type "+ lType +" is not supported in Add expression");
+                else throw new UnsupportedOperationException("Type "+ rType +" is not supported in Mod expression");
+            } else throw new UnsupportedOperationException("Type "+ lType +" is not supported in Mod expression");
         }
     }
 }

@@ -1,16 +1,14 @@
 package com.umbrella.physical.arrow;
 
 import com.google.common.collect.Iterables;
-import com.umbrella.physical.arrow.expr.ColumnExpr;
-import com.umbrella.physical.arrow.expr.LiteralExpr;
-import com.umbrella.physical.arrow.expr.MathExpr;
-import com.umbrella.physical.arrow.expr.PhysicalExpr;
+import com.umbrella.physical.arrow.expr.*;
 import com.umbrella.physical.arrow.plan.PhysicalPlan;
 import com.umbrella.physical.arrow.plan.PhysicalProject;
 import com.umbrella.physical.arrow.plan.PhysicalSort;
 import com.umbrella.physical.arrow.plan.PhysicalTableScan;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.types.Types;
 import org.apache.calcite.adapter.arrow.ArrowTable;
 import org.apache.calcite.interpreter.Bindables;
 import org.apache.calcite.rel.RelNode;
@@ -24,7 +22,6 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -77,7 +74,23 @@ public final class ExecutionContext {
             if(n.operands.size() == 1) {
                 var op = createPhysicalExpr(n.operands.get(0));
                 if (n.isA(SqlKind.CAST)) {
-                    return null;
+                    Types.MinorType type;
+                    if(n.getType().toString().equals(SqlTypeName.INTEGER.getName())) {
+                        type = Types.MinorType.INT;
+                    } else if (n.getType().toString().equals(SqlTypeName.BIGINT.getName())) {
+                        type = Types.MinorType.BIGINT;
+                    } else if (n.getType().toString().equals(SqlTypeName.FLOAT.getName())) {
+                        type = Types.MinorType.FLOAT4;
+                    } else if (n.getType().toString().equals(SqlTypeName.DOUBLE.getName())) {
+                        type = Types.MinorType.FLOAT8;
+                    } else if (n.getType().toString().equals(SqlTypeName.BOOLEAN.getName())) {
+                        type = Types.MinorType.BIT;
+                    } else if (n.getType().toString().equals(SqlTypeName.VARCHAR.getName())) {
+                        type = Types.MinorType.VARCHAR;
+                    } else {
+                        throw new UnsupportedOperationException("SqlType " + n.getType().toString() + " is not supported");
+                    }
+                    return new CastExpr(op, type);
                 } else {
                     throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
                 }

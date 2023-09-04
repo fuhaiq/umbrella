@@ -85,23 +85,4 @@ public final class FieldVectorUtils {
             v.set(index, i ? 1 : 0);
         } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
     }
-
-    public static void castAndSet(FieldVector vector, int index, Object value) {
-        checkNotNull(vector, "vector is null");
-        checkNotNull(value, "value is null");
-        var type = vector.getMinorType();
-        if(vector instanceof IntVector v && INT == type) {
-            v.set(index, (int) value);
-        } else if (vector instanceof BigIntVector v && BIGINT == type) {
-            v.set(index, (long) value);
-        } else if (vector instanceof Float4Vector v && FLOAT4 == type) {
-            v.set(index, (float) value);
-        } else if (vector instanceof Float8Vector v && FLOAT8 == type) {
-            v.set(index, (double) value);
-        } else if (vector instanceof VarCharVector v && VARCHAR == type) {
-            v.set(index, ((String) value).getBytes(StandardCharsets.UTF_8));
-        } else if (vector instanceof BitVector v && BIT == type) {
-            v.set(index, (boolean) value ? 1 : 0);
-        } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
-    }
 }
