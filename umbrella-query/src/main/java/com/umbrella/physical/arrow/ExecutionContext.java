@@ -52,10 +52,6 @@ public final class ExecutionContext {
         return allocator;
     }
 
-    public void stop() {
-        allocator.close();
-    }
-
     private PhysicalExpr createPhysicalExpr(RexNode node) {
         if(node instanceof RexLiteral n) {
             if(n.getType().toString().equals(SqlTypeName.INTEGER.getName())) {
@@ -73,7 +69,7 @@ public final class ExecutionContext {
             } else if (n.getTypeName() == SqlTypeName.CHAR) {
                 return new LiteralExpr.String(n.getValueAs(String.class));
             } else if (n.getTypeName() == SqlTypeName.DECIMAL) {
-                return new LiteralExpr.Decimal(n.getValueAs(BigDecimal.class));
+                return new LiteralExpr.Float(n.getValueAs(Float.class));
             } else {
                 throw new UnsupportedOperationException("SqlType " + n.getType().toString() + " is not supported");
             }
@@ -127,5 +123,9 @@ public final class ExecutionContext {
             var fetch = n.fetch == null ? 0 : ((RexLiteral) n.fetch).getValueAs(Integer.class);
             return new PhysicalSort(createPhysicalPlan(n.getInput()), offset, fetch);
         } else throw new UnsupportedOperationException("RelNode " + node.getRelTypeName() + " is not supported");
+    }
+
+    public void close() {
+        allocator().close();
     }
 }

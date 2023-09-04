@@ -24,11 +24,7 @@ public class LiteralExpr<T> implements PhysicalExpr {
     @Override
     public FieldVector evaluate(VectorBatch tabular) {
         FieldVector vector;
-        if(type == DECIMAL && value instanceof BigDecimal n) {
-            vector = new DecimalVector(value.toString(), ExecutionContext.instance().allocator(), n.precision(), n.scale());
-        } else {
-            vector = FieldVectorUtils.of(value.toString(), type, ExecutionContext.instance().allocator());
-        }
+        vector = FieldVectorUtils.of(value.toString(), type, ExecutionContext.instance().allocator());
         FieldVectorUtils.allocateNew(vector, tabular.rowCount);
         for (var i = 0; i < tabular.rowCount; i++) {
             FieldVectorUtils.set(vector, i, value);
@@ -109,19 +105,6 @@ public class LiteralExpr<T> implements PhysicalExpr {
         @Override
         public java.lang.String toString() {
             return "String{" +
-                    "value=" + value +
-                    '}';
-        }
-    }
-
-    public static class Decimal extends LiteralExpr<BigDecimal> {
-        public Decimal(BigDecimal value) {
-            super(value, DECIMAL);
-        }
-
-        @Override
-        public java.lang.String toString() {
-            return "Decimal{" +
                     "value=" + value +
                     '}';
         }

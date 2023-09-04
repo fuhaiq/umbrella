@@ -10,7 +10,7 @@ public record ColumnExpr(int i) implements PhysicalExpr {
     @Override
     public FieldVector evaluate(VectorBatch tabular) {
         var vector = tabular.getVector(i);
-        var ret = FieldVectorUtils.of(vector.getField(), vector.getMinorType(), ExecutionContext.instance().allocator());
+        var ret = FieldVectorUtils.of(vector.getField(), ExecutionContext.instance().allocator());
         FieldVectorUtils.allocateNew(ret, vector.getValueCount());
         VectorBatchAppender.batchAppend(ret, vector);
         return ret;

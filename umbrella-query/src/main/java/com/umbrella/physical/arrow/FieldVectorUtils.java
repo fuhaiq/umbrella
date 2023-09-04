@@ -6,6 +6,7 @@ import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
 
@@ -35,20 +36,25 @@ public final class FieldVectorUtils {
         };
     }
 
-    public static FieldVector of(Field field, Types.MinorType type, BufferAllocator allocator) {
-        checkNotNull(field, "Field is null");
-        checkNotNull(type, "Type is null");
+    public static FieldVector of(String name, FieldType fieldType, BufferAllocator allocator) {
+        checkState(!Strings.isNullOrEmpty(name), "Name is null or empty");
+        checkNotNull(fieldType, "FieldType is null");
         checkNotNull(allocator, "Allocator is null");
-        return switch (type) {
-            case INT ->  new IntVector(field, allocator);
-            case BIGINT -> new BigIntVector(field, allocator);
-            case FLOAT4 -> new Float4Vector(field, allocator);
-            case FLOAT8 -> new Float8Vector(field, allocator);
-            case VARCHAR -> new VarCharVector(field, allocator);
-            case BIT -> new BitVector(field, allocator);
-            case DECIMAL -> new DecimalVector(field, allocator);
-            default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
-        };
+        var field = Field.nullable(name, fieldType.getType());
+        return of(field, allocator);
+    }
+
+    public static FieldVector of(Field field, BufferAllocator allocator) {
+        checkNotNull(field, "Field is null");
+        checkNotNull(allocator, "Allocator is null");
+        var type = field.getFieldType().getType();
+        if(type.equals(INT.getType())) return new IntVector(field, allocator);
+        else if (type.equals(BIGINT.getType())) return new BigIntVector(field, allocator);
+        else if (type.equals(FLOAT4.getType())) return new Float4Vector(field, allocator);
+        else if (type.equals(FLOAT8.getType())) return new Float8Vector(field, allocator);
+        else if (type.equals(VARCHAR.getType())) return new VarCharVector(field, allocator);
+        else if (type.equals(BIT.getType())) return new BitVector(field, allocator);
+        else throw new UnsupportedOperationException("Type "+ type +" is not supported.");
     }
 
     public static void allocateNew(FieldVector vector, int valueCount) {
@@ -77,8 +83,6 @@ public final class FieldVectorUtils {
             v.set(index, i.getBytes(StandardCharsets.UTF_8));
         } else if (vector instanceof BitVector v && BIT == type && value instanceof Boolean i) {
             v.set(index, i ? 1 : 0);
-        } else if (vector instanceof DecimalVector v && DECIMAL == type && value instanceof BigDecimal i) {
-            v.set(index, i);
         } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
     }
 
@@ -99,32 +103,5 @@ public final class FieldVectorUtils {
         } else if (vector instanceof BitVector v && BIT == type) {
             v.set(index, (boolean) value ? 1 : 0);
         } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
-    }
-
-    public static Number cast(Number value, Types.MinorType type, int scale) {
-        checkNotNull(value, "value is null");
-        checkNotNull(type, "type is null");
-        if(type == INT) {
-            return value.intValue();
-        } else if (type == BIGINT) {
-            return value.longValue();
-        } else if (type == FLOAT4) {
-            return value.floatValue();
-        } else if (type == FLOAT8) {
-            return value.doubleValue();
-        } else if (type == DECIMAL) {
-            checkState(scale >= 0, "scale must >= 0");
-            return NumberUtils.toScaledBigDecimal(value.floatValue(), scale, MathContext.DECIMAL32.getRoundingMode());
-        } else throw new UnsupportedOperationException("Type " + type + " is not supported.");
-    }
-
-    public static Pair<Integer, Integer> compareTo(ArrowType a, ArrowType b) {
-        if(a instanceof ArrowType.Decimal ad && b instanceof ArrowType.Decimal bd) {
-            if(ad.getScale() == bd.getScale() && ad.getPrecision() == bd.getPrecision()) return null;
-            return Pair.with(
-                    Math.max(ad.getPrecision(), bd.getPrecision()),
-                    Math.max(ad.getScale(), bd.getScale())
-            );
-        } else return null;
     }
 }

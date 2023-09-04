@@ -25,6 +25,10 @@ public abstract class BinaryExpr implements PhysicalExpr {
         + ll.getValueCount() + " != " + rr.getValueCount());
         var vector = evaluate(ll ,rr);
         vector.setValueCount(ll.getValueCount());
+        ll.clear();
+        ll.close();
+        rr.clear();
+        rr.close();
         return vector;
     }
 

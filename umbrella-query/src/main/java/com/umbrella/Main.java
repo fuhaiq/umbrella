@@ -2,36 +2,23 @@ package com.umbrella;
 
 import com.umbrella.logical.Optimizer;
 import com.umbrella.physical.arrow.ExecutionContext;
-import com.umbrella.physical.arrow.expr.PhysicalExpr;
-import com.umbrella.physical.arrow.plan.PhysicalTableScan;
-import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
-import org.apache.arrow.dataset.jni.NativeMemoryPool;
-import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.calcite.adapter.arrow.ArrowSchema;
 import org.apache.calcite.adapter.arrow.ArrowTable;
-import org.apache.arrow.dataset.file.FileFormat;
-import org.apache.calcite.jdbc.CalciteSchema;
-import org.apache.calcite.plan.hep.HepPlanner;
-import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.rel.rules.CoreRules;
-import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.apache.calcite.tools.*;
 
 import java.util.List;
-import java.util.Optional;
 
 public class Main {
     public static void main(String[] args) throws SqlParseException {
 
         var sql = """
-                select s_nationkey,s_nationkey/0.01 from supplier limit 10
+                select s_acctbal,s_suppkey,s_suppkey+s_acctbal from supplier limit 10
                 """;
 
         //[s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal, s_comment]
-        var fileName = "file:/Users/haiqing.fu/Downloads/part-00000-f789dcc2-3a14-4651-bbc2-ea8fbf76c829-c000.snappy.parquet";
+        var fileName = "file:/Users/haiqing.fu/Downloads/part-00000-6428eccd-bba8-4976-bceb-e45c2aafe709-c000.snappy.parquet";
 
         var schema = ArrowSchema.newBuilder("ods").addTable("supplier",
                 new ArrowTable(fileName,
@@ -60,12 +47,11 @@ public class Main {
         System.out.println(optimizerRelTree);
 
         var engine = ExecutionContext.instance();
-
         var physicalPlan = engine.createPhysicalPlan(optimizerRelTree);
         System.out.println(physicalPlan.explain());
-
         try(var ret = physicalPlan.execute()) {
             System.out.println(ret.contentToTSVString(optimizerRelTree.getRowType()));
         }
+        engine.close();
     }
 }
