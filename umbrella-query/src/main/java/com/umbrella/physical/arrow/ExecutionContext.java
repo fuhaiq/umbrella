@@ -2,16 +2,14 @@ package com.umbrella.physical.arrow;
 
 import com.google.common.collect.Iterables;
 import com.umbrella.physical.arrow.expr.*;
-import com.umbrella.physical.arrow.plan.PhysicalPlan;
-import com.umbrella.physical.arrow.plan.PhysicalProject;
-import com.umbrella.physical.arrow.plan.PhysicalSort;
-import com.umbrella.physical.arrow.plan.PhysicalTableScan;
+import com.umbrella.physical.arrow.plan.*;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.types.Types;
 import org.apache.calcite.adapter.arrow.ArrowTable;
 import org.apache.calcite.interpreter.Bindables;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalSort;
 import org.apache.calcite.rel.logical.LogicalTableScan;
@@ -107,6 +105,8 @@ public final class ExecutionContext {
                     return new MathExpr.Div(l, r);
                 } else if (n.isA(SqlKind.MOD)) {
                     return new MathExpr.Mod(l, r);
+                } else if (n.isA(SqlKind.GREATER_THAN_OR_EQUAL)) {
+                    return new BooleanExpr.Ge(l, r);
                 } else {
                     throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
                 }
@@ -134,7 +134,12 @@ public final class ExecutionContext {
         } else if (node instanceof LogicalSort n) {
             var offset = n.offset == null ? 0 : ((RexLiteral) n.offset).getValueAs(Integer.class);
             var fetch = n.fetch == null ? 0 : ((RexLiteral) n.fetch).getValueAs(Integer.class);
-            return new PhysicalSort(createPhysicalPlan(n.getInput()), offset, fetch);
+            var input = createPhysicalPlan(n.getInput());
+            return new PhysicalSort(input, offset, fetch);
+        } else if (node instanceof LogicalFilter n) {
+            var input = createPhysicalPlan(n.getInput());
+            var expr = createPhysicalExpr(n.getCondition());
+            return new PhysicalFilter(input, expr);
         } else throw new UnsupportedOperationException("RelNode " + node.getRelTypeName() + " is not supported");
     }
 

@@ -10,7 +10,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class PhysicalFilter extends AbstractPhysicalPlan {
     private final PhysicalExpr expr;
-    protected PhysicalFilter(PhysicalPlan input, PhysicalExpr expr) {
+    public PhysicalFilter(PhysicalPlan input, PhysicalExpr expr) {
         super(input);
         checkState((expr instanceof BooleanExpr), "Expr type "+ expr.getClass().getName() +" is not supported in PhysicalFilter");
         this.expr = expr;
@@ -21,11 +21,11 @@ public class PhysicalFilter extends AbstractPhysicalPlan {
         var retSize = 0;
         var bool = (BitVector) expr.evaluate(input);
         checkState(bool.getValueCount() == input.rowCount, "数据条数不一致");
-        var fieldsSize = input.rowCount;
-        for (var i = 0; i < input.rowCount; i++) {
+        var fieldsSize = input.columnCount;
+        for (var i = 0; i < input.columnCount; i++) {
             for(var index = 0; index < fieldsSize; index++) {
-                var f = input.getVector(index);
-                checkState(bool.getValueCount() == f.getValueCount(), "数据条数不一致");
+                var field = input.getVector(index);
+                checkState(bool.getValueCount() == field.getValueCount(), "数据条数不一致");
             }
             retSize += bool.get(i);
         }

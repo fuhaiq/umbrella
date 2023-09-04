@@ -14,7 +14,10 @@ public class Main {
     public static void main(String[] args) throws SqlParseException {
 
         var sql = """
-                select s_acctbal,cast(s_acctbal+0.1 as int) from supplier limit 10
+                select s_acctbal
+                from supplier
+                where s_suppkey >= 7
+                limit 10
                 """;
 
         //[s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal, s_comment]

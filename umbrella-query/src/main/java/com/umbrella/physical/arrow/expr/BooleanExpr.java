@@ -4,114 +4,112 @@ import com.umbrella.physical.arrow.ExecutionContext;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.FieldVector;
 
+import static com.google.common.base.Preconditions.checkState;
+import static org.apache.arrow.vector.types.Types.MinorType.*;
+import static org.apache.arrow.vector.types.Types.MinorType.FLOAT8;
+
 public abstract class BooleanExpr extends BinaryExpr {
     protected BooleanExpr(PhysicalExpr l, PhysicalExpr r) {
         super(l, r);
     }
     @Override
     protected FieldVector evaluate(FieldVector l, FieldVector r) {
+        checkState(l.getMinorType() == INT
+                || l.getMinorType() == BIGINT
+                || l.getMinorType() == FLOAT4
+                || l.getMinorType() == FLOAT8, l.getMinorType() + "is not supported in bool expression");
+        checkState(r.getMinorType() == INT
+                || r.getMinorType() == BIGINT
+                || r.getMinorType() == FLOAT4
+                || r.getMinorType() == FLOAT8, r.getMinorType() + "is not supported in bool expression");
         var vector = new BitVector(l.getName() + r.getName(), ExecutionContext.instance().allocator());
         vector.allocateNew(l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
-            if(l.getObject(index) instanceof Comparable lc && r.getObject(index) instanceof Comparable rc) {
-                vector.set(index, evaluate(lc, rc) ? 1 : 0);
-            } else {
-                throw new UnsupportedOperationException("Bool expression only supports Comparable");
-            }
+            var lValue = (Number) l.getObject(index);
+            var rValue = (Number) r.getObject(index);
+            vector.set(index, evaluate(lValue, rValue) ? 1 : 0);
         }
         return vector;
     }
-    protected abstract boolean evaluate(Comparable l, Comparable r);
+    protected abstract boolean evaluate(Number l, Number r);
 
     public static class And extends BooleanExpr {
-        protected And(PhysicalExpr l, PhysicalExpr r) {
+        public And(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
-        protected boolean evaluate(Comparable l, Comparable r) {
-            if(l instanceof Boolean ll && r instanceof Boolean rr) {
-                return ll && rr;
-            } else if (l instanceof Number ll && r instanceof Number rr) {
-                return ll.intValue() == 1 && rr.intValue() == 1;
-            } else {
-                throw new UnsupportedOperationException("Type "+ l.getClass().getName() +" is not supported in And expression");
-            }
+        protected boolean evaluate(Number l, Number r) {
+            return l.intValue() == 1 && r.intValue() == 1;
         }
     }
 
     public static class Or extends BooleanExpr {
-        protected Or(PhysicalExpr l, PhysicalExpr r) {
+        public Or(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
-        protected boolean evaluate(Comparable l, Comparable r) {
-            if(l instanceof Boolean ll && r instanceof Boolean rr) {
-                return ll || rr;
-            } else if (l instanceof Number ll && r instanceof Number rr) {
-                return ll.intValue() == 1 || rr.intValue() == 1;
-            } else {
-                throw new UnsupportedOperationException("Type "+ l.getClass().getName() +" is not supported in Or expression");
-            }
+        protected boolean evaluate(Number l, Number r) {
+            return l.intValue() == 1 || r.intValue() == 1;
         }
     }
 
     public static class Eq extends BooleanExpr {
-        protected Eq(PhysicalExpr l, PhysicalExpr r) {
+        public Eq(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
-        protected boolean evaluate(Comparable l, Comparable r) {
-            return l.compareTo(r) == 0;
+        protected boolean evaluate(Number l, Number r) {
+            return l.floatValue() == r.floatValue();
         }
     }
 
     public static class Neq extends BooleanExpr {
-        protected Neq(PhysicalExpr l, PhysicalExpr r) {
+        public Neq(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
-        protected boolean evaluate(Comparable l, Comparable r) {
-            return l.compareTo(r) != 0;
+        protected boolean evaluate(Number l, Number r) {
+            return l.floatValue() != r.floatValue();
         }
     }
 
     public static class Gt extends BooleanExpr {
-        protected Gt(PhysicalExpr l, PhysicalExpr r) {
+        public Gt(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
-        protected boolean evaluate(Comparable l, Comparable r) {
-            return l.compareTo(r) > 0;
+        protected boolean evaluate(Number l, Number r) {
+            return l.floatValue() > r.floatValue();
         }
     }
 
     public static class Ge extends BooleanExpr {
-        protected Ge(PhysicalExpr l, PhysicalExpr r) {
+        public Ge(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
-        protected boolean evaluate(Comparable l, Comparable r) {
-            return l.compareTo(r) >= 0;
+        protected boolean evaluate(Number l, Number r) {
+            return l.floatValue() >= r.floatValue();
         }
     }
 
     public static class Lt extends BooleanExpr {
-        protected Lt(PhysicalExpr l, PhysicalExpr r) {
+        public Lt(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
-        protected boolean evaluate(Comparable l, Comparable r) {
-            return l.compareTo(r) < 0;
+        protected boolean evaluate(Number l, Number r) {
+            return l.floatValue() < r.floatValue();
         }
     }
 
     public static class Le extends BooleanExpr {
-        protected Le(PhysicalExpr l, PhysicalExpr r) {
+        public Le(PhysicalExpr l, PhysicalExpr r) {
             super(l, r);
         }
         @Override
-        protected boolean evaluate(Comparable l, Comparable r) {
-            return l.compareTo(r) <= 0;
+        protected boolean evaluate(Number l, Number r) {
+            return l.floatValue() <= r.floatValue();
         }
     }
 }
