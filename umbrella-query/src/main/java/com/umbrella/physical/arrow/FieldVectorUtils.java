@@ -79,8 +79,8 @@ public final class FieldVectorUtils {
             v.set(index, i);
         } else if (vector instanceof Float8Vector v && FLOAT8 == type && value instanceof Double i) {
             v.set(index, i);
-        } else if (vector instanceof VarCharVector v && VARCHAR == type && value instanceof String i) {
-            v.set(index, i.getBytes(StandardCharsets.UTF_8));
+        } else if (vector instanceof VarCharVector v && VARCHAR == type) {
+            v.setSafe(index, value.toString().getBytes(StandardCharsets.UTF_8));
         } else if (vector instanceof BitVector v && BIT == type && value instanceof Boolean i) {
             v.set(index, i ? 1 : 0);
         } else throw new UnsupportedOperationException("Type " + type + " is not supported.");

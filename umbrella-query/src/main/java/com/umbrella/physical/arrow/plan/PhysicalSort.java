@@ -15,6 +15,7 @@ public class PhysicalSort extends AbstractPhysicalPlan {
 
     @Override
     protected VectorBatch execute(VectorBatch input) {
+        if(offset + fetch > input.rowCount) return input.slice(0, input.rowCount);
         return input.slice(offset, fetch);
     }
 

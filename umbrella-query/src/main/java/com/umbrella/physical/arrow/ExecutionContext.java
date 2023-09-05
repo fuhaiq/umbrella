@@ -105,8 +105,22 @@ public final class ExecutionContext {
                     return new MathExpr.Div(l, r);
                 } else if (n.isA(SqlKind.MOD)) {
                     return new MathExpr.Mod(l, r);
+                } else if (n.isA(SqlKind.AND)) {
+                    return new BooleanExpr.And(l, r);
+                } else if (n.isA(SqlKind.OR)) {
+                    return new BooleanExpr.Or(l, r);
                 } else if (n.isA(SqlKind.GREATER_THAN_OR_EQUAL)) {
                     return new BooleanExpr.Ge(l, r);
+                } else if (n.isA(SqlKind.GREATER_THAN)) {
+                    return new BooleanExpr.Gt(l, r);
+                } else if (n.isA(SqlKind.LESS_THAN_OR_EQUAL)) {
+                    return new BooleanExpr.Le(l, r);
+                } else if (n.isA(SqlKind.LESS_THAN)) {
+                    return new BooleanExpr.Lt(l, r);
+                } else if (n.isA(SqlKind.EQUALS)) {
+                    return new BooleanExpr.Eq(l, r);
+                } else if (n.isA(SqlKind.NOT_EQUALS)) {
+                    return new BooleanExpr.Neq(l, r);
                 } else {
                     throw new UnsupportedOperationException("RexCall " + n.getKind() + " is not supported");
                 }
@@ -122,13 +136,13 @@ public final class ExecutionContext {
         if(node instanceof LogicalTableScan n) {
             var table = n.getTable();
             ArrowTable arrowTable = table.unwrap(ArrowTable.class);
-            return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.empty());
+            return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.empty(), Optional.empty());
         } else if (node instanceof Bindables.BindableTableScan n) {
             var table = n.getTable();
             var rowType = table.getRowType();
             var project = Iterables.toArray(n.projects.stream().map(i -> rowType.getFieldNames().get(i)).toList(), String.class);
             ArrowTable arrowTable = table.unwrap(ArrowTable.class);
-            return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.of(project));
+            return new PhysicalTableScan(arrowTable.getUri(), arrowTable.getFormat(), Optional.of(project), Optional.empty());
         } else if (node instanceof LogicalProject n) {
             return new PhysicalProject(createPhysicalPlan(n.getInput()), n.getProjects().stream().map(this::createPhysicalExpr).toList());
         } else if (node instanceof LogicalSort n) {

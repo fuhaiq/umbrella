@@ -8,12 +8,14 @@ import org.apache.arrow.dataset.jni.NativeMemoryPool;
 import org.apache.arrow.dataset.scanner.ScanOptions;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.util.VectorSchemaRootAppender;
+import org.apache.calcite.rex.RexNode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
 
-public record PhysicalTableScan(String uri, FileFormat format, Optional<String[]> projection) implements PhysicalPlan{
+//TODO implements FILTER_SCAN
+public record PhysicalTableScan(String uri, FileFormat format, Optional<String[]> projection, Optional<RexNode[]> filters) implements PhysicalPlan{
 
     @Override
     public List<PhysicalPlan> getInputs() {
@@ -49,9 +51,11 @@ public record PhysicalTableScan(String uri, FileFormat format, Optional<String[]
     @Override
     public String toString() {
         String project = projection.map(strings -> "[" + StringUtils.join(strings, ",") + "]").orElse("NONE");
+        String filter = filters.map(strings -> "[" + StringUtils.join(strings, ",") + "]").orElse("NONE");
         return "PhysicalTableScan{" +
                 "uri='" + uri + '\'' +
                 ", projection=" + project +
+                ", filter=" + filter +
                 '}';
     }
 }

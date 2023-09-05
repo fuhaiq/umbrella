@@ -14,9 +14,10 @@ public class Main {
     public static void main(String[] args) throws SqlParseException {
 
         var sql = """
-                select s_acctbal
+                select s_suppkey,s_acctbal+0.002
                 from supplier
-                where s_suppkey >= 7
+                where s_acctbal = 9915.24 and s_suppkey <> 762414
+                order by s_name desc, s_acctbal asc, s_suppkey desc
                 limit 10
                 """;
 
@@ -29,7 +30,7 @@ public class Main {
 
         var optimizer = Optimizer.create(schema, List.of(
                 CoreRules.PROJECT_TABLE_SCAN
-//                CoreRules.PROJECT_CALC_MERGE
+//                CoreRules.FILTER_SCAN
         ));
         // 1. SQL parse: SQL string --> SqlNode
         var sqlNode = optimizer.parse(sql);
