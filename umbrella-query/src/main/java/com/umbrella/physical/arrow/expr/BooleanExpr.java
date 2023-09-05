@@ -3,6 +3,7 @@ package com.umbrella.physical.arrow.expr;
 import com.umbrella.physical.arrow.ExecutionContext;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.util.Text;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.apache.arrow.vector.types.Types.MinorType.*;
@@ -17,12 +18,14 @@ public abstract class BooleanExpr extends BinaryExpr {
                 || l.getMinorType() == BIGINT
                 || l.getMinorType() == FLOAT4
                 || l.getMinorType() == FLOAT8
-                || l.getMinorType() == BIT, l.getMinorType() + " is not supported in bool expression");
+                || l.getMinorType() == BIT
+                || l.getMinorType() == VARCHAR, l.getMinorType() + " is not supported in bool expression");
         checkState(r.getMinorType() == INT
                 || r.getMinorType() == BIGINT
                 || r.getMinorType() == FLOAT4
                 || r.getMinorType() == FLOAT8
-                || r.getMinorType() == BIT, r.getMinorType() + " is not supported in bool expression");
+                || r.getMinorType() == BIT
+                || r.getMinorType() == VARCHAR, r.getMinorType() + " is not supported in bool expression");
         var vector = new BitVector(l.getName() + r.getName(), ExecutionContext.instance().allocator());
         vector.allocateNew(l.getValueCount());
         for (var index = 0; index < l.getValueCount(); index++) {
@@ -30,6 +33,10 @@ public abstract class BooleanExpr extends BinaryExpr {
                 var lValue = (Boolean) l.getObject(index);
                 var rValue = (Boolean) r.getObject(index);
                 vector.set(index, evaluate(lValue, rValue) ? 1 : 0);
+            } else if (l.getMinorType() == VARCHAR && r.getMinorType() == VARCHAR) {
+                var lValue = (Text) l.getObject(index);
+                var rValue = (Text) r.getObject(index);
+                vector.set(index, evaluate(lValue.toString(), rValue.toString()) ? 1 : 0);
             } else {
                 var lValue = (Number) l.getObject(index);
                 var rValue = (Number) r.getObject(index);
@@ -41,6 +48,8 @@ public abstract class BooleanExpr extends BinaryExpr {
     protected abstract boolean evaluate(Number l, Number r);
 
     protected abstract boolean evaluate(Boolean l, Boolean r);
+
+    protected abstract boolean evaluate(String l, String r);
 
     public static class And extends BooleanExpr {
         public And(PhysicalExpr l, PhysicalExpr r) {
@@ -54,6 +63,11 @@ public abstract class BooleanExpr extends BinaryExpr {
         @Override
         protected boolean evaluate(Boolean l, Boolean r) {
             return l && r;
+        }
+
+        @Override
+        protected boolean evaluate(String l, String r) {
+            throw new UnsupportedOperationException("And is not supported in Bool expression");
         }
 
         @Override
@@ -77,6 +91,11 @@ public abstract class BooleanExpr extends BinaryExpr {
         @Override
         protected boolean evaluate(Boolean l, Boolean r) {
             return l || r;
+        }
+
+        @Override
+        protected boolean evaluate(String l, String r) {
+            throw new UnsupportedOperationException("Or is not supported in Bool expression");
         }
 
         @Override
@@ -104,6 +123,11 @@ public abstract class BooleanExpr extends BinaryExpr {
         }
 
         @Override
+        protected boolean evaluate(String l, String r) {
+            return l.compareTo(r) == 0;
+        }
+
+        @Override
         public String toString() {
             return "Eq{" +
                     "l=" + l +
@@ -125,6 +149,11 @@ public abstract class BooleanExpr extends BinaryExpr {
         protected boolean evaluate(Boolean l, Boolean r) {
             if(l && r) return false;
             else return l || r;
+        }
+
+        @Override
+        protected boolean evaluate(String l, String r) {
+            return l.compareTo(r) != 0;
         }
 
         @Override
@@ -151,6 +180,11 @@ public abstract class BooleanExpr extends BinaryExpr {
         }
 
         @Override
+        protected boolean evaluate(String l, String r) {
+            return l.compareTo(r) > 0;
+        }
+
+        @Override
         public String toString() {
             return "Gt{" +
                     "l=" + l +
@@ -171,6 +205,11 @@ public abstract class BooleanExpr extends BinaryExpr {
         @Override
         protected boolean evaluate(Boolean l, Boolean r) {
             throw new UnsupportedOperationException("Ge is not supported in Bool expression");
+        }
+
+        @Override
+        protected boolean evaluate(String l, String r) {
+            return l.compareTo(r) >= 0;
         }
 
         @Override
@@ -197,6 +236,11 @@ public abstract class BooleanExpr extends BinaryExpr {
         }
 
         @Override
+        protected boolean evaluate(String l, String r) {
+            return l.compareTo(r) < 0;
+        }
+
+        @Override
         public String toString() {
             return "Lt{" +
                     "l=" + l +
@@ -217,6 +261,11 @@ public abstract class BooleanExpr extends BinaryExpr {
         @Override
         protected boolean evaluate(Boolean l, Boolean r) {
             throw new UnsupportedOperationException("Le is not supported in Bool expression");
+        }
+
+        @Override
+        protected boolean evaluate(String l, String r) {
+            return l.compareTo(r) <= 0;
         }
 
         @Override

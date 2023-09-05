@@ -18,18 +18,15 @@ public abstract class BinaryExpr implements PhysicalExpr {
 
     @Override
     public FieldVector evaluate(VectorBatch tabular) {
-        var ll = l.evaluate(tabular);
-        var rr = r.evaluate(tabular);
-        checkState(ll.getValueCount() == rr.getValueCount(),
-                "Binary expression operands do not have the same value count: "
-        + ll.getValueCount() + " != " + rr.getValueCount());
-        var vector = evaluate(ll ,rr);
-        vector.setValueCount(ll.getValueCount());
-        ll.clear();
-        ll.close();
-        rr.clear();
-        rr.close();
-        return vector;
+        try(var ll = l.evaluate(tabular);
+            var rr = r.evaluate(tabular)){
+            checkState(ll.getValueCount() == rr.getValueCount(),
+                    "Binary expression operands do not have the same value count: "
+                            + ll.getValueCount() + " != " + rr.getValueCount());
+            var vector = evaluate(ll ,rr);
+            vector.setValueCount(ll.getValueCount());
+            return vector;
+        }
     }
 
     protected abstract FieldVector evaluate(FieldVector l, FieldVector r);

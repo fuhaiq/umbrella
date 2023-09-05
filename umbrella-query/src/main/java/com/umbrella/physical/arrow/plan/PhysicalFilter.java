@@ -23,32 +23,31 @@ public class PhysicalFilter extends AbstractPhysicalPlan {
     @Override
     protected VectorBatch execute(VectorBatch input) {
         var retSize = 0;
-        var bool = (BitVector) expr.evaluate(input);
-        checkState(bool.getValueCount() == input.rowCount, "数据条数不一致");
-        for(var i = 0; i < bool.getValueCount(); i++) {
-            retSize += bool.get(i);
-        }
-
-        var list = new ArrayList<FieldVector>();
-        for(var i = 0; i < input.columnCount; i++) {
-            var vector = input.getVector(i);
-            checkState(bool.getValueCount() == vector.getValueCount(), "数据条数不一致");
-            var ret = FieldVectorUtils.of(vector.getField(), ExecutionContext.instance().allocator());
-            FieldVectorUtils.allocateNew(ret, retSize);
-            int index = 0;
-            for(var j = 0; j < vector.getValueCount(); j++) {
-                if(bool.get(j) == 1) {
-                    FieldVectorUtils.set(ret, index, vector.getObject(j));
-                    index++;
-                }
+        try(var bool = (BitVector) expr.evaluate(input)){
+            checkState(bool.getValueCount() == input.rowCount, "数据条数不一致");
+            for(var i = 0; i < bool.getValueCount(); i++) {
+                retSize += bool.get(i);
             }
-            checkState(index == retSize, "数据条数不一致");
-            ret.setValueCount(retSize);
-            list.add(ret);
+
+            var list = new ArrayList<FieldVector>();
+            for(var i = 0; i < input.columnCount; i++) {
+                var vector = input.getVector(i);
+                checkState(bool.getValueCount() == vector.getValueCount(), "数据条数不一致");
+                var ret = FieldVectorUtils.of(vector.getField(), ExecutionContext.instance().allocator());
+                FieldVectorUtils.allocateNew(ret, retSize);
+                int index = 0;
+                for(var j = 0; j < vector.getValueCount(); j++) {
+                    if(bool.get(j) == 1) {
+                        FieldVectorUtils.set(ret, index, vector.getObject(j));
+                        index++;
+                    }
+                }
+                checkState(index == retSize, "数据条数不一致");
+                ret.setValueCount(retSize);
+                list.add(ret);
+            }
+            return VectorBatch.of(list);
         }
-        bool.clear();
-        bool.close();
-        return VectorBatch.of(list);
     }
 
     @Override

@@ -174,6 +174,7 @@ public abstract class MathExpr extends BinaryExpr {
 
         @Override
         protected Number evaluate(Number l, Number r, Types.MinorType lType, Types.MinorType rType) {
+            if(r == null || r.floatValue() == 0) return 0;
             if(lType == INT) {
                 var lValue = l.intValue();
                 if(rType == INT) return lValue / r.intValue();

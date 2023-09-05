@@ -25,22 +25,7 @@ public final class FieldVectorUtils {
         checkState(!Strings.isNullOrEmpty(name), "name is null or empty");
         checkNotNull(type, "Type is null");
         checkNotNull(allocator, "Allocator is null");
-        return switch (type) {
-            case INT ->  new IntVector(name, allocator);
-            case BIGINT -> new BigIntVector(name, allocator);
-            case FLOAT4 -> new Float4Vector(name, allocator);
-            case FLOAT8 -> new Float8Vector(name, allocator);
-            case VARCHAR -> new VarCharVector(name, allocator);
-            case BIT -> new BitVector(name, allocator);
-            default -> throw new UnsupportedOperationException("Type "+ type +" is not supported.");
-        };
-    }
-
-    public static FieldVector of(String name, FieldType fieldType, BufferAllocator allocator) {
-        checkState(!Strings.isNullOrEmpty(name), "Name is null or empty");
-        checkNotNull(fieldType, "FieldType is null");
-        checkNotNull(allocator, "Allocator is null");
-        var field = Field.nullable(name, fieldType.getType());
+        var field = Field.nullable(name, type.getType());
         return of(field, allocator);
     }
 
@@ -71,14 +56,18 @@ public final class FieldVectorUtils {
         checkNotNull(vector, "vector is null");
         checkNotNull(value, "value is null");
         var type = vector.getMinorType();
-        if(vector instanceof IntVector v && INT == type && value instanceof Integer i) {
-            v.set(index, i);
-        } else if (vector instanceof BigIntVector v && BIGINT == type && value instanceof Long i) {
-            v.set(index, i);
-        } else if (vector instanceof Float4Vector v && FLOAT4 == type && value instanceof Float i) {
-            v.set(index, i);
-        } else if (vector instanceof Float8Vector v && FLOAT8 == type && value instanceof Double i) {
-            v.set(index, i);
+        if(vector instanceof IntVector v && INT == type) {
+            var i = (Number) value;
+            v.set(index, i.intValue());
+        } else if (vector instanceof BigIntVector v && BIGINT == type) {
+            var i = (Number) value;
+            v.set(index, i.longValue());
+        } else if (vector instanceof Float4Vector v && FLOAT4 == type) {
+            var i = (Number) value;
+            v.set(index, i.floatValue());
+        } else if (vector instanceof Float8Vector v && FLOAT8 == type) {
+            var i = (Number) value;
+            v.set(index, i.doubleValue());
         } else if (vector instanceof VarCharVector v && VARCHAR == type) {
             v.setSafe(index, value.toString().getBytes(StandardCharsets.UTF_8));
         } else if (vector instanceof BitVector v && BIT == type && value instanceof Boolean i) {

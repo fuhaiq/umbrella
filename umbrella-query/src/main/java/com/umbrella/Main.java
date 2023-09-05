@@ -14,10 +14,10 @@ public class Main {
     public static void main(String[] args) throws SqlParseException {
 
         var sql = """
-                select s_suppkey,s_acctbal+0.002
+                select s_name,s_suppkey*0.01,s_acctbal,s_acctbal+0.0001
                 from supplier
-                where s_acctbal = 9915.24 and s_suppkey <> 762414
-                order by s_name desc, s_acctbal asc, s_suppkey desc
+                where s_acctbal = 9915.24 or s_name = 'Supplier#000000049'
+                --order by s_name desc, s_acctbal asc, s_suppkey desc
                 limit 10
                 """;
 
