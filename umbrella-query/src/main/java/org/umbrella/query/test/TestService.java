@@ -11,9 +11,12 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.umbrella.query.QueryEngine;
 import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Optional;
 
 import static org.jooq.impl.DSL.field;
@@ -30,13 +33,34 @@ public class TestService {
     @Resource(name = "mysql")
     private DSLContext mysql;
 
+    @Autowired
+    private QueryEngine engine;
+
     @PostConstruct
     public void test2() {
-        test();
-        test();
-        test();
-        test();
-        test();
+        try (var rs = engine.mysql.resultQuery("""
+                select * from user
+                """).fetchResultSet()) {
+            var ret = engine.execute("user",
+                    new ArrowJDBCReader(allocator, rs),
+                    ctx -> ctx.resultQuery("""
+                            select * from user
+                            """)).fetch();
+            System.out.println(ret.format());
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        var ret = engine.execute("customer",
+                new ArrowORCReader(allocator, "file:/Users/haiqing.fu/Downloads/parquet/customer.orc"),
+                ctx -> ctx.resultQuery("""
+                        select a.id,a.user_name,a.name,b.c_phone
+                        from a,b
+                        where a.id = b.c_custkey
+                        limit 100
+                        """).fetch());
+        System.out.println(ret.format());
     }
     public void test() {
         var q1 = mysql.select(field("id"), field("user_name"), field("name"))
@@ -103,7 +127,6 @@ public class TestService {
             });
 
         } catch (Throwable e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
