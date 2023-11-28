@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    duckdb:
+      driver-class-name: org.duckdb.DuckDBDriver
+      jdbc-url: 'jdbc:duckdb:'
+      pool-name: Hikari-DuckDB
+      minimum-idle: 5
+      idle-timeout: 600000
+      maximum-pool-size: 10
+      auto-commit: true
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+    mysql:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: 'jdbc:mysql://localhost:3306/linkerp'
+      username: root
+      password: jiao1983!
+      pool-name: Hikari-MySql
+      minimum-idle: 5
+      idle-timeout: 600000
+      maximum-pool-size: 10
+      auto-commit: true
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
