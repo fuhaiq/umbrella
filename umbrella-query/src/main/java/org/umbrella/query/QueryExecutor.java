@@ -1,5 +1,6 @@
 package org.umbrella.query;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.dataset.scanner.ScanOptions;
@@ -17,15 +18,10 @@ import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkState;
 
+@RequiredArgsConstructor
 public class QueryExecutor {
-
     private final String name;
     private final QueryEngine engine;
-
-    public QueryExecutor(String name, QueryEngine engine) {
-        this.name = name;
-        this.engine = engine;
-    }
 
     public <T> T orc(String name, Function<DSLContext, T> func) {
         return arrow(new ArrowORCReader(engine.allocator, name), func);

@@ -1,19 +1,25 @@
 package org.umbrella.query;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import lombok.RequiredArgsConstructor;
 import org.apache.arrow.memory.BufferAllocator;
 import org.jooq.DSLContext;
 
+import static com.google.common.base.Preconditions.checkState;
+
+@RequiredArgsConstructor
 public class QueryEngine {
-    public final DSLContext mysql;
+    private final ImmutableMap<String, DSLContext> contexts;
     public final DSLContext duckdb;
     final BufferAllocator allocator;
-    public QueryEngine(DSLContext mysql, DSLContext duckdb, BufferAllocator allocator) {
-        this.mysql = mysql;
-        this.duckdb = duckdb;
-        this.allocator = allocator;
-    }
 
     public QueryExecutor with(String name) {
         return new QueryExecutor(name, this);
+    }
+
+    public DSLContext db(String key) {
+        checkState(contexts.containsKey(key), Strings.lenientFormat("没有 %s 数据库连接", key));
+        return contexts.get(key);
     }
 }

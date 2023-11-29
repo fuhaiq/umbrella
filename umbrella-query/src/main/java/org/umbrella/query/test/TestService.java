@@ -12,7 +12,7 @@ public class TestService {
     @Autowired
     private QueryEngine engine;
 
-    @PostConstruct
+
     /*
     `o_orderkey` bigint,
     `o_custkey` bigint,
@@ -33,7 +33,7 @@ public class TestService {
         System.out.println(ret.format());
     }
 
-
+    @PostConstruct
     /*
     c_custkey integer NOT NULL,
     c_name character varying(25) NOT NULL,
@@ -57,7 +57,7 @@ public class TestService {
 
 
     public void jdbc() {
-        var rs = engine.mysql.
+        var rs = engine.db("mysql").
                 select().from(DSL.table("linkerp_staff")).where("phone is not null and qq is not null and address is not null");
         var ret = engine.with("staff").jdbc(rs,
                 ctx -> ctx.resultQuery("""
@@ -66,5 +66,15 @@ public class TestService {
                         """).fetch()
         );
         System.out.println(ret.format());
+    }
+
+    public void transaction(){
+        engine.db("mysql").transaction(trx -> {
+            var ret = trx.dsl().insertInto(DSL.table("linkerp_city"))
+                    .set(DSL.field("province_id"), 800)
+                    .set(DSL.field("name"), "测试数据800").execute();
+            System.out.println(ret);
+            var xx = 1/0;
+        });
     }
 }

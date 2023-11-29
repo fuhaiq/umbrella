@@ -1,5 +1,6 @@
 package org.umbrella.query.config;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.jooq.DSLContext;
@@ -19,7 +20,9 @@ public class ArrowConfiguration {
     @Bean
     public QueryEngine engine(@Qualifier("mysql") DSLContext mysql, @Qualifier("duckdb") DSLContext duckdb,
                               BufferAllocator allocator) {
-        return new QueryEngine(mysql, duckdb, allocator);
+        return new QueryEngine(ImmutableMap.of(
+                "mysql", mysql
+        ), duckdb, allocator);
     }
 
 }

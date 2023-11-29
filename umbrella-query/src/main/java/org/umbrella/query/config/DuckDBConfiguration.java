@@ -33,33 +33,17 @@ public class DuckDBConfiguration {
         return new HikariDataSource(duckdb_hikariConfig);
     }
 
-    @Bean(name = "duckdb_ds_conn_provider")
-    public DataSourceConnectionProvider duckdb_ds_conn_provider(HikariDataSource duckdb_ds){
-        return new DataSourceConnectionProvider(new TransactionAwareDataSourceProxy(duckdb_ds));
-    }
-
-    @Bean(name = "duckdbTx")
-    public PlatformTransactionManager duckdbTx(HikariDataSource duckdb_ds) {
-        return new DataSourceTransactionManager(duckdb_ds);
-    }
-
-    @Bean(name = "duckdb_tx_provider")
-    public SpringTransactionProvider duckdb_tx_provider(PlatformTransactionManager duckdbTx) {
-        return new SpringTransactionProvider(duckdbTx);
-    }
-
     @Bean(name = "duckdb_listener_provider")
     public ExecuteListenerProvider duckdb_listener_provider() {
         return StopWatchListener::new;
     }
 
     @Bean(name = "duckdb_jooq_conf")
-    public DefaultConfiguration duckdb_jooq_conf(ConnectionProvider duckdb_ds_conn_provider, TransactionProvider duckdb_tx_provider,
+    public DefaultConfiguration duckdb_jooq_conf(HikariDataSource duckdb_ds,
              ObjectProvider<ExecuteListenerProvider> duckdb_listener_provider) {
         DefaultConfiguration configuration = new DefaultConfiguration();
         configuration.set(SQLDialect.DEFAULT);
-        configuration.set(duckdb_ds_conn_provider);
-        configuration.set(duckdb_tx_provider);
+        configuration.set(new DataSourceConnectionProvider(duckdb_ds));
         configuration.set(duckdb_listener_provider.orderedStream().toArray(ExecuteListenerProvider[]::new));
         return configuration;
     }
