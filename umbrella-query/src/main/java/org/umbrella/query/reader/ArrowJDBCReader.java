@@ -2,6 +2,7 @@ package org.umbrella.query.reader;
 
 import org.apache.arrow.adapter.jdbc.*;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.arrow.vector.types.pojo.Schema;
@@ -13,19 +14,24 @@ import java.sql.SQLException;
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class ArrowJDBCReader extends ArrowReader {
-    private final ArrowVectorIterator iterator;
+    private ArrowVectorIterator iterator;
     private final Schema schema;
-    public ArrowJDBCReader(BufferAllocator allocator, ResultSet resultSet) throws SQLException, IOException {
+    public ArrowJDBCReader(BufferAllocator allocator, ResultSet resultSet) {
         this(resultSet, new JdbcToArrowConfigBuilder(allocator, JdbcToArrowUtils.getUtcCalendar())
                 .setReuseVectorSchemaRoot(true)
                 .build());
     }
 
-    public ArrowJDBCReader(ResultSet resultSet, JdbcToArrowConfig config) throws SQLException, IOException {
+    public ArrowJDBCReader(ResultSet resultSet, JdbcToArrowConfig config) {
         super(config.getAllocator());
         checkArgument(config.isReuseVectorSchemaRoot(), "目前只支持 reuseVectorSchemaRoot = true");
-        this.iterator = JdbcToArrow.sqlToArrowVectorIterator(resultSet, config);
-        this.schema = JdbcToArrowUtils.jdbcToArrowSchema(resultSet.getMetaData(), config);
+        try {
+            this.iterator = JdbcToArrow.sqlToArrowVectorIterator(resultSet, config);
+            this.schema = JdbcToArrowUtils.jdbcToArrowSchema(resultSet.getMetaData(), config);
+        } catch (SQLException | IOException e) {
+            if(iterator != null) AutoCloseables.close(e, iterator);
+            throw new RuntimeException("创建 JDBC Arrow Reader 出错.", e);
+        }
     }
 
     @Override

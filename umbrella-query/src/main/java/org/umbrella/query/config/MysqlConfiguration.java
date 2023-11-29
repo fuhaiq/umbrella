@@ -48,10 +48,10 @@ public class MysqlConfiguration {
         return new SpringTransactionProvider(mysqlTx);
     }
 
-    @Bean(name = "mysql_listener_provider")
-    public ExecuteListenerProvider mysql_listener_provider() {
-        return StopWatchListener::new;
-    }
+//    @Bean(name = "mysql_listener_provider")
+//    public ExecuteListenerProvider mysql_listener_provider() {
+//        return StopWatchListener::new;
+//    }
 
     @Bean(name = "mysql_jooq_conf")
     public DefaultConfiguration mysql_jooq_conf(ConnectionProvider mysql_ds_conn_provider, TransactionProvider mysql_tx_provider,
