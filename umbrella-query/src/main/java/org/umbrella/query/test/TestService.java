@@ -1,6 +1,8 @@
 package org.umbrella.query.test;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
+import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -12,6 +14,8 @@ public class TestService {
     @Autowired
     private QueryEngine engine;
 
+    @Resource(name = "mysql")
+    private DSLContext mysql;
 
     /*
     `o_orderkey` bigint,
@@ -25,7 +29,7 @@ public class TestService {
     `o_comment` string
      */
     public void parquet() {
-        var ret = engine.duckdb.resultQuery("""
+        var ret = engine.duckdb().resultQuery("""
                 select o_orderkey,o_orderdate,o_clerk from '/Users/haiqing.fu/Downloads/parquet/result.orders.parquet' as orders
                 where orders.o_totalprice < 5000
                 order by orders.o_totalprice desc limit 100
@@ -45,7 +49,8 @@ public class TestService {
     c_comment character varying(117) NOT NULL
      */
     public void orc() {
-        var customer = engine.with("customer").orc("file:/Users/haiqing.fu/Downloads/parquet/customer.orc",
+        var customer = engine.orc("customer","file:/Users/haiqing.fu/Downloads/parquet/customer.orc",
+                new String[]{"c_custkey", "c_nationkey", "c_acctbal"},
                 ctx -> ctx.resultQuery("""
                         select c_custkey, c_nationkey, c_acctbal
                         from customer
@@ -57,9 +62,9 @@ public class TestService {
 
 
     public void jdbc() {
-        var rs = engine.db("mysql").
+        var rs = mysql.
                 select().from(DSL.table("linkerp_staff")).where("phone is not null and qq is not null and address is not null");
-        var ret = engine.with("staff").jdbc(rs,
+        var ret = engine.jdbc("staff",rs,
                 ctx -> ctx.resultQuery("""
                         select user_name,name,phone,qq,address
                         from staff
@@ -69,7 +74,7 @@ public class TestService {
     }
 
     public void transaction(){
-        engine.db("mysql").transaction(trx -> {
+        mysql.transaction(trx -> {
             var ret = trx.dsl().insertInto(DSL.table("linkerp_city"))
                     .set(DSL.field("province_id"), 800)
                     .set(DSL.field("name"), "测试数据800").execute();

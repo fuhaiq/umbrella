@@ -1,4 +1,4 @@
-package org.umbrella.query.reader;
+package org.umbrella.query.reader.avro;
 
 import org.apache.arrow.AvroToArrow;
 import org.apache.arrow.AvroToArrowConfig;
@@ -19,13 +19,18 @@ public class ArrowAvroReader extends ArrowReader  {
     private AvroToArrowVectorIterator iterator;
     private final org.apache.avro.Schema avroSchema;
     private final AvroToArrowConfig config;
+
     public ArrowAvroReader(BufferAllocator allocator, String file) {
+        this(allocator, file, new AvroToArrowConfigBuilder(allocator).build());
+    }
+
+    public ArrowAvroReader(BufferAllocator allocator, String file, AvroToArrowConfig config) {
         super(allocator);
-        config = new AvroToArrowConfigBuilder(allocator).build();
+        this.config = config;
         try {
             var decoder = new DecoderFactory().binaryDecoder(new FileInputStream(file), null);
             avroSchema = new org.apache.avro.Schema.Parser().parse(new File(file));
-            iterator = AvroToArrow.avroToArrowIterator(avroSchema, decoder, config);
+            iterator = AvroToArrow.avroToArrowIterator(avroSchema, decoder, this.config);
         } catch (IOException e) {
             if(iterator != null) AutoCloseables.close(e, iterator);
             throw new RuntimeException("创建 Arrow Avro Reader 出错.", e);

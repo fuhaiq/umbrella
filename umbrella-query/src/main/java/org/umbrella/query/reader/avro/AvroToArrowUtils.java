@@ -1,4 +1,4 @@
-package org.umbrella.query.reader;
+package org.umbrella.query.reader.avro;
 
 import org.apache.arrow.AvroToArrowConfig;
 import org.apache.arrow.AvroToArrowVectorIterator;

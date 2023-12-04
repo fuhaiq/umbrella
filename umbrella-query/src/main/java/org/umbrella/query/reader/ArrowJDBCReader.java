@@ -13,6 +13,11 @@ import java.sql.SQLException;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+/**
+ * 1. 需要客户端手动关闭 {@link ResultSet}
+ * <br/>
+ * 2. {@link ArrowJDBCReader#loadNextBatch()} 设置了 reuseVectorSchemaRoot, 不用 try-resource 关闭 root, iterator.close 会清理的
+ */
 public class ArrowJDBCReader extends ArrowReader {
     private ArrowVectorIterator iterator;
     private final Schema schema;
@@ -39,7 +44,7 @@ public class ArrowJDBCReader extends ArrowReader {
         if(!iterator.hasNext()) return false; // fast return
 
         prepareLoadNextBatch();
-        var root = iterator.next(); // 因为设置了 reuseVectorSchemaRoot, 这里不用 try-resource 关闭 root, iterator.close 会清理的
+        var root = iterator.next();
         final VectorUnloader unloader = new VectorUnloader(root);
         loadRecordBatch(unloader.getRecordBatch());
         return true;
@@ -51,12 +56,12 @@ public class ArrowJDBCReader extends ArrowReader {
     }
 
     @Override
-    protected void closeReadSource() throws IOException {
+    protected void closeReadSource() {
         iterator.close();
     }
 
     @Override
-    protected Schema readSchema() throws IOException {
+    protected Schema readSchema() {
         return schema;
     }
 }
