@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
+import org.apache.arrow.dataset.scanner.ScanOptions;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.duckdb.DuckDBConnection;
 import org.jooq.DSLContext;
@@ -19,17 +20,18 @@ import org.umbrella.query.reader.avro.ArrowAvroReader;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 @RequiredArgsConstructor
-public class FastThreadLocalQuerySession implements QuerySession {
-    private final FastThreadLocal<QuerySessionElement> threadLocal = new FastThreadLocal<>();
+public class ThreadLocalQuerySession implements QuerySession {
+    private final ThreadLocal<QuerySessionElement> threadLocal = new ThreadLocal<>();
     private final QueryEngine engine;
     @Override
     public void start() {
-        checkState(!threadLocal.isSet(), "开启 Arrow 会话失败,会话已经开启.");
+        checkState(threadLocal.get() == null, "开启 Arrow 会话失败,会话已经开启.");
         var conn = engine.duckdb().configuration().connectionProvider().acquire();
         threadLocal.set(new QuerySessionElement(conn));
         if(log.isDebugEnabled()) log.debug("开启 Arrow 会话");
@@ -46,19 +48,26 @@ public class FastThreadLocalQuerySession implements QuerySession {
     }
 
     @Override
+    public void orc(String tableName, String uri, String[] columns) {
+        arrow(tableName, new ArrowORCReader(engine.allocator(), uri, new ScanOptions.Builder(/*batchSize*/ 32768)
+                .columns(Optional.of(columns))
+                .build()));
+    }
+
+    @Override
     public void avro(String tableName, String uri) {
         arrow(tableName, new ArrowAvroReader(engine.allocator(), uri));
     }
 
     @Override
     public DSLContext dsl() {
-        checkState(threadLocal.isSet(), "获取 Arrow 会话失败,会话未开启.");
+        checkState(threadLocal.get() != null, "获取 Arrow 会话失败,会话未开启.");
         return DSL.using(threadLocal.get().conn);
     }
 
     @Override
     public void close() {
-        checkState(threadLocal.isSet(), "关闭 Arrow 会话失败,会话已经关闭.");
+        checkState(threadLocal.get() != null, "关闭 Arrow 会话失败,会话已经关闭.");
         var ele = threadLocal.get();
         try {
             for(String key : ele.map.keySet()) {
@@ -76,7 +85,7 @@ public class FastThreadLocalQuerySession implements QuerySession {
     }
 
     private void arrow(String tableName, ArrowReader reader) {
-        checkState(threadLocal.isSet(), "获取 Arrow 会话失败,会话未开启.");
+        checkState(threadLocal.get() != null, "获取 Arrow 会话失败,会话未开启.");
         try {
             var stream = ArrowArrayStream.allocateNew(engine.allocator());
             var ele = threadLocal.get();

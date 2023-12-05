@@ -90,7 +90,11 @@ public class TestService {
             var rq = mysql.
                    select().from(DSL.table("linkerp_staff"));
             session.jdbc("staff", rq);
-            return session.dsl().resultQuery("select c.c_custkey,s.user_name,s.name,c.c_address from customer c, staff s where c.c_custkey = s.id").fetch();
+            return session.dsl().resultQuery("""
+                    select c.c_custkey,s.user_name,s.name,c.c_address,o.o_orderdate,o.o_orderkey from
+                    customer c, staff s, '/Users/haiqing.fu/Downloads/parquet/result.orders.parquet' as o
+                    where c.c_custkey = s.id and o.o_custkey = s.id
+                    """).fetch();
         });
         System.out.println(ret.format());
     }

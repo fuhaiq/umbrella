@@ -12,6 +12,8 @@ public interface QuerySession extends Closeable {
 
     void orc(String tableName, String uri);
 
+    void orc(String tableName, String uri, String[] columns);
+
     void avro(String tableName, String uri);
 
     DSLContext dsl();

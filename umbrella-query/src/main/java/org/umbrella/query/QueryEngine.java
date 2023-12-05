@@ -15,7 +15,7 @@ import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
 import org.umbrella.query.reader.ArrowResultQueryReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
-import org.umbrella.query.session.FastThreadLocalQuerySession;
+import org.umbrella.query.session.ThreadLocalQuerySession;
 import org.umbrella.query.session.QuerySession;
 
 import java.io.File;
@@ -72,7 +72,7 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
     }
 
     public <T> T session(Function<QuerySession, T> func) {
-        try(var session = new FastThreadLocalQuerySession(this)) {
+        try(var session = new ThreadLocalQuerySession(this)) {
             session.start();
             return func.apply(session);
         }
@@ -88,7 +88,7 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
      */
     private <T> T arrow(String tableName, ArrowReader reader, Function<DSLContext, T> func) {
         return duckdb.connectionResult(conn -> {
-            try (conn; reader; var arrowStream = ArrowArrayStream.allocateNew(allocator)) {
+            try (reader; var arrowStream = ArrowArrayStream.allocateNew(allocator)) {
                 checkState(conn.isWrapperFor(DuckDBConnection.class), "引擎驱动不匹配");
                 Data.exportArrayStream(allocator, reader, arrowStream);
                 var duckConn = conn.unwrap(DuckDBConnection.class);
