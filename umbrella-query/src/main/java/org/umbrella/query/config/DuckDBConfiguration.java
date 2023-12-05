@@ -28,7 +28,7 @@ public class DuckDBConfiguration {
     @Bean(name = "duckdb_jooq_conf")
     public DefaultConfiguration duckdb_jooq_conf(HikariDataSource duckdb_ds) {
         DefaultConfiguration configuration = new DefaultConfiguration();
-        configuration.set(SQLDialect.DUCKDB);
+        configuration.set(SQLDialect.DEFAULT);
         configuration.set(new DataSourceConnectionProvider(duckdb_ds));
         configuration.set(StopWatchListener::new);
         return configuration;

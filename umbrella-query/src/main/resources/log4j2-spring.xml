@@ -11,7 +11,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="org.jooq.tools.StopWatch" level="trace">
+        <Logger name="org.jooq.tools.StopWatch" level="info">
             <AppenderRef ref="Console"/>
         </Logger>
 

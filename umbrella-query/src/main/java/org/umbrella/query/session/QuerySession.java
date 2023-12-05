@@ -16,6 +16,8 @@ public interface QuerySession extends Closeable {
 
     void avro(String tableName, String uri);
 
+    void avro(String tableName, String uri, String[] columns);
+
     DSLContext dsl();
 
     @Override

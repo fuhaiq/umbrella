@@ -15,11 +15,12 @@ import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
 import org.umbrella.query.reader.ArrowResultQueryReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
-import org.umbrella.query.session.ThreadLocalQuerySession;
 import org.umbrella.query.session.QuerySession;
+import org.umbrella.query.session.SimpleQuerySession;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.HashSet;
 import java.util.Optional;
@@ -72,7 +73,7 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
     }
 
     public <T> T session(Function<QuerySession, T> func) {
-        try(var session = new ThreadLocalQuerySession(this)) {
+        try(var session = new SimpleQuerySession(this)) {
             session.start();
             return func.apply(session);
         }
@@ -85,6 +86,10 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
      --------------------------------私有方法--------------------------------
      *
      *
+     */
+
+    /**
+     * 使用了 jOOQ 函数编程, {@link Connection} 会自动回收
      */
     private <T> T arrow(String tableName, ArrowReader reader, Function<DSLContext, T> func) {
         return duckdb.connectionResult(conn -> {

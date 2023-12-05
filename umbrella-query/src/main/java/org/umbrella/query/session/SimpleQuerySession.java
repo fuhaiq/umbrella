@@ -31,14 +31,15 @@ import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 @RequiredArgsConstructor
-public class ThreadLocalQuerySession implements QuerySession {
-    private final ThreadLocal<QuerySessionElement> threadLocal = new ThreadLocal<>();
+public class SimpleQuerySession implements QuerySession {
     private final QueryEngine engine;
+    private QuerySessionElement element;
+
     @Override
     public void start() {
-        checkState(threadLocal.get() == null, "开启 Arrow 会话失败,会话已经开启.");
+        checkState(element == null, "开启 Arrow 会话失败,会话已经开启.");
         var conn = engine.duckdb().configuration().connectionProvider().acquire();
-        threadLocal.set(new QuerySessionElement(conn, new HashMap<>()));
+        element = new QuerySessionElement(conn, new HashMap<>());
         if(log.isDebugEnabled()) log.debug("开启 Arrow 会话");
     }
 
@@ -84,14 +85,13 @@ public class ThreadLocalQuerySession implements QuerySession {
 
     @Override
     public DSLContext dsl() {
-        checkState(threadLocal.get() != null, "获取 Arrow 会话失败,会话未开启.");
-        return DSL.using(threadLocal.get().conn());
+        checkState(element != null, "获取 Arrow 会话失败,会话未开启.");
+        return DSL.using(element.conn());
     }
 
     @Override
     public void close() {
-        checkState(threadLocal.get() != null, "关闭 Arrow 会话失败,会话已经关闭.");
-        var element = threadLocal.get();
+        checkState(element != null, "关闭 Arrow 会话失败,会话已经关闭.");
         try {
             for(String key : element.map().keySet()) {
                 var pair = element.map().get(key);
@@ -102,16 +102,14 @@ public class ThreadLocalQuerySession implements QuerySession {
             throw new org.jooq.exception.IOException(e.getMessage(), e);
         } finally {
             engine.duckdb().configuration().connectionProvider().release(element.conn());
-            threadLocal.remove();
             if(log.isDebugEnabled()) log.debug("关闭 Arrow 会话");
         }
     }
 
     private void arrow(String tableName, ArrowReader reader) {
-        checkState(threadLocal.get() != null, "获取 Arrow 会话失败,会话未开启.");
+        checkState(element != null, "获取 Arrow 会话失败,会话未开启.");
         try {
             var stream = ArrowArrayStream.allocateNew(engine.allocator());
-            var element = threadLocal.get();
             checkState(element.conn().isWrapperFor(DuckDBConnection.class), "引擎驱动不匹配");
             Data.exportArrayStream(engine.allocator(), reader, stream);
             var duckConn = element.conn().unwrap(DuckDBConnection.class);
