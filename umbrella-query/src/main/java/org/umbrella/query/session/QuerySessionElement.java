@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RequiredArgsConstructor
-public class QueryEngineElement {
+public class QuerySessionElement {
     public final Connection conn;
     public final Map<String, Tuple2<ArrowArrayStream, ArrowReader>> map = new HashMap<>();
 }

@@ -15,8 +15,8 @@ import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
 import org.umbrella.query.reader.ArrowResultQueryReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
-import org.umbrella.query.session.FastThreadLocalQueryEngineSession;
-import org.umbrella.query.session.QueryEngineSession;
+import org.umbrella.query.session.FastThreadLocalQuerySession;
+import org.umbrella.query.session.QuerySession;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,8 +71,11 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
         return arrow(tableName, new ArrowResultQueryReader(allocator, rq), func);
     }
 
-    public QueryEngineSession session() {
-        return new FastThreadLocalQueryEngineSession(this);
+    public <T> T session(Function<QuerySession, T> func) {
+        try(var session = new FastThreadLocalQuerySession(this)) {
+            session.start();
+            return func.apply(session);
+        }
     }
 
 

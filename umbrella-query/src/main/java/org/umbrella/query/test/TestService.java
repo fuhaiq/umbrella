@@ -37,7 +37,7 @@ public class TestService {
         System.out.println(ret.format());
     }
 
-    @PostConstruct
+
     /*
     c_custkey integer NOT NULL,
     c_name character varying(25) NOT NULL,
@@ -54,7 +54,7 @@ public class TestService {
                 ctx -> ctx.resultQuery("""
                         select c_custkey, c_nationkey, c_acctbal
                         from customer
-                        where c_acctbal >=5000 order by c_acctbal desc limit 100;
+                        where c_acctbal >=5000 order by c_acctbal desc limit 10;
                         """).fetch());
 
         System.out.println(customer.format());
@@ -81,5 +81,17 @@ public class TestService {
             System.out.println(ret);
             var xx = 1/0;
         });
+    }
+
+    @PostConstruct
+    public void session(){
+        var ret = engine.session(session -> {
+            session.orc("customer","file:/Users/haiqing.fu/Downloads/parquet/customer.orc");
+            var rq = mysql.
+                   select().from(DSL.table("linkerp_staff"));
+            session.jdbc("staff", rq);
+            return session.dsl().resultQuery("select c.c_custkey,s.user_name,s.name,c.c_address from customer c, staff s where c.c_custkey = s.id").fetch();
+        });
+        System.out.println(ret.format());
     }
 }

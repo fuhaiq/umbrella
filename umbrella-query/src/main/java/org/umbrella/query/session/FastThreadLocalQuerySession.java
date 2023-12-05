@@ -7,8 +7,10 @@ import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.duckdb.DuckDBConnection;
+import org.jooq.DSLContext;
 import org.jooq.ResultQuery;
 import org.jooq.exception.DataAccessException;
+import org.jooq.impl.DSL;
 import org.jooq.lambda.tuple.Tuple2;
 import org.umbrella.query.QueryEngine;
 import org.umbrella.query.reader.ArrowORCReader;
@@ -22,15 +24,14 @@ import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 @RequiredArgsConstructor
-public class FastThreadLocalQueryEngineSession implements QueryEngineSession {
-    private final FastThreadLocal<QueryEngineElement> threadLocal = new FastThreadLocal<>();
+public class FastThreadLocalQuerySession implements QuerySession {
+    private final FastThreadLocal<QuerySessionElement> threadLocal = new FastThreadLocal<>();
     private final QueryEngine engine;
     @Override
     public void start() {
-        checkState(!threadLocal.isSet(), "开启 Arrow 会话失败,会话未关闭.");
-        engine.duckdb().connection(conn -> {
-            threadLocal.set(new QueryEngineElement(conn));
-        });
+        checkState(!threadLocal.isSet(), "开启 Arrow 会话失败,会话已经开启.");
+        var conn = engine.duckdb().configuration().connectionProvider().acquire();
+        threadLocal.set(new QuerySessionElement(conn));
         if(log.isDebugEnabled()) log.debug("开启 Arrow 会话");
     }
 
@@ -50,8 +51,14 @@ public class FastThreadLocalQueryEngineSession implements QueryEngineSession {
     }
 
     @Override
+    public DSLContext dsl() {
+        checkState(threadLocal.isSet(), "获取 Arrow 会话失败,会话未开启.");
+        return DSL.using(threadLocal.get().conn);
+    }
+
+    @Override
     public void close() {
-        checkState(threadLocal.isSet(), "关闭 Arrow 会话失败,会话未开启或者已经关闭.");
+        checkState(threadLocal.isSet(), "关闭 Arrow 会话失败,会话已经关闭.");
         var ele = threadLocal.get();
         try {
             for(String key : ele.map.keySet()) {
@@ -61,14 +68,15 @@ public class FastThreadLocalQueryEngineSession implements QueryEngineSession {
             }
         } catch (IOException e) {
             throw new org.jooq.exception.IOException(e.getMessage(), e);
+        } finally {
+            engine.duckdb().configuration().connectionProvider().release(ele.conn);
+            threadLocal.remove();
+            if(log.isDebugEnabled()) log.debug("关闭 Arrow 会话");
         }
-        engine.duckdb().configuration().connectionProvider().release(ele.conn);
-        threadLocal.remove();
-        if(log.isDebugEnabled()) log.debug("关闭 Arrow 会话");
     }
 
     private void arrow(String tableName, ArrowReader reader) {
-        checkState(threadLocal.isSet(), "获取 Arrow 会话失败,会话未开启或者已经关闭.");
+        checkState(threadLocal.isSet(), "获取 Arrow 会话失败,会话未开启.");
         try {
             var stream = ArrowArrayStream.allocateNew(engine.allocator());
             var ele = threadLocal.get();
