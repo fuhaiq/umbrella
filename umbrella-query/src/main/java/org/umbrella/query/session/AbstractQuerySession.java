@@ -34,16 +34,7 @@ public abstract class AbstractQuerySession implements QuerySession{
 
     protected final QueryEngine engine;
 
-    protected abstract QuerySessionElement getElement();
-
-    protected abstract void initElement();
-
-    @Override
-    public void start() {
-        checkState(getElement() == null, "开启 Arrow 会话失败,会话已经开启.");
-        initElement();
-        if(log.isDebugEnabled()) log.debug("开启 Arrow 会话");
-    }
+    protected abstract QuerySessionElement element();
 
     @Override
     public void jdbc(String tableName, ResultQuery<?> rq) {
@@ -87,37 +78,37 @@ public abstract class AbstractQuerySession implements QuerySession{
 
     @Override
     public DSLContext dsl() {
-        checkState(getElement() != null, "获取 Arrow 会话失败,会话未开启.");
-        return DSL.using(getElement().conn());
+        checkState(element() != null, "获取 Arrow 会话失败,会话未开启.");
+        return DSL.using(element().conn());
     }
 
     @Override
     public void close() {
-        checkState(getElement() != null, "关闭 Arrow 会话失败,会话已经关闭.");
+        checkState(element() != null, "关闭 Arrow 会话失败,会话已经关闭.");
         try {
-            for(String key : getElement().map().keySet()) {
-                var pair = getElement().map().get(key);
+            for(String key : element().map().keySet()) {
+                var pair = element().map().get(key);
                 pair.v1.close();
                 pair.v2.close();
             }
         } catch (IOException e) {
             throw new org.jooq.exception.IOException(e.getMessage(), e);
         } finally {
-            engine.duckdb().configuration().connectionProvider().release(getElement().conn());
+            engine.duckdb().configuration().connectionProvider().release(element().conn());
             if(log.isDebugEnabled()) log.debug("关闭 Arrow 会话");
         }
     }
 
     private void arrow(String tableName, ArrowReader reader) {
-        checkState(getElement() != null, "获取 Arrow 会话失败,会话未开启.");
+        checkState(element() != null, "获取 Arrow 会话失败,会话未开启.");
         try {
             var stream = ArrowArrayStream.allocateNew(engine.allocator());
-            checkState(getElement().conn().isWrapperFor(DuckDBConnection.class), "引擎驱动不匹配");
+            checkState(element().conn().isWrapperFor(DuckDBConnection.class), "引擎驱动不匹配");
             Data.exportArrayStream(engine.allocator(), reader, stream);
-            var duckConn = getElement().conn().unwrap(DuckDBConnection.class);
+            var duckConn = element().conn().unwrap(DuckDBConnection.class);
             duckConn.registerArrowStream(tableName, stream);
 
-            getElement().map().put(tableName, new Tuple2<>(stream, reader));
+            element().map().put(tableName, new Tuple2<>(stream, reader));
             if(log.isDebugEnabled()) log.debug("导出数据到 Arrow 会话完成.");
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
