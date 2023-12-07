@@ -6,6 +6,7 @@ import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.jooq.exception.DataAccessException;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -35,7 +36,7 @@ public class ArrowJDBCReader extends ArrowReader {
             this.schema = JdbcToArrowUtils.jdbcToArrowSchema(resultSet.getMetaData(), config);
         } catch (SQLException | IOException e) {
             if(iterator != null) AutoCloseables.close(e, iterator);
-            throw new RuntimeException("创建 JDBC Arrow Reader 出错.", e);
+            throw new DataAccessException("创建 JDBC Arrow Reader 出错.", e);
         }
     }
 
@@ -57,6 +58,9 @@ public class ArrowJDBCReader extends ArrowReader {
 
     @Override
     protected void closeReadSource() {
+        System.out.println(">>>>>>>>>>>>>>>JDBC关闭");
+
+
         iterator.close();
     }
 

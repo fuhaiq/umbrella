@@ -15,12 +15,13 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.lambda.tuple.Tuple2;
 import org.umbrella.query.QueryEngine;
+import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
-import org.umbrella.query.reader.ArrowResultQueryReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Optional;
@@ -37,8 +38,17 @@ public abstract class AbstractQuerySession implements QuerySession{
     protected abstract QuerySessionElement element();
 
     @Override
+    public void jdbc(String tableName, ResultSet rs) {
+        arrow(tableName, new ArrowJDBCReader(engine.allocator(), rs));
+    }
+
+    @Override
     public void jdbc(String tableName, ResultQuery<?> rq) {
-        arrow(tableName, new ArrowResultQueryReader(engine.allocator(), rq));
+        try(var rs = rq.fetchResultSet()) {
+            jdbc(tableName, rs);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
     }
 
     @Override

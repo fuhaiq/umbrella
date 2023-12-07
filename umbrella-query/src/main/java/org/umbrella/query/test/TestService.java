@@ -61,15 +61,29 @@ public class TestService {
     }
 
 
+
     public void jdbc() {
-        var rs = mysql.
+        var rq = mysql.
                 select().from(DSL.table("linkerp_staff")).where("phone is not null and qq is not null and address is not null");
-        var ret = engine.jdbc("staff",rs,
+        var ret = engine.jdbc("staff",rq,
                 ctx -> ctx.resultQuery("""
                         select user_name,name,phone,qq,address
                         from staff
                         """).fetch()
         );
+        System.out.println(ret.format());
+    }
+
+
+    public void jdbc_duck() {
+        var rq = engine.duckdb().resultQuery("""
+                select o_orderkey,o_orderdate,o_clerk from '/Users/haiqing.fu/Downloads/parquet/result.orders.parquet' as orders
+                where orders.o_totalprice < 5000
+                order by orders.o_totalprice desc limit 100
+                """);
+        var ret = engine.jdbc("orders", rq,
+                ctx -> ctx.resultQuery("select * from orders limit 5").fetch()
+                );
         System.out.println(ret.format());
     }
 

@@ -4,11 +4,14 @@ import org.jooq.DSLContext;
 import org.jooq.ResultQuery;
 
 import java.io.Closeable;
+import java.sql.ResultSet;
 
 public interface QuerySession extends Closeable {
     void start();
 
     void jdbc(String tableName, ResultQuery<?> rq);
+
+    void jdbc(String tableName, ResultSet rs);
 
     void orc(String tableName, String uri);
 

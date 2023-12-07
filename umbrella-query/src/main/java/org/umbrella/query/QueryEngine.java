@@ -1,6 +1,7 @@
 package org.umbrella.query;
 
 import org.apache.arrow.AvroToArrowConfigBuilder;
+import org.apache.arrow.adapter.jdbc.JdbcToArrowConfig;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.dataset.scanner.ScanOptions;
@@ -8,20 +9,23 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.avro.Schema;
 import org.duckdb.DuckDBConnection;
+import org.duckdb.DuckDBResultSet;
 import org.jooq.DSLContext;
 import org.jooq.ResultQuery;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
-import org.umbrella.query.reader.ArrowResultQueryReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
 import org.umbrella.query.session.QuerySession;
 import org.umbrella.query.session.SimpleQuerySession;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -64,12 +68,23 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
     /**
      * 客户端需要手动释放 {@link ResultSet}
      */
-    public <T> T jdbc(String tableName, ResultSet rs, Function<DSLContext, T> func) {
-        return arrow(tableName, new ArrowJDBCReader(allocator, rs), func);
+    public <T> T jdbc(String tableName, ResultSet rs, Function<DSLContext, T> func) throws SQLException {
+        ArrowReader reader;
+        if(rs.isWrapperFor(DuckDBResultSet.class)) {
+            var drs = rs.unwrap(DuckDBResultSet.class);
+            reader = (ArrowReader) drs.arrowExportStream(allocator, JdbcToArrowConfig.DEFAULT_TARGET_BATCH_SIZE);
+        } else {
+            reader = new ArrowJDBCReader(allocator, rs);
+        }
+        return arrow(tableName, reader, func);
     }
 
     public <T> T jdbc(String tableName, ResultQuery<?> rq, Function<DSLContext, T> func) {
-        return arrow(tableName, new ArrowResultQueryReader(allocator, rq), func);
+        try(var rs = rq.fetchResultSet()) {
+            return jdbc(tableName, rs, func);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
     }
 
     public <T> T session(Function<QuerySession, T> func) {
@@ -89,11 +104,14 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
      */
 
     /**
-     * 使用了 jOOQ 函数编程, {@link Connection} 会自动回收
+     * <li>使用了 jOOQ 函数编程, {@link Connection} 会自动回收
+     * <li>{@link Data#exportArrayStream} 底层调用 {@link ArrayStreamExporter.ExportedArrayStreamPrivateData} 传输数据,
+     * 因为它是一个 {@link Closeable}, 所以会调用 {@link ArrayStreamExporter.ExportedArrayStreamPrivateData#close()} 方法,
+     * 而这个方法里面会间接的关闭传入的 {@link ArrowReader}, 所以 try-resource 里面不能把 reader 包进去, 否则会关闭两次
      */
     private <T> T arrow(String tableName, ArrowReader reader, Function<DSLContext, T> func) {
         return duckdb.connectionResult(conn -> {
-            try (reader; var arrowStream = ArrowArrayStream.allocateNew(allocator)) {
+            try (var arrowStream = ArrowArrayStream.allocateNew(allocator)) {
                 checkState(conn.isWrapperFor(DuckDBConnection.class), "引擎驱动不匹配");
                 Data.exportArrayStream(allocator, reader, arrowStream);
                 var duckConn = conn.unwrap(DuckDBConnection.class);
