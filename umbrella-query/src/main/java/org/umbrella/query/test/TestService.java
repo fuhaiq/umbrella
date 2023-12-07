@@ -48,9 +48,9 @@ public class TestService {
     c_mktsegment character(10) NOT NULL,
     c_comment character varying(117) NOT NULL
      */
+
     public void orc() {
         var customer = engine.orc("customer","file:/Users/haiqing.fu/Downloads/parquet/customer.orc",
-                new String[]{"c_custkey", "c_nationkey", "c_acctbal"},
                 ctx -> ctx.resultQuery("""
                         select c_custkey, c_nationkey, c_acctbal
                         from customer

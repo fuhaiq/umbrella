@@ -15,7 +15,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="org.umbrella.query.session.ThreadLocalQuerySession" level="debug">
+        <Logger name="org.umbrella.query.session.SimpleQuerySession" level="debug">
             <AppenderRef ref="Console"/>
         </Logger>
 

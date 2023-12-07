@@ -1,7 +1,6 @@
 package org.umbrella.query.reader.avro;
 
 import org.apache.arrow.AvroToArrowConfig;
-import org.apache.arrow.AvroToArrowVectorIterator;
 import org.apache.arrow.util.Preconditions;
 import org.apache.arrow.vector.dictionary.DictionaryEncoder;
 import org.apache.arrow.vector.dictionary.DictionaryProvider;

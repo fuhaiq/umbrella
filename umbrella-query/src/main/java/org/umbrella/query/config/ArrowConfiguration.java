@@ -1,6 +1,5 @@
 package org.umbrella.query.config;
 
-import com.google.common.collect.ImmutableMap;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.jooq.DSLContext;
