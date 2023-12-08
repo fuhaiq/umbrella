@@ -1,5 +1,6 @@
 package org.umbrella.query.reader;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
 import org.apache.arrow.dataset.jni.NativeMemoryPool;
@@ -15,6 +16,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import java.io.IOException;
 import java.util.Optional;
 
+@Slf4j
 public class ArrowORCReader extends ArrowReader  {
     private final DatasetFactory datasetFactory;
     private final Dataset dataset;
@@ -56,6 +58,7 @@ public class ArrowORCReader extends ArrowReader  {
 
     @Override
     protected void closeReadSource() throws IOException {
+        if(log.isDebugEnabled()) log.debug("释放 ArrowORCReader 资源");
         try {
             reader.close();
             scanner.close();

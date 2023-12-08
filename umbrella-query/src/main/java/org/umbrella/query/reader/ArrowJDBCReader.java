@@ -1,5 +1,6 @@
 package org.umbrella.query.reader;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.arrow.adapter.jdbc.*;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.util.AutoCloseables;
@@ -19,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  * <br/>
  * 2. {@link ArrowJDBCReader#loadNextBatch()} 设置了 reuseVectorSchemaRoot, 不用 try-resource 关闭 root, iterator.close 会清理的
  */
+@Slf4j
 public class ArrowJDBCReader extends ArrowReader {
     private ArrowVectorIterator iterator;
     private final Schema schema;
@@ -58,6 +60,7 @@ public class ArrowJDBCReader extends ArrowReader {
 
     @Override
     protected void closeReadSource() {
+        if(log.isDebugEnabled()) log.debug("释放 ArrowJDBCReader 资源");
         iterator.close();
     }
 
