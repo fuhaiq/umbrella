@@ -3,22 +3,24 @@ package org.umbrella.query.session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.arrow.AvroToArrowConfigBuilder;
+import org.apache.arrow.adapter.jdbc.JdbcToArrowConfig;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.dataset.scanner.ScanOptions;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.avro.Schema;
 import org.duckdb.DuckDBConnection;
+import org.duckdb.DuckDBResultSet;
 import org.jooq.DSLContext;
 import org.jooq.ResultQuery;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import org.jooq.lambda.tuple.Tuple2;
 import org.umbrella.query.QueryEngine;
 import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -38,14 +40,22 @@ public abstract class AbstractQuerySession implements QuerySession{
     protected abstract QuerySessionElement element();
 
     @Override
-    public void jdbc(String tableName, ResultSet rs) {
-        arrow(tableName, new ArrowJDBCReader(engine.allocator(), rs));
+    public void jdbc(String tableName, ResultSet rs) throws SQLException {
+        ArrowReader reader;
+        if (rs.isWrapperFor(DuckDBResultSet.class)) {
+            if(log.isDebugEnabled()) log.debug("Zero-Copy 导出 JDBC 数据");
+            var drs = rs.unwrap(DuckDBResultSet.class);
+            reader = (ArrowReader) drs.arrowExportStream(engine.allocator(), JdbcToArrowConfig.DEFAULT_TARGET_BATCH_SIZE);
+        } else {
+            reader = new ArrowJDBCReader(engine.allocator(), rs);
+        }
+        arrow(tableName, reader);
     }
 
     @Override
     public void jdbc(String tableName, ResultQuery<?> rq) {
-        try(var rs = rq.fetchResultSet()) {
-            jdbc(tableName, rs);
+        try {
+            jdbc(tableName, rq.fetchResultSet());
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
@@ -95,20 +105,24 @@ public abstract class AbstractQuerySession implements QuerySession{
     @Override
     public void close() {
         checkState(element() != null, "关闭 Arrow 会话失败,会话已经关闭.");
-        try {
-            for(String key : element().map().keySet()) {
-                var pair = element().map().get(key);
-                pair.v1.close();
-                pair.v2.close();
-            }
-        } catch (IOException e) {
-            throw new org.jooq.exception.IOException(e.getMessage(), e);
-        } finally {
-            engine.duckdb().configuration().connectionProvider().release(element().conn());
-            if(log.isDebugEnabled()) log.debug("关闭 Arrow 会话");
-        }
+        element().map().values().forEach(ArrowArrayStream::close);
+        engine.duckdb().configuration().connectionProvider().release(element().conn());
+        if(log.isDebugEnabled()) log.debug("关闭 Arrow 会话");
     }
 
+    /*
+     *
+     *
+     --------------------------------私有方法--------------------------------
+     *
+     *
+     */
+
+    /**
+     <li>{@link Data#exportArrayStream} 底层调用 {@link ArrayStreamExporter.ExportedArrayStreamPrivateData} 传输数据,
+     * 因为它是一个 {@link Closeable}, 所以会调用 {@link ArrayStreamExporter.ExportedArrayStreamPrivateData#close()} 方法,
+     * 而这个方法里面会间接的关闭传入的 {@link ArrowReader}, 所以 {@link AbstractQuerySession#close()} 方法不需要关闭 {@link ArrowReader}
+     */
     private void arrow(String tableName, ArrowReader reader) {
         checkState(element() != null, "获取 Arrow 会话失败,会话未开启.");
         try {
@@ -117,8 +131,7 @@ public abstract class AbstractQuerySession implements QuerySession{
             Data.exportArrayStream(engine.allocator(), reader, stream);
             var duckConn = element().conn().unwrap(DuckDBConnection.class);
             duckConn.registerArrowStream(tableName, stream);
-
-            element().map().put(tableName, new Tuple2<>(stream, reader));
+            element().map().put(tableName, stream);
             if(log.isDebugEnabled()) log.debug("导出数据到 Arrow 会话完成.");
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);

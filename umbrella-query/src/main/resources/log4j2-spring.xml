@@ -21,6 +21,9 @@
         <Logger name="org.umbrella.query.session.AbstractQuerySession" level="debug">
             <AppenderRef ref="Console"/>
         </Logger>
+        <Logger name="org.umbrella.query.QueryEngine" level="debug">
+            <AppenderRef ref="Console"/>
+        </Logger>
 
         <Root level="info">
             <AppenderRef ref="Console"/>

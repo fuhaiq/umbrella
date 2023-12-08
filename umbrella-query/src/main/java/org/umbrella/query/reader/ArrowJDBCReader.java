@@ -58,9 +58,6 @@ public class ArrowJDBCReader extends ArrowReader {
 
     @Override
     protected void closeReadSource() {
-        System.out.println(">>>>>>>>>>>>>>>JDBC关闭");
-
-
         iterator.close();
     }
 

@@ -56,7 +56,6 @@ public class ArrowORCReader extends ArrowReader  {
 
     @Override
     protected void closeReadSource() throws IOException {
-        System.out.println(">>>>>>>>>>>>>>>ORC关闭");
         try {
             reader.close();
             scanner.close();

@@ -1,5 +1,6 @@
 package org.umbrella.query;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.arrow.AvroToArrowConfigBuilder;
 import org.apache.arrow.adapter.jdbc.JdbcToArrowConfig;
 import org.apache.arrow.c.ArrowArrayStream;
@@ -33,6 +34,7 @@ import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkState;
 
+@Slf4j
 public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
     public <T> T orc(String tableName, String uri, Function<DSLContext, T> func) {
         return arrow(tableName, new ArrowORCReader(allocator, uri), func);
@@ -71,6 +73,7 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
     public <T> T jdbc(String tableName, ResultSet rs, Function<DSLContext, T> func) throws SQLException {
         ArrowReader reader;
         if(rs.isWrapperFor(DuckDBResultSet.class)) {
+            if(log.isDebugEnabled()) log.debug("Zero-Copy 导出 JDBC 数据");
             var drs = rs.unwrap(DuckDBResultSet.class);
             reader = (ArrowReader) drs.arrowExportStream(allocator, JdbcToArrowConfig.DEFAULT_TARGET_BATCH_SIZE);
         } else {

@@ -5,13 +5,14 @@ import org.jooq.ResultQuery;
 
 import java.io.Closeable;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public interface QuerySession extends Closeable {
     void start();
 
     void jdbc(String tableName, ResultQuery<?> rq);
 
-    void jdbc(String tableName, ResultSet rs);
+    void jdbc(String tableName, ResultSet rs) throws SQLException;
 
     void orc(String tableName, String uri);
 
