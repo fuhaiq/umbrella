@@ -9,14 +9,14 @@ import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 public class SimpleQuerySession extends AbstractQuerySession {
-    protected QuerySessionElement element;
+    private QuerySessionElement element;
 
     public SimpleQuerySession(QueryEngine engine) {
         super(engine);
     }
 
     @Override
-    protected QuerySessionElement element() {
+    QuerySessionElement element() {
         return element;
     }
 

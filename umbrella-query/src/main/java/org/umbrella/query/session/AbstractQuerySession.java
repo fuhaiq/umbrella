@@ -38,7 +38,7 @@ public abstract class AbstractQuerySession implements QuerySession{
 
     protected final QueryEngine engine;
 
-    protected abstract QuerySessionElement element();
+    abstract QuerySessionElement element();
 
     @Override
     public void jdbc(String tableName, ResultSet rs) throws SQLException {
@@ -53,6 +53,9 @@ public abstract class AbstractQuerySession implements QuerySession{
         arrow(tableName, reader);
     }
 
+    /**
+     * 获取 {@link ResultSet}, 并注册到 Arrow, 这里只是注册,并没有消费,所以不能使用 try-resource
+     */
     @Override
     public void jdbc(String tableName, ResultQuery<?> rq) {
         try {

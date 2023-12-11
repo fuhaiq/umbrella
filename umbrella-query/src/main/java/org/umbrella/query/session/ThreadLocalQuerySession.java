@@ -17,7 +17,7 @@ public class ThreadLocalQuerySession extends AbstractQuerySession {
 
 
     @Override
-    protected QuerySessionElement element() {
+    QuerySessionElement element() {
         return threadLocal.get();
     }
 

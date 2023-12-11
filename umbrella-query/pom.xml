@@ -17,7 +17,7 @@
 
     <description>
         1.  创建 docker 网络:
-            docker create network umbrella
+            docker network create umbrella
 
         2.  启动 mysql:
             docker run --name mysql --hostname mysql \
