@@ -15,6 +15,41 @@
     <artifactId>umbrella-query</artifactId>
     <version>1.0</version>
 
+    <description>
+        1.  创建 docker 网络:
+            docker create network umbrella
+
+        2.  启动 mysql:
+            docker run --name mysql --hostname mysql \
+            --network umbrella \
+            -p 3306:3306 \
+            -v /Users/haiqing.fu/docker-instances/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf \
+            -v /Users/haiqing.fu/docker-instances/mysql/data:/var/lib/mysql \
+            -v /Users/haiqing.fu/docker-instances/mysql/linkerp.sql:/docker-entrypoint-initdb.d/linkerp.sql \
+            -e MYSQL_ROOT_PASSWORD=jiao1983! \
+            -d mysql:8
+
+        3.  启动 mongo:
+            docker run -d --name mongo --hostname mongo \
+            --network umbrella \
+            -p 27017:27017 \
+            -e MONGO_INITDB_ROOT_USERNAME=admin \
+            -e MONGO_INITDB_ROOT_PASSWORD=admin \
+            -v /Users/haiqing.fu/docker-instances/mongo/data:/data/db \
+            mongo:7.0.4
+
+        4.  启动 mongo-express:
+            docker run -d --name mongo-express --hostname mongo-express \
+            --network umbrella \
+            -p 8081:8081 \
+            -e ME_CONFIG_MONGODB_SERVER=mongo \
+            -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin \
+            -e ME_CONFIG_MONGODB_ADMINPASSWORD=admin \
+            -e ME_CONFIG_BASICAUTH_USERNAME=admin \
+            -e ME_CONFIG_BASICAUTH_PASSWORD=admin \
+            mongo-express:1.0.0-18
+    </description>
+
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
