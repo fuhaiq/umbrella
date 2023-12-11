@@ -18,6 +18,10 @@ public interface QuerySession extends Closeable {
 
     void orc(String tableName, String uri, String[] columns);
 
+    void arrow(String tableName, String uri);
+
+    void arrow(String tableName, String uri, String[] columns);
+
     void avro(String tableName, String uri);
 
     void avro(String tableName, String uri, String[] columns);

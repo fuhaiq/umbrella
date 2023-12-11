@@ -16,6 +16,7 @@ import org.jooq.ResultQuery;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.umbrella.query.QueryEngine;
+import org.umbrella.query.reader.ArrowArrowReader;
 import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
@@ -63,12 +64,24 @@ public abstract class AbstractQuerySession implements QuerySession{
 
     @Override
     public void orc(String tableName, String uri) {
-        arrow(tableName, new ArrowORCReader(engine.allocator(), uri));
+        arrow(tableName, new ArrowORCReader(engine.allocator(), engine.memoryPool(), uri));
     }
 
     @Override
     public void orc(String tableName, String uri, String[] columns) {
-        arrow(tableName, new ArrowORCReader(engine.allocator(), uri, new ScanOptions.Builder(/*batchSize*/ 32768)
+        arrow(tableName, new ArrowORCReader(engine.allocator(), engine.memoryPool(), uri, new ScanOptions.Builder(/*batchSize*/ 32768)
+                .columns(Optional.of(columns))
+                .build()));
+    }
+
+    @Override
+    public void arrow(String tableName, String uri) {
+        arrow(tableName, new ArrowArrowReader(engine.allocator(), engine.memoryPool(), uri));
+    }
+
+    @Override
+    public void arrow(String tableName, String uri, String[] columns) {
+        arrow(tableName, new ArrowArrowReader(engine.allocator(), engine.memoryPool(), uri, new ScanOptions.Builder(/*batchSize*/ 32768)
                 .columns(Optional.of(columns))
                 .build()));
     }

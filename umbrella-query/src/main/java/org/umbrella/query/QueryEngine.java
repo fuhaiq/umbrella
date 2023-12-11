@@ -5,6 +5,7 @@ import org.apache.arrow.AvroToArrowConfigBuilder;
 import org.apache.arrow.adapter.jdbc.JdbcToArrowConfig;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
+import org.apache.arrow.dataset.jni.NativeMemoryPool;
 import org.apache.arrow.dataset.scanner.ScanOptions;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.ipc.ArrowReader;
@@ -15,6 +16,7 @@ import org.jooq.DSLContext;
 import org.jooq.ResultQuery;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
+import org.umbrella.query.reader.ArrowArrowReader;
 import org.umbrella.query.reader.ArrowJDBCReader;
 import org.umbrella.query.reader.ArrowORCReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
@@ -35,13 +37,13 @@ import java.util.function.Function;
 import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
-public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
+public record QueryEngine(DSLContext duckdb, BufferAllocator allocator, NativeMemoryPool memoryPool) {
     public <T> T orc(String tableName, String uri, Function<DSLContext, T> func) {
-        return arrow(tableName, new ArrowORCReader(allocator, uri), func);
+        return arrow(tableName, new ArrowORCReader(allocator, memoryPool, uri), func);
     }
 
     public <T> T orc(String tableName, String uri, String[] columns, Function<DSLContext, T> func) {
-        return arrow(tableName, new ArrowORCReader(allocator, uri, new ScanOptions.Builder(/*batchSize*/ 32768)
+        return arrow(tableName, new ArrowORCReader(allocator, memoryPool, uri, new ScanOptions.Builder(/*batchSize*/ 32768)
                 .columns(Optional.of(columns))
                 .build()), func);
     }
@@ -65,6 +67,16 @@ public record QueryEngine(DSLContext duckdb, BufferAllocator allocator) {
                 .setSkipFieldNames(skipFieldNames)
                 .build()
         ), func);
+    }
+
+    public <T> T arrow(String tableName, String uri, Function<DSLContext, T> func) {
+        return arrow(tableName, new ArrowArrowReader(allocator, memoryPool, uri), func);
+    }
+
+    public <T> T arrow(String tableName, String uri, String[] columns, Function<DSLContext, T> func) {
+        return arrow(tableName, new ArrowArrowReader(allocator, memoryPool, uri, new ScanOptions.Builder(/*batchSize*/ 32768)
+                .columns(Optional.of(columns))
+                .build()), func);
     }
 
     /**

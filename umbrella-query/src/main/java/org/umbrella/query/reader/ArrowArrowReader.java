@@ -21,16 +21,16 @@ public class ArrowArrowReader extends ArrowReader  {
     private final Scanner scanner;
     private final ArrowReader reader;
 
-    public ArrowArrowReader(BufferAllocator allocator, String uri) {
-        this(allocator, uri, new ScanOptions.Builder(/*batchSize*/ 32768)
+    public ArrowArrowReader(BufferAllocator allocator, NativeMemoryPool memoryPool,  String uri) {
+        this(allocator, memoryPool, uri, new ScanOptions.Builder(/*batchSize*/ 32768)
                 .columns(Optional.empty())
                 .build());
     }
 
-    public ArrowArrowReader(BufferAllocator allocator, String uri, ScanOptions options) {
+    public ArrowArrowReader(BufferAllocator allocator, NativeMemoryPool memoryPool, String uri, ScanOptions options) {
         super(allocator);
         this.datasetFactory = new FileSystemDatasetFactory(
-                allocator, NativeMemoryPool.getDefault(),
+                allocator, memoryPool,
                 FileFormat.ARROW_IPC, uri);
         this.dataset = datasetFactory.finish();
         this.scanner = dataset.newScan(options);

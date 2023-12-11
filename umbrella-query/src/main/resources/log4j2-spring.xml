@@ -30,6 +30,9 @@
         <Logger name="org.umbrella.query.reader.ArrowORCReader" level="debug">
             <AppenderRef ref="Console"/>
         </Logger>
+<!--        <Logger name="org.umbrella.query.config.LogAllocationListener" level="trace">-->
+<!--            <AppenderRef ref="Console"/>-->
+<!--        </Logger>-->
 
         <Root level="info">
             <AppenderRef ref="Console"/>
