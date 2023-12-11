@@ -27,7 +27,16 @@
             -v /Users/haiqing.fu/docker-instances/mysql/data:/var/lib/mysql \
             -v /Users/haiqing.fu/docker-instances/mysql/linkerp.sql:/docker-entrypoint-initdb.d/linkerp.sql \
             -e MYSQL_ROOT_PASSWORD=jiao1983! \
-            -d mysql:8
+            -d mysql:8.2
+
+            WIN:
+            docker run --name mysql --hostname mysql \
+            --network umbrella \
+            -p 3306:3306 \
+            -v D:/docker-instances/mysql/data:/var/lib/mysql \
+            -e MYSQL_ROOT_PASSWORD=jiao1983! \
+            -d mysql:8.2
+
 
         3.  启动 mongo:
             docker run -d --name mongo --hostname mongo \
