@@ -35,7 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-import static com.google.common.base.Preconditions.checkState;
+import static org.apache.arrow.util.Preconditions.checkState;
 
 @Slf4j
 public record QueryEngine(DSLContext duckdb, BufferAllocator allocator, NativeMemoryPool memoryPool) {

@@ -1,5 +1,8 @@
 import jakarta.annotation.Resource;
 import org.jooq.DSLContext;
+import org.jooq.DataType;
+import org.jooq.Field;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,6 +11,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.umbrella.query.QueryApplication;
 import org.umbrella.query.QueryEngine;
+
+import java.sql.SQLException;
 
 
 @RunWith(SpringRunner.class)
@@ -31,7 +36,7 @@ public class QueryEngineTest {
     `o_shippriority` int,
     `o_comment` string
      */
-    @Test
+//    @Test
     public void parquet() {
         var ret = engine.duckdb().resultQuery("""
                 select o_orderkey,o_orderdate,o_clerk from '/Users/haiqing.fu/Downloads/parquet/result.orders.parquet' as orders
@@ -74,7 +79,7 @@ public class QueryEngineTest {
     c_mktsegment character(10) NOT NULL,
     c_comment character varying(117) NOT NULL
      */
-    @Test
+//    @Test
     public void orc() {
         var customer = engine.orc("customer","file:/Users/haiqing.fu/Downloads/parquet/customer.orc",
                 ctx -> ctx.resultQuery("""
@@ -86,7 +91,7 @@ public class QueryEngineTest {
         System.out.println(customer.format());
     }
 
-    @Test
+//    @Test
     public void jdbc() {
         var rq = mysql.
                 select().from(DSL.table("linkerp_staff")).where("phone is not null and qq is not null and address is not null");
@@ -99,7 +104,7 @@ public class QueryEngineTest {
         System.out.println(ret.format());
     }
 
-    @Test
+//    @Test
     public void jdbc_duck() {
         var rq = engine.duckdb().resultQuery("""
                 select o_orderkey,o_orderdate,o_clerk from '/Users/haiqing.fu/Downloads/parquet/result.orders.parquet' as orders
@@ -123,7 +128,7 @@ public class QueryEngineTest {
         });
     }
 
-    @Test
+//    @Test
     public void session(){
         var ret = engine.session(session -> {
             session.orc("customer","file:/Users/haiqing.fu/Downloads/parquet/customer.orc");
@@ -139,5 +144,27 @@ public class QueryEngineTest {
                     """).fetch();
         });
         System.out.println(ret.format());
+    }
+
+//    @Test
+    public void json(){
+        try(var rs = mysql.resultQuery("select * from my_json_table").fetchResultSet()){
+            var ret = engine.jdbc("data", rs,
+                    ctx -> ctx.resultQuery("""
+                            select * from data where detail.b.c = true
+                            """)).fetch();
+            System.out.println(ret);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+
+
+
+//        var ret = engine.json("data", "file:/Users/haiqing.fu/Downloads/parquet/data.json",
+//                ctx -> ctx.resultQuery("select * from data where detail[4] = 4")).fetch();
+//        System.out.println(ret);
+//
+//        var ret2 = engine.duckdb().resultQuery("select * from '/Users/haiqing.fu/Downloads/parquet/data.json'").fetch();
+//        System.out.println(ret2);
     }
 }

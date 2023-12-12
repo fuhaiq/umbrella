@@ -8,12 +8,15 @@ import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.jooq.exception.DataAccessException;
+import org.umbrella.query.jdbc.ExtraJDBCToArrowTypeConverter;
+import org.umbrella.query.jdbc.ExtraJdbcConsumerFactory;
 
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Calendar;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.arrow.util.Preconditions.checkArgument;
 
 /**
  * 1. 需要客户端手动关闭 {@link ResultSet}
@@ -24,9 +27,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class ArrowJDBCReader extends ArrowReader {
     private ArrowVectorIterator iterator;
     private final Schema schema;
+
     public ArrowJDBCReader(BufferAllocator allocator, ResultSet resultSet) {
-        this(resultSet, new JdbcToArrowConfigBuilder(allocator, JdbcToArrowUtils.getUtcCalendar())
+        this(allocator, resultSet, JdbcToArrowUtils.getUtcCalendar());
+    }
+
+    public ArrowJDBCReader(BufferAllocator allocator, ResultSet resultSet, Calendar calendar) {
+        this(resultSet, new JdbcToArrowConfigBuilder(allocator, calendar)
                 .setReuseVectorSchemaRoot(true)
+                .setIncludeMetadata(true)
+                .setJdbcToArrowTypeConverter(new ExtraJDBCToArrowTypeConverter(calendar))
+                .setJdbcConsumerGetter(new ExtraJdbcConsumerFactory())
                 .build());
     }
 

@@ -5,7 +5,7 @@ import org.umbrella.query.QueryEngine;
 
 import java.util.HashMap;
 
-import static com.google.common.base.Preconditions.checkState;
+import static org.apache.arrow.util.Preconditions.checkState;
 
 @Slf4j
 public class ThreadLocalQuerySession extends AbstractQuerySession {
