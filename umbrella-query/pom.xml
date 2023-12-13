@@ -27,7 +27,7 @@
             -v /Users/haiqing.fu/docker-instances/mysql/data:/var/lib/mysql \
             -v /Users/haiqing.fu/docker-instances/mysql/linkerp.sql:/docker-entrypoint-initdb.d/linkerp.sql \
             -e MYSQL_ROOT_PASSWORD=jiao1983! \
-            -d mysql:8.2
+            -d mysql:5.7
 
             WIN:
             docker run --name mysql --hostname mysql \
@@ -35,8 +35,7 @@
             -p 3306:3306 \
             -v D:/docker-instances/mysql/data:/var/lib/mysql \
             -e MYSQL_ROOT_PASSWORD=jiao1983! \
-            -d mysql:8.2
-
+            -d mysql:5.7
 
         3.  启动 mongo:
             docker run -d --name mongo --hostname mongo \
@@ -45,7 +44,7 @@
             -e MONGO_INITDB_ROOT_USERNAME=admin \
             -e MONGO_INITDB_ROOT_PASSWORD=admin \
             -v /Users/haiqing.fu/docker-instances/mongo/data:/data/db \
-            mongo:7.0.4
+            mongo:6.0.12
 
         4.  启动 mongo-express:
             docker run -d --name mongo-express --hostname mongo-express \
@@ -57,6 +56,12 @@
             -e ME_CONFIG_BASICAUTH_USERNAME=admin \
             -e ME_CONFIG_BASICAUTH_PASSWORD=admin \
             mongo-express:1.0.0-18
+
+        5.  启动 Dremio:
+            docker run -d --name dremio --hostname dremio \
+            --network umbrella \
+            -p 9047:9047 -p 31010:31010 -p 45678:45678 \
+            dremio/dremio-oss:24.2.6
     </description>
 
     <properties>
