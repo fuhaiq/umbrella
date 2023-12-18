@@ -1,4 +1,5 @@
 import jakarta.annotation.Resource;
+import org.apache.arrow.driver.jdbc.ArrowFlightJdbcConnectionPoolDataSource;
 import org.jooq.DSLContext;
 import org.jooq.DataType;
 import org.jooq.Field;
@@ -12,7 +13,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.umbrella.query.QueryApplication;
 import org.umbrella.query.QueryEngine;
 
+import javax.sql.PooledConnection;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 
 @RunWith(SpringRunner.class)
@@ -56,7 +59,7 @@ public class QueryEngineTest {
     c_mktsegment character(10) NOT NULL,
     c_comment character varying(117) NOT NULL
      */
-    @Test
+//    @Test
     public void orc_project() {
         var customer = engine.orc("customer","file:/Users/haiqing.fu/Downloads/parquet/customer.orc",
                 new String[]{"c_custkey", "c_nationkey", "c_acctbal"},
@@ -148,18 +151,15 @@ public class QueryEngineTest {
 
 //    @Test
     public void json(){
-        try(var rs = mysql.resultQuery("select * from my_json_table").fetchResultSet()){
+        try(var rs = mysql.resultQuery("select * from test").fetchResultSet()){
             var ret = engine.jdbc("data", rs,
                     ctx -> ctx.resultQuery("""
-                            select * from data where detail.b.c = true
+                            select * from data
                             """)).fetch();
             System.out.println(ret);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
-
-
-
 //        var ret = engine.json("data", "file:/Users/haiqing.fu/Downloads/parquet/data.json",
 //                ctx -> ctx.resultQuery("select * from data where detail[4] = 4")).fetch();
 //        System.out.println(ret);
@@ -167,4 +167,24 @@ public class QueryEngineTest {
 //        var ret2 = engine.duckdb().resultQuery("select * from '/Users/haiqing.fu/Downloads/parquet/data.json'").fetch();
 //        System.out.println(ret2);
     }
+
+    @Autowired
+    private ArrowFlightJdbcConnectionPoolDataSource ds;
+
+    @Test
+    public void dremio(){
+        try{
+            var conn = ds.getPooledConnection().getConnection();
+            System.out.println(conn);
+            var ret = DSL.using(conn).resultQuery("""
+                select staff.name,sup.s_comment,mstaff.detail,mstaff.role from mysql.linkerp."linkerp_staff" as staff,"@admin".supplier as sup,
+                mongo.linkerp.staff as mstaff
+                where staff.id = sup."s_suppkey" AND mstaff.id = staff.id and mstaff.detail.age>10
+                """).fetch();
+            System.out.println(ret.format());
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
 }

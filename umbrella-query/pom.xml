@@ -60,7 +60,7 @@
         5.  启动 Dremio:
             docker run -d --name dremio --hostname dremio \
             --network umbrella \
-            -p 9047:9047 -p 31010:31010 -p 45678:45678 \
+            -p 9047:9047 -p 31010:31010 -p 32010:32010 -p 45678:45678 \
             dremio/dremio-oss:24.2.6
     </description>
 
@@ -161,6 +161,11 @@
             <artifactId>arrow-algorithm</artifactId>
             <version>${arrow.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>flight-sql-jdbc-core</artifactId>
+            <version>${arrow.version}</version>
         </dependency>
         <dependency>
             <groupId>org.duckdb</groupId>

@@ -1,5 +1,6 @@
 package org.umbrella.query.jdbc;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.arrow.adapter.jdbc.consumer.BaseConsumer;
 import org.apache.arrow.adapter.jdbc.consumer.JdbcConsumer;
 import org.apache.arrow.vector.complex.StructVector;
@@ -7,6 +8,7 @@ import org.apache.arrow.vector.complex.StructVector;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+@Slf4j
 public class StructConsumer {
 
     public static JdbcConsumer<StructVector> createConsumer(StructVector vector, int index, boolean nullable) {
@@ -41,7 +43,8 @@ public class StructConsumer {
                 }
                 currentIndex++;
             } else {
-                throw new SQLException("JDBC 中的数据不是结构体");
+                if(log.isDebugEnabled()) log.debug(obj.toString());
+                throw new SQLException("JDBC 中的数据不是结构体,实际为:" + obj.getClass().getName());
             }
 
         }
@@ -60,7 +63,8 @@ public class StructConsumer {
                 //TODO
                 currentIndex++;
             } else {
-                throw new SQLException("JDBC 中的数据不是结构体");
+                if(log.isDebugEnabled()) log.debug(obj.toString());
+                throw new SQLException("JDBC 中的数据不是结构体,实际为:" + obj.getClass().getName());
             }
         }
     }

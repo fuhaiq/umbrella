@@ -29,3 +29,9 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
       connection-test-query: SELECT 1
+    dremio:
+      url: 'jdbc:arrow-flight-sql://localhost:32010'
+      user: admin
+      password: zxcvbnm4Mnbvcxz$
+      useEncryption: false
+      threadPoolSize: 5
