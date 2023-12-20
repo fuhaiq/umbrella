@@ -30,12 +30,7 @@
             -d mysql:5.7
 
             WIN:
-            docker run --name mysql --hostname mysql \
-            --network umbrella \
-            -p 3306:3306 \
-            -v D:/docker-instances/mysql/data:/var/lib/mysql \
-            -e MYSQL_ROOT_PASSWORD=jiao1983! \
-            -d mysql:5.7
+            docker run --name mysql --hostname mysql --network umbrella -p 3306:3306 -v D:/docker-instances/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf -v D:/docker-instances/mysql/data:/var/lib/mysql -v D:/docker-instances/mysql/linkerp.sql:/docker-entrypoint-initdb.d/linkerp.sql -e MYSQL_ROOT_PASSWORD=jiao1983! -d mysql:5.7
 
         3.  启动 mongo:
             docker run -d --name mongo --hostname mongo \
@@ -45,6 +40,9 @@
             -e MONGO_INITDB_ROOT_PASSWORD=admin \
             -v /Users/haiqing.fu/docker-instances/mongo/data:/data/db \
             mongo:6.0.12
+
+            WIN:
+            docker run -d --name mongo --hostname mongo --network umbrella -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin -v D:/docker-instances/mongo/data:/data/db mongo:6.0.12
 
         4.  启动 mongo-express:
             docker run -d --name mongo-express --hostname mongo-express \
@@ -57,11 +55,17 @@
             -e ME_CONFIG_BASICAUTH_PASSWORD=admin \
             mongo-express:1.0.0-18
 
+            WIN:
+            docker run -d --name mongo-express --hostname mongo-express --network umbrella -p 8081:8081 -e ME_CONFIG_MONGODB_SERVER=mongo -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin -e ME_CONFIG_MONGODB_ADMINPASSWORD=admin -e ME_CONFIG_BASICAUTH_USERNAME=admin -e ME_CONFIG_BASICAUTH_PASSWORD=admin mongo-express:1.0.0-18
+
         5.  启动 Dremio:
             docker run -d --name dremio --hostname dremio \
             --network umbrella \
             -p 9047:9047 -p 31010:31010 -p 32010:32010 -p 45678:45678 \
             dremio/dremio-oss:24.2.6
+
+            WIN:
+            docker run -d --name dremio --hostname dremio --network umbrella -p 9047:9047 -p 31010:31010 -p 32010:32010 -p 45678:45678 dremio/dremio-oss:24.2.6
     </description>
 
     <properties>
@@ -72,10 +76,11 @@
         <arrow.version>14.0.1</arrow.version>
         <duckdb.version>0.9.2</duckdb.version>
         <lombok.version>1.18.30</lombok.version>
-        <jooq.version>3.18.7</jooq.version>
+        <jooq.version>3.19.0</jooq.version>
         <jool.version>0.9.15</jool.version>
         <mysql.version>8.2.0</mysql.version>
         <micrometer.version>1.12.0</micrometer.version>
+        <fastjson2.version>2.0.43</fastjson2.version>
     </properties>
 
     <dependencies>
@@ -196,6 +201,11 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>${fastjson2.version}</version>
         </dependency>
     </dependencies>
 

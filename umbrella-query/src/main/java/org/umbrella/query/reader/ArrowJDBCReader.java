@@ -8,8 +8,6 @@ import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.jooq.exception.DataAccessException;
-import org.umbrella.query.jdbc.ExtraJDBCToArrowTypeConverter;
-import org.umbrella.query.jdbc.ExtraJdbcConsumerFactory;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -36,8 +34,6 @@ public class ArrowJDBCReader extends ArrowReader {
         this(resultSet, new JdbcToArrowConfigBuilder(allocator, calendar)
                 .setReuseVectorSchemaRoot(true)
                 .setIncludeMetadata(true)
-                .setJdbcToArrowTypeConverter(new ExtraJDBCToArrowTypeConverter(calendar))
-                .setJdbcConsumerGetter(new ExtraJdbcConsumerFactory())
                 .build());
     }
 

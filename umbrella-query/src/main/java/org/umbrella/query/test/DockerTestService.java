@@ -1,37 +1,32 @@
-import jakarta.annotation.Resource;
-import org.apache.arrow.adapter.jdbc.JdbcToArrowConfig;
-import org.apache.arrow.vector.ipc.ArrowReader;
-import org.duckdb.DuckDBResultSet;
-import org.jooq.DSLContext;
-import org.junit.runner.RunWith;
+package org.umbrella.query.test;
+
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.umbrella.query.QueryApplication;
+import org.springframework.stereotype.Service;
 import org.umbrella.query.QueryEngine;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = QueryApplication.class)
-public class WindowsQueryEngineTest {
-
+@Service
+public class DockerTestService {
     @Autowired
     private QueryEngine engine;
 
-    @Resource(name = "mysql")
-    private DSLContext mysql;
+//    @PostConstruct
+    public void test(){
+        json_engine();
+        orc();
+        json_duckdb();
+    }
 
-//    @Test
     public void json_engine() {
-        var ret = engine.json("data", "file:/D:/WORK/data.json",
+        var ret = engine.json("data", "file:/mnt/host/data.json",
                 ctx -> ctx.resultQuery("""
         select name,detail,role from data where detail.address = 'SH' and detail.age>=40
         """).fetch());
         System.out.println(ret.format());
     }
 
-//    @Test
     public void orc() {
-        var ret = engine.orc("customer", "file:/D:/WORK/customer.orc",
+        var ret = engine.orc("customer", "file:/mnt/host/customer.orc",
                 ctx -> ctx.resultQuery("""
                         select c_custkey, c_nationkey, c_acctbal
                         from customer
@@ -40,10 +35,9 @@ public class WindowsQueryEngineTest {
         System.out.println(ret.format());
     }
 
-//    @Test
     public void json_duckdb() {
         var ret = engine.duckdb().resultQuery("""
-                select name,detail,role from 'D:/WORK/data.json' where detail.address = 'SH' and detail.age>=40
+                select name,detail,role from '/mnt/host/data.json' where detail.address = 'SH' and detail.age>=40
                 """).fetch();
         System.out.println(ret.format());
     }

@@ -1,11 +1,7 @@
 import jakarta.annotation.Resource;
-import org.apache.arrow.driver.jdbc.ArrowFlightJdbcConnectionPoolDataSource;
 import org.jooq.DSLContext;
-import org.jooq.DataType;
-import org.jooq.Field;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,9 +9,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.umbrella.query.QueryApplication;
 import org.umbrella.query.QueryEngine;
 
-import javax.sql.PooledConnection;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 
 @RunWith(SpringRunner.class)
@@ -166,25 +160,6 @@ public class QueryEngineTest {
 //
 //        var ret2 = engine.duckdb().resultQuery("select * from '/Users/haiqing.fu/Downloads/parquet/data.json'").fetch();
 //        System.out.println(ret2);
-    }
-
-    @Autowired
-    private ArrowFlightJdbcConnectionPoolDataSource ds;
-
-    @Test
-    public void dremio(){
-        try{
-            var conn = ds.getPooledConnection().getConnection();
-            System.out.println(conn);
-            var ret = DSL.using(conn).resultQuery("""
-                select staff.name,sup.s_comment,mstaff.detail,mstaff.role from mysql.linkerp."linkerp_staff" as staff,"@admin".supplier as sup,
-                mongo.linkerp.staff as mstaff
-                where staff.id = sup."s_suppkey" AND mstaff.id = staff.id and mstaff.detail.age>10
-                """).fetch();
-            System.out.println(ret.format());
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
     }
 
 }
