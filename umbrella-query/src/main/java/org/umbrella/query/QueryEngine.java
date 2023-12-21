@@ -18,7 +18,6 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.umbrella.query.reader.ArrowArrowReader;
 import org.umbrella.query.reader.ArrowJDBCReader;
-import org.umbrella.query.reader.ArrowJSONReader;
 import org.umbrella.query.reader.ArrowORCReader;
 import org.umbrella.query.reader.avro.ArrowAvroReader;
 import org.umbrella.query.session.QuerySession;
@@ -40,9 +39,6 @@ import static org.apache.arrow.util.Preconditions.checkState;
 @Slf4j
 public record QueryEngine(DSLContext duckdb, BufferAllocator allocator, NativeMemoryPool memoryPool) {
 
-    public <T> T json(String tableName, String uri, Function<DSLContext, T> func) {
-        return arrow(tableName, new ArrowJSONReader(allocator, memoryPool, uri), func);
-    }
     public <T> T orc(String tableName, String uri, Function<DSLContext, T> func) {
         return arrow(tableName, new ArrowORCReader(allocator, memoryPool, uri), func);
     }

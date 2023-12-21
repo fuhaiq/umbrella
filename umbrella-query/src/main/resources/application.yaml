@@ -11,7 +11,7 @@ spring:
       pool-name: Hikari-DuckDB
       minimum-idle: 5
       idle-timeout: 600000
-      maximum-pool-size: 10
+      maximum-pool-size: 1000
       auto-commit: true
       max-lifetime: 1800000
       connection-timeout: 30000
@@ -30,8 +30,15 @@ spring:
       connection-timeout: 30000
       connection-test-query: SELECT 1
     dremio:
-      url: 'jdbc:arrow-flight-sql://localhost:32010'
-      user: admin
+      driver-class-name: com.dremio.jdbc.Driver
+      jdbc-url: 'jdbc:dremio:direct=localhost:31010'
+      username: admin
       password: zxcvbnm4Mnbvcxz$
-      useEncryption: false
-      threadPoolSize: 5
+      pool-name: Hikari-Dremio
+      minimum-idle: 5
+      idle-timeout: 600000
+      maximum-pool-size: 10
+      auto-commit: true
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      #connection-test-query: SELECT 1

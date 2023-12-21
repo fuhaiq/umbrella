@@ -62,10 +62,13 @@
             docker run -d --name dremio --hostname dremio \
             --network umbrella \
             -p 9047:9047 -p 31010:31010 -p 32010:32010 -p 45678:45678 \
-            dremio/dremio-oss:24.2.6
+            dremio/dremio-oss:24.3.0
 
             WIN:
-            docker run -d --name dremio --hostname dremio --network umbrella -p 9047:9047 -p 31010:31010 -p 32010:32010 -p 45678:45678 dremio/dremio-oss:24.2.6
+            docker run -d --name dremio --hostname dremio --network umbrella -p 9047:9047 -p 31010:31010 -p 32010:32010 -p 45678:45678 dremio/dremio-oss:24.3.0
+
+        6.  安装 dremio jdbc driver
+            mvn install:install-file "-Dfile=D:\WORK\dremio-jdbc-driver-24.3.0-202312190021150029-52db2faf.jar" "-DgroupId=com.dremio" "-DartifactId=jdbc-driver" "-Dversion=24.3.0" "-Dpackaging=jar" "-DgeneratePom=true"
     </description>
 
     <properties>
@@ -73,7 +76,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>
-        <arrow.version>14.0.1</arrow.version>
+        <arrow.version>14.0.2</arrow.version>
         <duckdb.version>0.9.2</duckdb.version>
         <lombok.version>1.18.30</lombok.version>
         <jooq.version>3.19.0</jooq.version>
@@ -168,9 +171,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.arrow</groupId>
-            <artifactId>flight-sql-jdbc-core</artifactId>
-            <version>${arrow.version}</version>
+            <groupId>com.dremio</groupId>
+            <artifactId>jdbc-driver</artifactId>
+            <version>24.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.duckdb</groupId>

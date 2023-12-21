@@ -33,7 +33,7 @@
 <!--        <Logger name="org.umbrella.query.config.LogAllocationListener" level="trace">-->
 <!--            <AppenderRef ref="Console"/>-->
 <!--        </Logger>-->
-        <Logger name="org.umbrella.query.jdbc.StructConsumer" level="debug">
+        <Logger name="org.jooq.tools.StopWatchListener" level="trace">
             <AppenderRef ref="Console"/>
         </Logger>
         <Root level="info">
