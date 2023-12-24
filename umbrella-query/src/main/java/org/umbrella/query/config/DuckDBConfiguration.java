@@ -1,5 +1,6 @@
 package org.umbrella.query.config;
 
+import com.google.common.base.Strings;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jooq.SQLDialect;
@@ -11,6 +12,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 @Configuration
 public class DuckDBConfiguration {
 
@@ -21,7 +26,11 @@ public class DuckDBConfiguration {
     }
 
     @Bean(name = "duckdb_ds", destroyMethod = "close")
-    public HikariDataSource duckdb_ds(HikariConfig duckdb_hikariConfig) {
+    public HikariDataSource duckdb_ds(HikariConfig duckdb_hikariConfig) throws IOException {
+        var jdbcUrl = duckdb_hikariConfig.getJdbcUrl();
+        var db = jdbcUrl.substring("jdbc:duckdb:".length());
+        if(Strings.isNullOrEmpty(db)) throw new IOException("DuckDB 数据库文件不存在");
+        Files.deleteIfExists(Path.of(db));
         return new HikariDataSource(duckdb_hikariConfig);
     }
 

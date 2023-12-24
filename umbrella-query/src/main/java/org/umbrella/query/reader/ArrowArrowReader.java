@@ -21,7 +21,7 @@ public class ArrowArrowReader extends ArrowReader  {
     private final Scanner scanner;
     private final ArrowReader reader;
 
-    public ArrowArrowReader(BufferAllocator allocator, NativeMemoryPool memoryPool,  String uri) {
+    public ArrowArrowReader(BufferAllocator allocator, NativeMemoryPool memoryPool, String uri) {
         this(allocator, memoryPool, uri, new ScanOptions.Builder(/*batchSize*/ 32768)
                 .columns(Optional.empty())
                 .build());

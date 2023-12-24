@@ -5,12 +5,9 @@ import org.apache.arrow.memory.AllocationListener;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.memory.rounding.DefaultRoundingPolicy;
-import org.jooq.DSLContext;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.umbrella.query.QueryEngine;
 
 @Configuration
 public class ArrowConfiguration {
@@ -36,11 +33,4 @@ public class ArrowConfiguration {
 //        return NativeMemoryPool.createListenable(DirectReservationListener.instance());
         return NativeMemoryPool.getDefault();
     }
-
-    @Bean
-    public QueryEngine engine(@Qualifier("duckdb") DSLContext duckdb,
-                              BufferAllocator allocator, NativeMemoryPool memoryPool) {
-        return new QueryEngine(duckdb, allocator, memoryPool);
-    }
-
 }

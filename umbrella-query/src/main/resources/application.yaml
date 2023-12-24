@@ -7,7 +7,7 @@ spring:
   datasource:
     duckdb:
       driver-class-name: org.duckdb.DuckDBDriver
-      jdbc-url: 'jdbc:duckdb:'
+      jdbc-url: 'jdbc:duckdb:D:/WORK/umbrella-engine-db/engine.db'
       pool-name: Hikari-DuckDB
       minimum-idle: 5
       idle-timeout: 600000
@@ -42,3 +42,6 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
       #connection-test-query: SELECT 1
+      #flight:
+      #  host: localhost
+      #  port: 32010

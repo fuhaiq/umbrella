@@ -1,5 +1,4 @@
-import jakarta.annotation.Resource;
-import org.jooq.DSLContext;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,63 +7,106 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.umbrella.query.QueryApplication;
 import org.umbrella.query.QueryEngine;
 
-import java.sql.SQLException;
-
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = QueryApplication.class)
+@FixMethodOrder
 public class WindowsQueryEngineTest {
 
     @Autowired
     private QueryEngine engine;
 
-    @Resource(name = "mysql")
-    private DSLContext mysql;
 
-    @Resource(name = "dremio")
-    private DSLContext dremio;
+    /* result.orders.parquet
+    `o_orderkey` bigint,
+    `o_custkey` bigint,
+    `o_orderstatus` string,
+    `o_totalprice` double,
+    `o_orderdate` string,
+    `o_orderpriority` string,
+    `o_clerk` string,
+    `o_shippriority` int,
+    `o_comment` string
+     */
 
+
+
+    /* customer.orc
+    c_custkey integer NOT NULL,
+    c_name character varying(25) NOT NULL,
+    c_address character varying(40) NOT NULL,
+    c_nationkey integer NOT NULL,
+    c_phone character(15) NOT NULL,
+    c_acctbal numeric(15,2) NOT NULL,
+    c_mktsegment character(10) NOT NULL,
+    c_comment character varying(117) NOT NULL
+    */
 
     @Test
-    public void json_duckdb() {
-        var ret = engine.duckdb().resultQuery("""
-                select name,detail,role from 'D:/WORK/data.json' where detail.address = 'SH' and detail.age>=33
+    public void read_1() {
+        var ret = engine.reader().dremio().resultQuery("""
+                SELECT * FROM mongo.linkerp.staff
                 """).fetch();
         System.out.println(ret.format());
     }
 
     @Test
-    public void mysql() {
+    public void cache_1() {
+        engine.cache("staff_orders").dremio("""
+                SELECT id,name,age,role,detail,orders.o_totalprice FROM mongo.linkerp.staff,"@admin".orders
+                WHERE staff.id = orders.o_custkey
+                """);
+
+        engine.cache("orders").dremio("""
+                SELECT * FROM "@admin".orders limit 100;
+                """);
+
+        engine.cache("staff").dremio("""
+                SELECT * FROM mysql.linkerp."linkerp_staff"
+                """);
+    }
+
+    @Test
+    public void cache_2() {
+        var ret = engine.reader().duckdb().resultQuery("""
+                select * from cache.staff_orders where detail.salary >= 30000
+                """).fetch();
+        System.out.println(ret.format());
+
+        ret = engine.reader().duckdb().resultQuery("""
+                select * from cache.staff limit 5
+                """).fetch();
+        System.out.println(ret.format());
+
+        ret = engine.reader().duckdb().resultQuery("""
+                select * from cache.orders limit 5
+                """).fetch();
+        System.out.println(ret.format());
+    }
+
+    @Test
+    public void cache_3(){
+        engine.cache("staff_orders").evict();
+    }
+
+    @Test
+    public void session_1() {
         var ret = engine.session(session -> {
-
-            var rq_mysql = mysql.resultQuery("""
-                    select * from test
+            session.define("T2").dremio("""
+                    SELECT * FROM mongo.linkerp.staff
                     """);
-            session.jdbc("rq_mysql", rq_mysql);
-
-            var rq_duck = session.dsl().resultQuery("""
-                    select id, detail::JSON::STRUCT
-                    (id INTEGER, name VARCHAR, role VARCHAR[], detail STRUCT(age INTEGER, address VARCHAR))
-                    as detail from rq_mysql
+            session.define("T3").dremio("""
+                    SELECT * FROM mysql.linkerp."linkerp_supplier"
                     """);
-            session.jdbc("rq_duck", rq_duck);
-
+            session.define("T4").dremio("""
+                    SELECT * FROM mysql.linkerp."linkerp_supplier"
+                    """);
+            session.define("T5").dremio("""
+                    SELECT * FROM mysql.linkerp."linkerp_supplier"
+                    """);
             return session.dsl().resultQuery("""
-                    select rq_duck.id, rq_duck.detail::JSON as detail, parquet.o_custkey, parquet.o_clerk, parquet.o_totalprice from rq_duck
-                    left join 'D:/WORK/result.orders.parquet' as parquet on
-                    rq_duck.detail.id = parquet.o_custkey
-                    order by parquet.o_totalprice desc
+                    select T2.detail.salary,T2.role[3] AS R3 from T2
                     """).fetch();
         });
-
-        System.out.println(ret.format());
-    }
-
-    @Test
-    public void dremio() throws SQLException {
-        var ret = dremio.resultQuery("""
-                SELECT id,name,age,detail,role,orders.o_totalprice FROM mongo.linkerp.staff,"@admin".orders
-                WHERE staff.id = orders.o_custkey and array_length(staff.role) > 0
-                """).fetch();
         System.out.println(ret.format());
     }
 }
