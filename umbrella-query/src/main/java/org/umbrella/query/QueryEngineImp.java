@@ -1,21 +1,12 @@
 package org.umbrella.query;
 
-import org.apache.arrow.dataset.jni.NativeMemoryPool;
-import org.apache.arrow.flight.FlightClient;
-import org.apache.arrow.flight.auth2.ClientIncomingAuthHeaderMiddleware;
-import org.apache.arrow.memory.BufferAllocator;
 import org.umbrella.query.session.EngineSession;
 
 import java.util.function.Function;
 
 public record QueryEngineImp(
-        EngineWriter writer,
-        EngineReader reader,
-        EngineSession session,
-        BufferAllocator allocator,
-        NativeMemoryPool memoryPool,
-        FlightClient flightClient,
-        ClientIncomingAuthHeaderMiddleware.Factory authFactory
+        EngineClient client,
+        EngineSession session
 ) implements QueryEngine {
 
     @Override
@@ -28,16 +19,16 @@ public record QueryEngineImp(
 
     @Override
     public EngineWriter write() {
-        return writer;
+        return client.writer();
     }
 
     @Override
     public EngineCacheHandler cache(String schema, String name) {
-        return new EngineCacheHandlerImp(schema, name, allocator, memoryPool, reader, flightClient, authFactory);
+        return new EngineCacheHandlerImp(schema, name, client);
     }
 
     @Override
     public EngineReader reader() {
-        return reader;
+        return client.reader();
     }
 }

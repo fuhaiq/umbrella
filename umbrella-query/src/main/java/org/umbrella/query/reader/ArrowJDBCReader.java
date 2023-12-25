@@ -19,7 +19,7 @@ import static org.apache.arrow.util.Preconditions.checkArgument;
 /**
  * 1. 需要客户端手动关闭 {@link ResultSet}
  * <br/>
- * 2. {@link ArrowJDBCReader#loadNextBatch()} 设置了 reuseVectorSchemaRoot, 不用 try-resource 关闭 root, iterator.close 会清理的
+ * 2. {@link ArrowJDBCReader#loadNextBatch()} 设置了 reuseVectorSchemaRoot, 不用 try-client 关闭 root, iterator.close 会清理的
  */
 @Slf4j
 public class ArrowJDBCReader extends ArrowReader {

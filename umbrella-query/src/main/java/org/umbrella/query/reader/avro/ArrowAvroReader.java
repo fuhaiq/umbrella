@@ -38,7 +38,7 @@ public class ArrowAvroReader extends ArrowReader  {
     }
 
     /**
-     根据 {@link AvroToArrowVectorIterator} 说明,由客户端释放资源,所以这里使用 try-resource
+     根据 {@link AvroToArrowVectorIterator} 说明,由客户端释放资源,所以这里使用 try-client
      */
     @Override
     public boolean loadNextBatch() throws IOException {

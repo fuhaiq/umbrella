@@ -11,7 +11,7 @@ import java.io.IOException;
 /**
  * 1. 自动关闭 {@link FlightStream}
  * <br>
- * 2. 注意 {@link ArrowFlightStreamReader#loadNextBatch()} 方法里面不能把 {@link FlightStream#getRoot()} 放入 try-resource 里面, 注释说的很清楚:
+ * 2. 注意 {@link ArrowFlightStreamReader#loadNextBatch()} 方法里面不能把 {@link FlightStream#getRoot()} 放入 try-client 里面, 注释说的很清楚:
  * The data in the root may change at any time. Clients should NOT modify the root, but instead unload the data into their own root.
  */
 public class ArrowFlightStreamReader extends ArrowReader {

@@ -26,23 +26,24 @@ public class QueryEngineConfiguration {
     }
 
     @Bean
-    public EngineSession engineSession(EngineReader reader,
+    public EngineClient engineResource(EngineReader reader,
+                                       EngineWriter writer,
                                        BufferAllocator allocator,
                                        NativeMemoryPool memoryPool,
                                        FlightClient flightClient,
                                        ClientIncomingAuthHeaderMiddleware.Factory authFactory) {
-        return new ThreadLocalEngineSession(reader, allocator, memoryPool, flightClient, authFactory);
+        return new EngineClient(allocator, reader, writer, memoryPool, flightClient, authFactory);
+    }
+
+    @Bean
+    public EngineSession engineSession(EngineClient engineClient) {
+        return new ThreadLocalEngineSession(engineClient);
     }
     @Bean
-    public QueryEngine queryEngine(EngineWriter writer,
-                                     EngineReader query,
-                                     EngineSession session,
-                                     BufferAllocator allocator,
-                                     NativeMemoryPool memoryPool,
-                                     FlightClient flightClient,
-                                     ClientIncomingAuthHeaderMiddleware.Factory authFactory
+    public QueryEngine queryEngine(EngineClient engineClient,
+                                   EngineSession engineSession
     ) {
-        return new QueryEngineImp(writer, query, session, allocator, memoryPool, flightClient, authFactory);
+        return new QueryEngineImp(engineClient, engineSession);
     }
 
 

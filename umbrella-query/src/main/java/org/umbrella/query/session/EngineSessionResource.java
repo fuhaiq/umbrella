@@ -5,7 +5,7 @@ import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
 
-record EngineSessionResource(Connection conn, List<AutoCloseable> resources) implements Closeable {
+public record EngineSessionResource(Connection conn, List<AutoCloseable> resources) implements Closeable {
 
     public void addResource(AutoCloseable... resource) {
         resources.addAll(Arrays.asList(resource));
