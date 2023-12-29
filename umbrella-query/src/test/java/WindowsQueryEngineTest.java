@@ -1,11 +1,17 @@
+import org.jooq.impl.DSL;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 import org.umbrella.query.QueryApplication;
 import org.umbrella.query.QueryEngine;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = QueryApplication.class)
@@ -108,5 +114,15 @@ public class WindowsQueryEngineTest {
                     """).fetch();
         });
         System.out.println(ret.format());
+    }
+
+//    @Test
+    @Transactional
+    public void transcation_1(){
+        int linkerpCity = engine.write().mysql().insertInto(DSL.table("linkerp_city"))
+                .columns(DSL.field("id"),DSL.field("province_id"),DSL.field("name"))
+                        .values(801, 801, "P801").execute();
+        System.out.println("插入数据>>>>" + linkerpCity);
+        var err = 1/0;
     }
 }

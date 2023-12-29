@@ -26,7 +26,7 @@ public class QueryEngineConfiguration {
     }
 
     @Bean
-    public EngineClient engineResource(EngineReader reader,
+    public EngineClient engineClient(EngineReader reader,
                                        EngineWriter writer,
                                        BufferAllocator allocator,
                                        NativeMemoryPool memoryPool,

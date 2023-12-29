@@ -1,4 +1,4 @@
-package org.umbrella.query;
+package org.umbrella.query.cache;
 
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
@@ -7,6 +7,8 @@ import org.apache.arrow.vector.ipc.ArrowReader;
 import org.duckdb.DuckDBConnection;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
+import org.umbrella.query.EngineClient;
+import org.umbrella.query.EngineHandlerImp;
 import org.umbrella.query.reader.ArrowFlightStreamReader;
 
 import java.nio.charset.StandardCharsets;
@@ -20,10 +22,8 @@ import static org.apache.arrow.util.Preconditions.checkState;
  * 应用不用关心并发问题
  */
 public class EngineCacheHandlerImp extends EngineHandlerImp implements EngineCacheHandler {
-
     private final String schema;
     private final String name;
-
     public EngineCacheHandlerImp(String schema, String name, EngineClient client) {
         super(client);
         this.schema = schema;

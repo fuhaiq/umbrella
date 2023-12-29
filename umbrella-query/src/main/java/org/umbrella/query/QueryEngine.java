@@ -1,5 +1,6 @@
 package org.umbrella.query;
 
+import org.umbrella.query.cache.EngineCacheHandler;
 import org.umbrella.query.session.EngineSession;
 
 import java.util.function.Function;

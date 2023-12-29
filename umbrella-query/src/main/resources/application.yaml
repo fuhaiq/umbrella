@@ -4,6 +4,13 @@ spring:
       enabled: true
   arrow:
     max-allocation: 4294967296 # max allocation size in bytes
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: linkerp
+      username: admin
+      password: admin
   datasource:
     duckdb:
       driver-class-name: org.duckdb.DuckDBDriver
@@ -41,7 +48,6 @@ spring:
       auto-commit: true
       max-lifetime: 1800000
       connection-timeout: 30000
-      #connection-test-query: SELECT 1
-      #flight:
-      #  host: localhost
-      #  port: 32010
+      flight:
+        host: localhost
+        port: 32010

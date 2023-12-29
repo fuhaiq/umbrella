@@ -7,8 +7,8 @@ import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.duckdb.DuckDBConnection;
 import org.jooq.exception.DataAccessException;
-import org.umbrella.query.EngineHandlerImp;
 import org.umbrella.query.EngineClient;
+import org.umbrella.query.EngineHandlerImp;
 import org.umbrella.query.reader.ArrowFlightStreamReader;
 
 import java.nio.charset.StandardCharsets;
@@ -25,7 +25,6 @@ public class EngineSessionHandlerImp extends EngineHandlerImp implements EngineS
         this.name = name;
         this.resource = resource;
     }
-
     @Override
     public void dremio(String sql) {
         var flightClient = client.flightClient();
@@ -35,7 +34,6 @@ public class EngineSessionHandlerImp extends EngineHandlerImp implements EngineS
         resource.addResource(stream); // 在 arrow 方法里面统一 addResource(reader)
         arrow(new ArrowFlightStreamReader(client.allocator(), stream));
     }
-
     @Override
     public void arrow(ArrowReader arrowReader) {
         try {
