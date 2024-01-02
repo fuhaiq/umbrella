@@ -1,5 +1,9 @@
 package org.umbrella.query.reader.avro;
 
+import static org.apache.arrow.vector.types.FloatingPointPrecision.DOUBLE;
+import static org.apache.arrow.vector.types.FloatingPointPrecision.SINGLE;
+
+import java.util.*;
 import org.apache.arrow.AvroToArrowConfig;
 import org.apache.arrow.util.Preconditions;
 import org.apache.arrow.vector.dictionary.DictionaryEncoder;
@@ -17,11 +21,6 @@ import org.apache.avro.LogicalType;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
-
-import java.util.*;
-
-import static org.apache.arrow.vector.types.FloatingPointPrecision.DOUBLE;
-import static org.apache.arrow.vector.types.FloatingPointPrecision.SINGLE;
 
 /**
  * 完全拷贝代码来自 {@link org.apache.arrow.AvroToArrowUtils}

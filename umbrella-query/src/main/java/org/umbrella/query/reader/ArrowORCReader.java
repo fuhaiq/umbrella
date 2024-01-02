@@ -1,5 +1,7 @@
 package org.umbrella.query.reader;
 
+import java.io.IOException;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.arrow.dataset.file.FileFormat;
 import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
@@ -12,9 +14,6 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.arrow.vector.types.pojo.Schema;
-
-import java.io.IOException;
-import java.util.Optional;
 
 @Slf4j
 public class ArrowORCReader extends ArrowReader  {

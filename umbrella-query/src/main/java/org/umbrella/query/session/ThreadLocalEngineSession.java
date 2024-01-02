@@ -8,24 +8,24 @@ import java.util.ArrayList;
 
 @Slf4j
 public class ThreadLocalEngineSession extends AbstractEngineSession {
-    private final ThreadLocal<EngineSessionResource> threadLocal = new ThreadLocal<>();
+  private final ThreadLocal<EngineSessionResource> threadLocal = new ThreadLocal<>();
 
-    public ThreadLocalEngineSession(EngineClient client) {
-        super(client);
-    }
+  public ThreadLocalEngineSession(EngineClient client) {
+    super(client);
+  }
 
-    @Override
-    EngineSessionResource resource() {
-        return threadLocal.get();
-    }
+  @Override
+  EngineSessionResource resource() {
+    return threadLocal.get();
+  }
 
-    @Override
-    void closeSession() {
-        threadLocal.remove();
-    }
+  @Override
+  void closeSession() {
+    threadLocal.remove();
+  }
 
-    @Override
-    void startSession(Connection conn) {
-        threadLocal.set(new EngineSessionResource(conn, new ArrayList<>()));
-    }
+  @Override
+  void startSession(Connection conn) {
+    threadLocal.set(new EngineSessionResource(conn, new ArrayList<>()));
+  }
 }

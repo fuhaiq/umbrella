@@ -6,31 +6,28 @@ import org.umbrella.query.session.EngineSession;
 
 import java.util.function.Function;
 
-public record QueryEngineImp(
-        EngineClient client,
-        EngineSession session
-) implements QueryEngine {
+public record QueryEngineImp(EngineClient client, EngineSession session) implements QueryEngine {
 
-    @Override
-    public <T> T session(Function<EngineSession, T> func) {
-        try(session) {
-            session.start();
-            return func.apply(session);
-        }
+  @Override
+  public <T> T session(Function<EngineSession, T> func) {
+    try (session) {
+      session.start();
+      return func.apply(session);
     }
+  }
 
-    @Override
-    public EngineWriter write() {
-        return client.writer();
-    }
+  @Override
+  public EngineWriter write() {
+    return client.writer();
+  }
 
-    @Override
-    public EngineCacheHandler cache(String schema, String name) {
-        return new EngineCacheHandlerImp(schema, name, client);
-    }
+  @Override
+  public EngineCacheHandler cache(String schema, String name) {
+    return new EngineCacheHandlerImp(schema, name, client);
+  }
 
-    @Override
-    public EngineReader reader() {
-        return client.reader();
-    }
+  @Override
+  public EngineReader reader() {
+    return client.reader();
+  }
 }

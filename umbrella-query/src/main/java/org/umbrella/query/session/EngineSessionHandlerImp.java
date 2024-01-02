@@ -18,34 +18,38 @@ import static cdjd.org.apache.arrow.util.Preconditions.checkState;
 
 @Slf4j
 public class EngineSessionHandlerImp extends EngineHandlerImp implements EngineSessionHandler {
-    private final String name;
-    private final EngineSessionResource resource;
-    public EngineSessionHandlerImp(String name, EngineClient client, EngineSessionResource resource) {
-        super(client);
-        this.name = name;
-        this.resource = resource;
+  private final String name;
+  private final EngineSessionResource resource;
+
+  public EngineSessionHandlerImp(String name, EngineClient client, EngineSessionResource resource) {
+    super(client);
+    this.name = name;
+    this.resource = resource;
+  }
+
+  @Override
+  public void dremio(String sql) {
+    var flightClient = client.flightClient();
+    var auth = client.authFactory().getCredentialCallOption();
+    var info =
+        flightClient.getInfo(FlightDescriptor.command(sql.getBytes(StandardCharsets.UTF_8)), auth);
+    var stream = flightClient.getStream(info.getEndpoints().get(0).getTicket(), auth);
+    resource.addResource(stream); // 在 arrow 方法里面统一 addResource(reader)
+    arrow(new ArrowFlightStreamReader(client.allocator(), stream));
+  }
+
+  @Override
+  public void arrow(ArrowReader arrowReader) {
+    try {
+      var stream = ArrowArrayStream.allocateNew(client.allocator());
+      resource.addResource(stream, arrowReader);
+      checkState(resource.conn().isWrapperFor(DuckDBConnection.class), "引擎驱动不匹配");
+      Data.exportArrayStream(client.allocator(), arrowReader, stream);
+      var duckConn = resource.conn().unwrap(DuckDBConnection.class);
+      duckConn.registerArrowStream(name, stream);
+      if (log.isDebugEnabled()) log.debug("导出数据到 Arrow 会话完成.");
+    } catch (SQLException e) {
+      throw new DataAccessException(e.getMessage(), e);
     }
-    @Override
-    public void dremio(String sql) {
-        var flightClient = client.flightClient();
-        var auth = client.authFactory().getCredentialCallOption();
-        var info = flightClient.getInfo(FlightDescriptor.command(sql.getBytes(StandardCharsets.UTF_8)), auth);
-        var stream = flightClient.getStream(info.getEndpoints().get(0).getTicket(), auth);
-        resource.addResource(stream); // 在 arrow 方法里面统一 addResource(reader)
-        arrow(new ArrowFlightStreamReader(client.allocator(), stream));
-    }
-    @Override
-    public void arrow(ArrowReader arrowReader) {
-        try {
-            var stream = ArrowArrayStream.allocateNew(client.allocator());
-            resource.addResource(stream, arrowReader);
-            checkState(resource.conn().isWrapperFor(DuckDBConnection.class), "引擎驱动不匹配");
-            Data.exportArrayStream(client.allocator(), arrowReader, stream);
-            var duckConn = resource.conn().unwrap(DuckDBConnection.class);
-            duckConn.registerArrowStream(name, stream);
-            if(log.isDebugEnabled()) log.debug("导出数据到 Arrow 会话完成.");
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
+  }
 }

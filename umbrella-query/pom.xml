@@ -32,33 +32,7 @@
             WIN:
             docker run --name mysql --hostname mysql --network umbrella -p 3306:3306 -v D:/docker-instances/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf -v D:/docker-instances/mysql/data:/var/lib/mysql -v D:/docker-instances/mysql/linkerp.sql:/docker-entrypoint-initdb.d/linkerp.sql -e MYSQL_ROOT_PASSWORD=jiao1983! -d mysql:5.7
 
-        3.  启动 mongo:
-            docker run -d --name mongo --hostname mongo \
-            --network umbrella \
-            -p 27017:27017 \
-            -e MONGO_INITDB_ROOT_USERNAME=admin \
-            -e MONGO_INITDB_ROOT_PASSWORD=admin \
-            -v /Users/haiqing.fu/docker-instances/mongo/data:/data/db \
-            mongo:6.0.12
-
-            WIN:
-            docker run -d --name mongo --hostname mongo --network umbrella -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin -v D:/docker-instances/mongo/data:/data/db mongo:6.0.12
-
-        4.  启动 mongo-express:
-            docker run -d --name mongo-express --hostname mongo-express \
-            --network umbrella \
-            -p 8081:8081 \
-            -e ME_CONFIG_MONGODB_SERVER=mongo \
-            -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin \
-            -e ME_CONFIG_MONGODB_ADMINPASSWORD=admin \
-            -e ME_CONFIG_BASICAUTH_USERNAME=admin \
-            -e ME_CONFIG_BASICAUTH_PASSWORD=admin \
-            mongo-express:1.0.0-18
-
-            WIN:
-            docker run -d --name mongo-express --hostname mongo-express --network umbrella -p 8081:8081 -e ME_CONFIG_MONGODB_SERVER=mongo -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin -e ME_CONFIG_MONGODB_ADMINPASSWORD=admin -e ME_CONFIG_BASICAUTH_USERNAME=admin -e ME_CONFIG_BASICAUTH_PASSWORD=admin mongo-express:1.0.0-18
-
-        5.  启动 Dremio:
+        3.  启动 Dremio:
             docker run -d --name dremio --hostname dremio \
             --network umbrella \
             -p 9047:9047 -p 31010:31010 -p 32010:32010 -p 45678:45678 \
@@ -67,15 +41,11 @@
             WIN:
             docker run -d --name dremio --hostname dremio --network umbrella -p 9047:9047 -p 31010:31010 -p 32010:32010 -p 45678:45678 dremio/dremio-oss:24.3.0
 
-        6.  安装 dremio jdbc driver
+        4.  安装 dremio jdbc driver
             mvn install:install-file "-Dfile=D:\WORK\dremio-jdbc-driver-24.3.0-202312190021150029-52db2faf.jar" "-DgroupId=com.dremio" "-DartifactId=jdbc-driver" "-Dversion=24.3.0" "-Dpackaging=jar" "-DgeneratePom=true"
 
-        7.  启动 Superset
+        5.  启动 Superset
             docker run -d --name superset --hostname superset --network umbrella -p 8088:8088 -e "SUPERSET_SECRET_KEY=UMBRELLA" apache/superset:2.1.3
-
-
-        8.  启动 postgres
-            docker run -d --name postgres --hostname postgres --network umbrella -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=jiao1983! -e PGDATA=/var/lib/postgresql/data -v D:/docker-instances/postgres/data:/var/lib/postgresql/data postgres:16.1
 
     </description>
 
@@ -136,10 +106,6 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-aspects</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

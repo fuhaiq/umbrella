@@ -2,6 +2,8 @@ package org.umbrella.query.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.FlightClientMiddleware;
@@ -22,9 +24,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Configuration
 public class DremioConfiguration {
