@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.umbrella.user.mapper.duckdb.DuckdbMapper">
+    <resultMap id="BaseResultMap" type="org.umbrella.api.dto.UserDTO">
+        <id column="id" property="id"/>
+        <collection property="orderList" select="inner_select_order" column="id"/>
+    </resultMap>
+    <select id="inner_select_order" resultType="org.umbrella.api.entity.TOrder">
+        select * from orders where userId = #{userId}
+    </select>
+
+    <!-- 查询列表用户 -->
+    <select id="listWithOrders" resultMap="BaseResultMap">
+        select * from users order by id desc;
+    </select>
+
+    <!-- 查询单个用户 -->
+    <select id="withOrders" resultMap="BaseResultMap">
+        select * from users order by id desc;
+    </select>
+</mapper>

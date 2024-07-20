@@ -1,0 +1,11 @@
+server:
+  port: 8081
+spring:
+  config:
+    import:
+    - optional:nacos:mq-service.yaml
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+      username: nacos
+      password: nacos

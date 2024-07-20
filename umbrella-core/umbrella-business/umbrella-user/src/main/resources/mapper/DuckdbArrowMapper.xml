@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.umbrella.common.duckdb.mapper.DuckdbArrowMapper">
+    <insert id="create">
+        CREATE TABLE IF NOT EXISTS ${to} AS select * from ${from};
+    </insert>
+
+    <insert id="drop">
+        DROP TABLE IF EXISTS ${name};
+    </insert>
+</mapper>

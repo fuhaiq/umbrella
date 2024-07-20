@@ -1,0 +1,11 @@
+server:
+  port: 8080
+spring:
+  config:
+    import:
+    - optional:nacos:user-service.yaml
+  cloud:
+    nacos:
+      server-addr: nacos:8848
+      username: nacos
+      password: nacos

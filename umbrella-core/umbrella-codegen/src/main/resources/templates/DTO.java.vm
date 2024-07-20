@@ -1,0 +1,48 @@
+package ${package.Entity};
+
+#foreach($pkg in ${table.importPackages})
+import ${pkg};
+#end
+#if(${springdoc})
+import io.swagger.v3.oas.annotations.media.Schema;
+#elseif(${swagger})
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.annotations.ApiModelProperty;
+#end
+
+/**
+ * <p>
+ * $!{table.comment}
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+
+#if(${springdoc})
+@Schema(name = "${entity}", description = "$!{table.comment}传输对象")
+#elseif(${swagger})
+@ApiModel(value = "${entity}对象", description = "$!{table.comment}")
+#end
+public record ${entity}DTO (
+## ----------  BEGIN 字段循环遍历  ----------
+#set($size = ${table.fields.size()})
+#set($index = 0)
+#foreach($field in ${table.fields})
+#set($index = $index + 1)
+#if("$!field.comment" != "")
+  #if(${springdoc})
+    @Schema(description = "${field.comment}")
+  #elseif(${swagger})
+    @ApiModelProperty("${field.comment}")
+  #else
+    /**
+     * ${field.comment}
+     */
+  #end
+#end
+    ${field.propertyType} ${field.propertyName}#if(${index} < ${size}),#end
+#end
+## ----------  END 字段循环遍历  ----------
+)
+{}
