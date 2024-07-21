@@ -1,0 +1,166 @@
+spring:
+  application:
+    name: mq-service
+
+  cloud:
+    openfeign:
+      oauth2:
+        enabled: true
+      httpclient:
+        hc5:
+          enabled: true
+      client:
+        config:
+          default:
+            loggerLevel: none
+            connectTimeout: 3000
+            readTimeout: 3000
+      compression:
+        request:
+          enabled: true
+          mime-types: text/xml,application/xml,application/json
+          min-request-size: 1024
+        response:
+          enabled: true
+
+  #数据源配置
+  datasource:
+    dynamic:
+      primary: mysql
+      strict: false
+      datasource:
+        mysql:
+          type: com.zaxxer.hikari.HikariDataSource
+          hikari:
+            pool-name: MYSQLPool
+            maximum-pool-size: 5
+            minimum-idle: 1
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://mysql:3306/umbrella?serverTimezone=UTC&userUnicode=true&characterEncoding=utf-8
+          username: root
+          password: fuhaiqing
+        duckdb:
+          type: com.zaxxer.hikari.HikariDataSource
+          hikari:
+            pool-name: DUCKDBPool
+            maximum-pool-size: 5
+            minimum-idle: 1
+            connection-init-sql: ATTACH 'host=localhost user=root password=fuhaiqing port=3306 database=umbrella' AS mysqldb (TYPE MYSQL);
+          driver-class-name: org.duckdb.DuckDBDriver
+          url: 'jdbc:duckdb:'
+
+  #缓存配置
+  data:
+    redis:
+      host: redis
+      port: 6379
+      database: 1
+      client-type: lettuce
+      lettuce:
+        pool:
+          #最小空闲连接数.
+          min-idle: 0
+          #最大连接数。使用负值表示无限制
+          max-active: 5
+          #最大空闲连接数。使用负值表示无限制
+          max-idle: 5
+          #连接池资源耗尽时，连接尝试分配阻塞时间,超时即抛出异常。使用负值无限期阻塞
+          max-wait: -1ms
+      timeout: 3000ms
+      connect-timeout: 3000ms
+
+  # Rabbitmq 配置
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: admin
+    password: admin
+
+
+  #安全配置
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8180/realms/umbrella/protocol/openid-connect/certs
+
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: user-service
+      client-secret: 2u0bqUkRWP31MaVK1eIoaBJHp6c8RsIc
+
+keycloak:
+  sys-user:
+    server-url: http://localhost:8180
+    realm: umbrella
+    client-id: user-service
+    client-secret: 2u0bqUkRWP31MaVK1eIoaBJHp6c8RsIc
+    username: sys_user
+    password: password
+  enforcer:
+    policy-enforcer-config:
+      {
+        "realm": "umbrella",
+        "auth-server-url": "http://localhost:8180",
+        "resource": "user-service",
+        "credentials": {
+          "secret": "2u0bqUkRWP31MaVK1eIoaBJHp6c8RsIc"
+        },
+        "path-cache-config": {
+          "lifespan": -100
+        },
+        "paths": [
+          {
+            "path": "/actuator/*",
+            "enforcement-mode": "DISABLED"
+          }
+        ]
+      }
+
+logging:
+  level:
+    org.umbrella.user.mapper: debug
+    org:
+      umbrella:
+        common:
+          feign:
+            RemoteOrderService: DEBUG
+
+
+
+# mybaits-plus配置
+mybatis-plus:
+  configuration:
+    local-cache-scope: statement
+  mapper-locations: classpath:/mapper/*Mapper.xml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        #默认值访问health,info端点  用*可以包含全部端点
+        include: ["*"]
+      #修改访问路径 2.0之前默认是/; 2.0默认是/actuator可以通过这个属性值修改
+      base-path: /actuator
+  endpoint:
+    shutdown:
+      enabled: false
+    health:
+      show-details: always
+  metrics:
+    # 在 Prometheus 中添加特别的 Labels
+    # 必须加上对应的应用名，因为需要以应用的维度来查看对应的监控
+    tags:
+      application: ${spring.application.name}
+    # 下面选项建议打开，以监控 http 请求的 P99/P95 等，具体的时间分布可以根据实际情况设置
+    distribution:
+      sla:
+        http:
+          server:
+            requests: 1ms,5ms,10ms,50ms,100ms,200ms,500ms,1s,5s
+      percentiles-histogram:
+        http:
+          server:
+            #开启 http server 的请求监控
+            requests: true
