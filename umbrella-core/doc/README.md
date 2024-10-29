@@ -253,7 +253,7 @@ docker run --sysctl net.core.somaxconn=2048 --name rabbitmq --hostname rabbitmq 
 -e RABBITMQ_DEFAULT_USER=admin `
 -e RABBITMQ_DEFAULT_PASS=admin `
 -v D:/docker-instances/rabbitmq/data:/var/lib/rabbitmq `
--d rabbitmq:3.13.3-management
+-d rabbitmq:3.13.4-management
 ```
 
 # 启动 Loki
