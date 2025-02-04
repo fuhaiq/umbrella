@@ -17,4 +17,5 @@ import org.springframework.stereotype.Service;
 @Service
 public class TbHotelServiceImpl extends ServiceImpl<TbHotelMapper, TbHotel> implements ITbHotelService {
     //TODO: 添加旅店逻辑
+    //TODO: 添加旅店事务
 }
